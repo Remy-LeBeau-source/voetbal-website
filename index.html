@@ -164,14 +164,22 @@
       background: radial-gradient(ellipse 18% 14% at 12% 4%, rgba(255,255,230,.55), transparent 70%),
                   radial-gradient(ellipse 18% 14% at 88% 4%, rgba(255,255,230,.55), transparent 70%),
                   radial-gradient(ellipse 60% 40% at 50% 60%, rgba(255,255,255,.07), transparent 70%); }
-    .publiek { position: absolute; left: 0; right: 0; top: 4%; height: 22%;
-      background-image: radial-gradient(circle at 50% 35%, #f1c9a5 0 22%, transparent 24%),
-                        radial-gradient(circle at 50% 35%, #8a5a3b 0 22%, transparent 24%),
-                        radial-gradient(circle at 50% 35%, #d9a77e 0 22%, transparent 24%);
-      background-size: 14px 13px, 17px 15px, 11px 12px; background-position: 0 0, 6px 5px, 3px 9px; opacity: .55; }
-    .publiek::after { content: ""; position: absolute; inset: 0;
-      background: repeating-linear-gradient(90deg, rgba(245,197,66,.35) 0 22px, rgba(255,255,255,.1) 22px 40px, rgba(29,185,84,.3) 40px 64px, rgba(0,0,0,.2) 64px 90px);
-      mix-blend-mode: overlay; }
+    /* Tribune met getekende supporters (zie tekenTribune) */
+    .publiek { position: absolute; left: 0; right: 0; top: 3%; height: 23%; opacity: .9; }
+    .publiek canvas { width: 100%; height: 100%; display: block; }
+    .publiek::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+      background: linear-gradient(rgba(6,10,26,.55), rgba(6,10,26,0) 60%); }
+    .dak { position: absolute; left: 0; right: 0; top: 0; height: 3.5%; z-index: 1;
+           background: linear-gradient(#000, #0b1022); border-bottom: 2px solid #1e2a4d; }
+    .dak::after { content: ""; position: absolute; inset: 30% 6%;
+                  background: repeating-linear-gradient(90deg, rgba(255,255,230,.9) 0 10px, transparent 10px 26px); filter: blur(1px); opacity: .7; }
+    .doel-schaduw { position: absolute; left: 21%; width: 58%; top: 50%; height: 4%; z-index: 2; pointer-events: none;
+                    background: linear-gradient(rgba(0,0,0,.4), transparent); transform: skewX(-12deg); }
+    .keeper-schaduw { position: absolute; left: 50%; top: 50.5%; width: 9%; aspect-ratio: 4 / 1; z-index: 2; pointer-events: none;
+                      border-radius: 50%; background: rgba(0,0,0,.4); filter: blur(2px); transform: translate(-50%, -50%);
+                      transition: transform .38s cubic-bezier(.25,1.2,.5,1), opacity .38s; }
+    .spoor { position: absolute; width: 6.5%; aspect-ratio: 1; z-index: 3; pointer-events: none; border-radius: 50%;
+             background: radial-gradient(circle, rgba(255,255,255,.55), rgba(255,255,255,0) 70%); opacity: 0; transform: translate(-50%, -50%); }
     .publiek { transition: filter .5s, transform .5s; }
     .stadion.juich .publiek { animation: juichen .22s steps(2) 9; filter: brightness(1.4) saturate(1.4); }
     @keyframes juichen { 50% { transform: translateY(-5px); } }
@@ -290,7 +298,16 @@
 
     /* ---------- Speeltuin: hooghouden ---------- */
     .tuin { position: relative; height: clamp(380px, 62vh, 540px); border-radius: 22px; overflow: hidden; border: 1px solid var(--rand);
-            background: radial-gradient(ellipse at 50% 120%, #1f8a41, #0b3d1d 60%, #051a0c); touch-action: pan-y; user-select: none; }
+            background: radial-gradient(ellipse at 50% 110%, rgba(255,255,230,.18), transparent 55%),
+                        repeating-linear-gradient(90deg, rgba(255,255,255,.035) 0 70px, transparent 70px 140px),
+                        radial-gradient(ellipse at 50% 120%, #1f8a41, #0b3d1d 60%, #051a0c);
+            touch-action: pan-y; user-select: none; }
+    .tuin-schaduw { position: absolute; left: 0; bottom: 2px; width: var(--maat); height: calc(var(--maat) * .22); border-radius: 50%;
+                    background: rgba(0,0,0,.45); filter: blur(3px); pointer-events: none; will-change: transform, opacity; }
+    .tik-ring { position: absolute; width: 80px; height: 80px; margin: -40px 0 0 -40px; border-radius: 50%; pointer-events: none;
+                border: 3px solid var(--goud); z-index: 1; }
+    .plus-een { position: absolute; pointer-events: none; z-index: 2; font-family: "Bebas Neue", sans-serif; font-size: 1.8rem;
+                color: var(--goud); text-shadow: 0 2px 6px rgba(0,0,0,.6); transform: translate(-50%, -50%); }
     .tuin::before { content: ""; position: absolute; left: 50%; bottom: -90px; width: 260px; height: 180px; margin-left: -130px;
                     border: 2px solid rgba(255,255,255,.18); border-radius: 50%; }
     .tuin::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 6px; background: rgba(255,255,255,.18); }
@@ -546,7 +563,8 @@
         </div>
 
         <div class="stadion verschijn" id="stadion" aria-label="Voetbalstadion: klik in het doel om te schieten">
-          <div class="publiek"></div>
+          <div class="dak" aria-hidden="true"></div>
+          <div class="publiek"><canvas id="tribune"></canvas></div>
           <div class="handen" aria-hidden="true"></div>
           <div class="publiek-reactie" id="publiekReactie" aria-hidden="true"></div>
           <div class="led" aria-hidden="true"><div class="led-rij">
@@ -609,6 +627,9 @@
             </svg>
           </div>
           <div class="stip"></div>
+          <div class="doel-schaduw" aria-hidden="true"></div>
+          <div class="keeper-schaduw" id="keeperSchaduw" aria-hidden="true"></div>
+          <div class="spoor"></div><div class="spoor"></div><div class="spoor"></div><div class="spoor"></div><div class="spoor"></div>
           <div class="schaduw" id="schaduw"></div>
           <div class="bal" id="bal"><svg viewBox="0 0 40 40"><use href="#balvorm"/></svg></div>
           <div class="vizier aan" id="vizier"></div>
@@ -1155,7 +1176,7 @@
     // Beweeg de bal in een boog van a naar b
     function vlieg(van, naar, { duur = 550, boog = 0, schaal = [1, 1], draai = 720, schaduwMee = true, vervaag = false } = {}) {
       return new Promise(klaar => {
-        const start = performance.now();
+        const start = performance.now(), geschiedenis = [];
         const stap = nu => {
           const t = Math.min((nu - start) / duur, 1), e = 1 - Math.pow(1 - t, 2);
           const x = van.x + (naar.x - van.x) * e;
@@ -1163,6 +1184,14 @@
           const s = schaal[0] + (schaal[1] - schaal[0]) * e;
           zet(bal, x, y, `scale(${s}) rotate(${draai * e}deg)`);
           bal.style.opacity = vervaag ? 1 - t : 1;
+          // Spoor achter de bal: vervagende kopieën op eerdere plekken
+          geschiedenis.push([x, y, s]);
+          sporen.forEach((sp, i) => {
+            const p = geschiedenis[geschiedenis.length - 1 - (i + 1) * 2];
+            if (!p || t >= 1 || rustig) { sp.style.opacity = 0; return; }
+            zet(sp, p[0], p[1], `scale(${p[2] * (1 - i * .12)})`);
+            sp.style.opacity = (.5 - i * .09) * (vervaag ? 1 - t : 1);
+          });
           if (schaduwMee) {
             const gy = van.y + 3 + (Math.min(naar.y, DOEL.y2) + 1 - van.y - 3) * e;
             zet(schaduw, x, gy, `scale(${s * (1 - Math.sin(Math.PI * t) * .4)})`);
@@ -1188,7 +1217,45 @@
       const hoek = Math.abs(kx - 50) < 6 ? 0 : grens((kx - 50) * 3.4, -88, 88);
       keeper.classList.add('duikt');
       keeper.style.transform = `translate(${dx}px, ${dy}px) rotate(${hoek}deg)`;
+      keeperSchaduw.style.transform = `translate(calc(-50% + ${dx}px), -50%) scale(${hoek ? 1.8 : .8}, ${hoek ? .8 : .7})`;
+      keeperSchaduw.style.opacity = dy < -10 ? .5 : 1;
     }
+    const keeperSchaduw = $('#keeperSchaduw'), sporen = [...document.querySelectorAll('.spoor')];
+
+    // Tribune: rijen supporters met shirts, sjaals en vlaggen, getekend op een canvas
+    function tekenTribune() {
+      const doek = $('#tribune'), w = doek.clientWidth, h = doek.clientHeight;
+      if (!w || !h) return;
+      const dpr = Math.min(devicePixelRatio || 1, 2);
+      doek.width = Math.round(w * dpr); doek.height = Math.round(h * dpr);
+      const c = doek.getContext('2d');
+      c.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const shirts = ['#f5c542', '#35c6ff', '#ffffff', '#1db954', '#ff6fc8', '#ff4d4d', '#1a1a1a', '#f5c542'];
+      const huid = ['#f1c9a5', '#d9a77e', '#b07a50', '#6b4226'];
+      const rijen = 7, rh = h / rijen;
+      for (let r = 0; r < rijen; r++) {
+        c.fillStyle = r % 2 ? '#131b33' : '#0f1529';
+        c.fillRect(0, r * rh, w, rh);
+        const y = (r + 1) * rh, g = rh * .42 * (.75 + r / rijen * .5), stap = g * 1.85;
+        for (let x = (r % 2) * stap / 2 - stap; x < w + stap; x += stap * willekeurig(.85, 1.15)) {
+          c.fillStyle = shirts[Math.floor(Math.random() * shirts.length)];
+          c.beginPath(); c.roundRect(x - g * .8, y - g * 1.15, g * 1.6, g * 1.2, g * .5); c.fill();
+          c.fillStyle = huid[Math.floor(Math.random() * huid.length)];
+          c.beginPath(); c.arc(x, y - g * 1.5, g * .52, 0, Math.PI * 2); c.fill();
+          const extra = Math.random();
+          if (extra < .07) {                       // sjaal boven het hoofd
+            c.fillStyle = Math.random() < .5 ? '#f5c542' : '#35c6ff';
+            c.fillRect(x - g * 1.3, y - g * 2.55, g * 2.6, g * .42);
+          } else if (extra < .1) {                 // vlag
+            c.strokeStyle = '#ddd'; c.lineWidth = 1; c.beginPath(); c.moveTo(x + g * .6, y - g); c.lineTo(x + g * .6, y - g * 3.2); c.stroke();
+            c.fillStyle = Math.random() < .5 ? '#f5c542' : '#1db954';
+            c.fillRect(x + g * .6, y - g * 3.2, g * 1.6, g);
+          }
+        }
+      }
+    }
+    tekenTribune();
+    addEventListener('resize', tekenTribune);
 
     async function schiet(tx, ty) {
       if (bezig || serie.length >= 5) return;
@@ -1263,6 +1330,7 @@
       stadion.classList.remove('juich', 'balen', 'schud');
       keeper.classList.remove('duikt');
       keeper.style.transform = '';
+      keeperSchaduw.style.transform = ''; keeperSchaduw.style.opacity = 1;
       bal.style.opacity = 1;
       zet(bal, STIP.x, STIP.y); zet(schaduw, STIP.x, STIP.y + 3); schaduw.style.opacity = .9;
 
@@ -1342,8 +1410,12 @@
       el.style.setProperty('--maat', r * 2 + 'px');
       if (kleur) el.style.setProperty('--bal', kleur);
       el.innerHTML = '<svg viewBox="0 0 40 40"><use href="#balvorm"/></svg>';
+      const schaduwEl = document.createElement('div');
+      schaduwEl.className = 'tuin-schaduw';
+      schaduwEl.style.setProperty('--maat', r * 2 + 'px');
+      tuin.insertBefore(schaduwEl, tuin.firstChild);
       tuin.appendChild(el);
-      const b = { el, r, x: willekeurig(r, B - r), y: r + 10, vx: willekeurig(-200, 200), vy: 0, hoek: 0, grijp: null, sleept: false, getrapt: false };
+      const b = { el, schaduwEl, r, x: willekeurig(r, B - r), y: r + 10, vx: willekeurig(-200, 200), vy: 0, hoek: 0, plet: 0, grijp: null, sleept: false, getrapt: false };
       ballen.push(b);
       el.addEventListener('pointerdown', e => {
         e.preventDefault();
@@ -1387,6 +1459,16 @@
       reeksEl.classList.add('tik');
       setTimeout(() => reeksEl.classList.remove('tik'), 120);
       trapGeluid({ pan: b.x / B * 2 - 1, licht: true });
+      if (rustig) return;
+      // Ring en "+1" op de plek van de tik
+      const ring = document.createElement('div');
+      ring.className = 'tik-ring'; ring.style.left = b.x + 'px'; ring.style.top = b.y + 'px';
+      const plus = document.createElement('div');
+      plus.className = 'plus-een'; plus.textContent = '+1'; plus.style.left = b.x + 'px'; plus.style.top = (b.y - b.r) + 'px';
+      tuin.append(ring, plus);
+      ring.animate([{ transform: 'scale(.4)', opacity: 1 }, { transform: 'scale(1.6)', opacity: 0 }], { duration: 450, easing: 'ease-out' }).onfinish = () => ring.remove();
+      plus.animate([{ transform: 'translate(-50%, -50%) scale(.6)', opacity: 0 }, { transform: 'translate(-50%, -120%) scale(1.2)', opacity: 1, offset: .25 },
+                    { transform: 'translate(-50%, -260%) scale(1)', opacity: 0 }], { duration: 800, easing: 'ease-out' }).onfinish = () => plus.remove();
     }
 
     function eindeReeks() {
@@ -1417,6 +1499,7 @@
             if (b.vy > 0) {
               if (b.getrapt && b === laatste && reeks > 0) eindeReeks();
               b.getrapt = false;
+              if (b.vy > 300) b.plet = Math.min(1, b.vy / 1400);     // platdrukken bij een harde landing
               b.vy = b.vy > 140 ? -b.vy * .55 : 0;
             }
             b.vx *= .985;
@@ -1440,7 +1523,14 @@
           if (!c.sleept) { c.vx += imp * nx; c.vy += imp * ny; }
         }
       }
-      for (const b of ballen) b.el.style.transform = `translate(${b.x - b.r}px, ${b.y - b.r}px) rotate(${b.hoek}deg)`;
+      for (const b of ballen) {
+        b.plet = Math.max(0, b.plet - dt * 6);
+        const sx = 1 + b.plet * .22, sy = 1 - b.plet * .22;
+        b.el.style.transform = `translate(${b.x - b.r}px, ${b.y - b.r + b.plet * b.r * .22}px) scale(${sx}, ${sy}) rotate(${b.hoek}deg)`;
+        const hoogte = Math.min(1, (H - b.y - b.r) / (H * .8));
+        b.schaduwEl.style.transform = `translateX(${b.x - b.r}px) scale(${1 - hoogte * .55})`;
+        b.schaduwEl.style.opacity = .9 - hoogte * .7;
+      }
       loopt ? requestAnimationFrame(stap) : null;
     }
     function start() { if (!loopt && zichtbaarTuin) { loopt = true; vorige = performance.now(); requestAnimationFrame(stap); } }
@@ -1452,7 +1542,7 @@
     document.querySelectorAll('.kleur-bal').forEach(k => k.addEventListener('click', () => nieuweBal(k.dataset.kleur)));
     $('#regenboog').addEventListener('click', () => KLEUREN.forEach((k, i) => setTimeout(() => nieuweBal(k), i * 120)));
     $('#tuinReset').addEventListener('click', () => {
-      ballen.forEach(b => b.el.remove());
+      ballen.forEach(b => { b.el.remove(); b.schaduwEl.remove(); });
       ballen = []; laatste = null; reeks = 0; reeksEl.textContent = 0;
       nieuweBal();
     });
@@ -1552,7 +1642,7 @@
         s.vy += SPELER_ZW * dt;
         s.x = grens(s.x + s.vx * dt, s.min, s.max);
         s.y += s.vy * dt;
-        if (s.y > GROND) { s.y = GROND; s.vy = 0; }
+        if (s.y > GROND) { if (s.vy > 350) deeltjes(s.x, GROND, 8, true); s.y = GROND; s.vy = 0; }
         s.loopFase += Math.abs(s.vx) * dt * .05;
       });
       if (kopWacht > 0) return;
@@ -1587,7 +1677,7 @@
           b.vx = ux * kracht + s.vx * .35 + (isKop ? -s.kant * 95 : 0);    // koppen stuurt de bal richting het net
           b.vy = uy * kracht + Math.min(0, s.vy) * .35;
           if (isKop && uy > -.4) b.vy -= 240;
-          if (isKop) { laatsteKopper = s; trapGeluid({ pan: (s.x / KB) * 2 - 1, licht: true }); }
+          if (isKop) { laatsteKopper = s; trapGeluid({ pan: (s.x / KB) * 2 - 1, licht: true }); deeltjes(b.x - ux * BAL_R, b.y - uy * BAL_R, 12, false); }
         }
       });
       // Over het net?
@@ -1666,26 +1756,48 @@
     function kopTeken() {
       const schaal = kopDoek.width / KB;
       kd.setTransform(schaal, 0, 0, schaal, 0, 0);
-      // lucht en lichten
+      const nu = performance.now() / 1000;
+      // lucht met sterren
       const lucht = kd.createLinearGradient(0, 0, 0, GROND);
-      lucht.addColorStop(0, '#070b1c'); lucht.addColorStop(1, '#1b3566');
+      lucht.addColorStop(0, '#050817'); lucht.addColorStop(.55, '#12234a'); lucht.addColorStop(1, '#1b3566');
       kd.fillStyle = lucht; kd.fillRect(0, 0, KB, KH);
-      for (const lx of [90, 710]) {
-        const g = kd.createRadialGradient(lx, 30, 5, lx, 30, 170);
-        g.addColorStop(0, 'rgba(255,255,230,.5)'); g.addColorStop(1, 'rgba(255,255,230,0)');
-        kd.fillStyle = g; kd.fillRect(0, 0, KB, 250);
-      }
-      // publiek
-      for (let rij = 0; rij < 5; rij++) for (let i = 0; i < 62; i++) {
-        const px = i * 13 + (rij % 2) * 6, py = 175 + rij * 16 + Math.sin(i * 1.7 + rij) * 2;
-        kd.fillStyle = ['#f5c542', '#35c6ff', '#fff', '#1db954', '#ff6fc8'][(i + rij * 3) % 5];
-        kd.globalAlpha = .28; kd.fillRect(px - 4, py, 9, 10);
-        kd.globalAlpha = .45; kd.fillStyle = (i + rij) % 3 ? '#d9a77e' : '#8a5a3b';
-        kd.beginPath(); kd.arc(px, py - 3, 4, 0, Math.PI * 2); kd.fill();
+      for (const [sx, sy, sg, fase] of KOP_STERREN) {
+        kd.globalAlpha = .35 + Math.sin(nu * 2 + fase) * .25;
+        kd.fillStyle = '#fff'; kd.fillRect(sx, sy, sg, sg);
       }
       kd.globalAlpha = 1;
-      // gras
-      for (let i = 0; i < 10; i++) { kd.fillStyle = i % 2 ? '#1f8a41' : '#1c7a3a'; kd.fillRect(i * 80, 262, 80, KH); }
+      // lichtmasten met lichtbundels
+      for (const lx of [55, 745]) {
+        kd.fillStyle = '#1a2240'; kd.fillRect(lx - 3, 40, 6, 125);
+        kd.fillStyle = '#2a3560'; kd.fillRect(lx - 24, 26, 48, 18);
+        for (let i = 0; i < 4; i++) { kd.fillStyle = '#fffbe0'; kd.fillRect(lx - 20 + i * 11, 30, 8, 10); }
+        const g = kd.createRadialGradient(lx, 35, 4, lx, 35, 220);
+        g.addColorStop(0, 'rgba(255,255,230,.55)'); g.addColorStop(1, 'rgba(255,255,230,0)');
+        kd.fillStyle = g; kd.fillRect(0, 0, KB, 300);
+      }
+      // tribune met supporters (vaste plekken, ze wiebelen een beetje)
+      kd.fillStyle = '#0d1430';
+      kd.beginPath(); kd.moveTo(0, 150); kd.lineTo(KB, 150); kd.lineTo(KB, 250); kd.lineTo(0, 250); kd.fill();
+      for (let r = 0; r < 5; r++) { kd.fillStyle = r % 2 ? '#111a38' : '#0e1631'; kd.fillRect(0, 155 + r * 19, KB, 19); }
+      for (const p of KOP_PUBLIEK) {
+        const hop = kopBezig ? Math.max(0, Math.sin(nu * p.snel + p.fase)) * p.hop : 0;
+        kd.fillStyle = p.shirt; kd.beginPath(); kd.roundRect(p.x - 5, p.y - 9 - hop, 10, 10, 3); kd.fill();
+        kd.fillStyle = p.huid; kd.beginPath(); kd.arc(p.x, p.y - 12 - hop, 3.6, 0, Math.PI * 2); kd.fill();
+      }
+      // lichtreclame die voorbij schuift
+      kd.fillStyle = '#050505'; kd.fillRect(0, 248, KB, 16);
+      kd.save(); kd.beginPath(); kd.rect(0, 248, KB, 16); kd.clip();
+      kd.font = '13px "Bebas Neue", sans-serif'; kd.textBaseline = 'middle'; kd.textAlign = 'left';
+      kd.fillStyle = '#f5c542'; kd.shadowColor = 'rgba(245,197,66,.8)'; kd.shadowBlur = 6;
+      const tekst = 'SILL-VYAN & NAOUFAL   ·   OVERKOPPEN CUP   ·   SAMEN STERK   ·   ';
+      const tw = kd.measureText(tekst).width, schuif = (nu * 40) % tw;
+      for (let x = -schuif; x < KB; x += tw) kd.fillText(tekst, x, 256.5);
+      kd.restore();
+      // gras met maaistroken en licht in het midden
+      for (let i = 0; i < 10; i++) { kd.fillStyle = i % 2 ? '#1f8a41' : '#1c7a3a'; kd.fillRect(i * 80, 264, 80, KH); }
+      const glans = kd.createRadialGradient(KB / 2, GROND, 20, KB / 2, GROND, 420);
+      glans.addColorStop(0, 'rgba(255,255,255,.12)'); glans.addColorStop(1, 'rgba(0,0,0,.25)');
+      kd.fillStyle = glans; kd.fillRect(0, 264, KB, KH);
       kd.fillStyle = 'rgba(255,255,255,.7)'; kd.fillRect(0, GROND, KB, 3);
       // net
       kd.fillStyle = '#ddd'; kd.fillRect(NET_X - NET_HALF, NET_TOP - 4, NET_HALF * 2, GROND - NET_TOP + 4);
@@ -1697,11 +1809,51 @@
       const lucht2 = GROND - kopBal.y;
       kd.fillStyle = `rgba(0,0,0,${Math.max(.08, .3 - lucht2 / 1200)})`;
       kd.beginPath(); kd.ellipse(kopBal.x, GROND + 4, Math.max(5, 14 - lucht2 / 30), 4, 0, 0, Math.PI * 2); kd.fill();
+      // spoor achter een snelle bal
+      kopSpoor.forEach(([x, y], i) => {
+        kd.globalAlpha = (i / kopSpoor.length) * .35;
+        kd.fillStyle = '#fff'; kd.beginPath(); kd.arc(x, y, BAL_R * (.5 + i / kopSpoor.length * .5), 0, Math.PI * 2); kd.fill();
+      });
+      kd.globalAlpha = 1;
       tekenBal(kopBal.x, kopBal.y, kopBal.hoek);
+      // vonkjes en stofwolkjes
+      for (const d of kopDeeltjes) {
+        kd.globalAlpha = Math.max(0, d.leven / d.max);
+        kd.fillStyle = d.kleur;
+        kd.beginPath(); kd.arc(d.x, d.y, d.grootte * (d.stof ? 2 - d.leven / d.max : 1), 0, Math.PI * 2); kd.fill();
+      }
+      kd.globalAlpha = 1;
       if (kopBezig && kopWacht > 0) {
         kd.fillStyle = 'rgba(255,255,255,.9)'; kd.font = '32px "Bebas Neue", sans-serif'; kd.textAlign = 'center';
         kd.fillText('Klaar…', KB / 2, 110);
       }
+    }
+    // Vaste achtergrond: sterren en supporters (één keer bepaald, dan flikkert er niets)
+    const KOP_STERREN = Array.from({ length: 70 }, () => [willekeurig(0, KB), willekeurig(0, 140), Math.random() < .2 ? 2 : 1, willekeurig(0, 6)]);
+    const KOP_PUBLIEK = [];
+    for (let r = 0; r < 5; r++) for (let x = (r % 2) * 7; x < KB; x += willekeurig(11, 16))
+      KOP_PUBLIEK.push({ x, y: 172 + r * 19, shirt: ['#f5c542', '#35c6ff', '#ffffff', '#1db954', '#ff6fc8', '#ff4d4d'][Math.floor(Math.random() * 6)],
+                         huid: ['#f1c9a5', '#d9a77e', '#b07a50', '#6b4226'][Math.floor(Math.random() * 4)], hop: Math.random() < .3 ? willekeurig(1, 3) : 0,
+                         snel: willekeurig(6, 10), fase: willekeurig(0, 6) });
+    const kopDeeltjes = [], kopSpoor = [];
+    function deeltjes(x, y, aantal, stof) {
+      if (rustig) return;
+      for (let i = 0; i < aantal; i++) {
+        const hoek = stof ? willekeurig(Math.PI, Math.PI * 2) : willekeurig(0, Math.PI * 2), v = stof ? willekeurig(30, 90) : willekeurig(120, 320);
+        kopDeeltjes.push({ x, y, vx: Math.cos(hoek) * v, vy: Math.sin(hoek) * v, leven: stof ? .5 : .35, max: stof ? .5 : .35, stof,
+                           grootte: stof ? willekeurig(3, 6) : willekeurig(1.5, 3), kleur: stof ? 'rgba(210,230,200,.5)' : (Math.random() < .5 ? '#f5c542' : '#fff') });
+      }
+    }
+    function kopEffecten(dt) {
+      for (let i = kopDeeltjes.length - 1; i >= 0; i--) {
+        const d = kopDeeltjes[i];
+        d.leven -= dt; d.x += d.vx * dt; d.y += d.vy * dt; d.vy += (d.stof ? 60 : 500) * dt;
+        if (d.leven <= 0) kopDeeltjes.splice(i, 1);
+      }
+      const snel = Math.hypot(kopBal.vx, kopBal.vy) > 380 && kopBezig && kopWacht <= 0;
+      kopSpoor.push([kopBal.x, kopBal.y]);
+      if (kopSpoor.length > 8 || !snel) kopSpoor.shift();
+      if (!snel && kopSpoor.length) kopSpoor.shift();
     }
     function kopMaat() {
       const w = kopDoek.clientWidth * Math.min(devicePixelRatio || 1, 2);
@@ -1712,6 +1864,7 @@
       let dt = Math.min((nu - kopVorige) / 1000, .05);
       kopVorige = nu;
       if (kopBezig) { const stappen = Math.ceil(dt / (1 / 240)); for (let i = 0; i < stappen; i++) kopStap(dt / stappen); }
+      kopEffecten(dt);
       kopTeken();
       if (kopBezig && kopInBeeld) requestAnimationFrame(kopFrame); else kopLoop = false;
     }
