@@ -55,6 +55,7 @@
     .logo span { color: var(--goud); display: inline-block; transition: transform .4s; }
     .logo:hover span { transform: rotate(360deg) scale(1.3); }
     .menu { display: flex; gap: 26px; list-style: none; margin: 0; padding: 0; }
+    @media (max-width: 1150px) and (min-width: 761px) { .menu { gap: 14px; } .menu a { font-size: .9rem; } }
     .menu a { text-decoration: none; font-weight: 600; color: var(--grijs); transition: color .2s; position: relative; }
     .menu a::after { content: ""; position: absolute; left: 0; right: 0; bottom: -4px; height: 2px; background: var(--goud);
                      transform: scaleX(0); transition: transform .3s; }
@@ -226,6 +227,44 @@
                z-index: 3; pointer-events: none; left: 50%; top: 91%; transform: translate(-50%, -50%); }
     .stip { position: absolute; left: 50%; top: 90%; width: 1.1%; aspect-ratio: 1; border-radius: 50%; background: rgba(255,255,255,.8);
             transform: translate(-50%, -50%); z-index: 2; }
+    /* Schutter met poses voor aanloop, celebrations en balen */
+    .schutter { position: absolute; left: 40%; top: 73%; width: 7.5%; aspect-ratio: 60 / 110; z-index: 5; pointer-events: none;
+                transform: translate(-50%, 0); transform-origin: 50% 100%; }
+    .schutter svg { width: 100%; height: 100%; display: block; overflow: visible; filter: drop-shadow(0 6px 6px rgba(0,0,0,.4)); }
+    .schutter .arm { transition: transform .25s; }
+    .schutter .arm-l { transform-origin: 10px 28px; }
+    .schutter .arm-r { transform-origin: 50px 28px; }
+    .schutter .been { transition: transform .12s; }
+    .schutter .been-r { transform-origin: 36px 62px; }
+    .schutter .hoofd { transition: transform .3s; transform-origin: 30px 24px; }
+    .schutter.armen-omhoog .arm-l { transform: rotate(160deg); }
+    .schutter.armen-omhoog .arm-r { transform: rotate(-160deg); }
+    .schutter.armen-wijd .arm-l { transform: rotate(92deg); }
+    .schutter.armen-wijd .arm-r { transform: rotate(-92deg); }
+    .schutter.handen-hoofd .arm-l { transform: rotate(-138deg); }
+    .schutter.handen-hoofd .arm-r { transform: rotate(138deg); }
+    .schutter.handen-hoofd .hoofd { transform: translateY(3px); }
+    .schutter.trap .been-r { transform: rotate(-28deg) scaleY(.85); }
+    /* Krachtmeter voor de Panenka */
+    .kracht { position: absolute; left: 50%; bottom: 3%; width: min(62%, 460px); transform: translateX(-50%); z-index: 6; text-align: center; }
+    .kracht[hidden] { display: none; }
+    .kracht-balk { position: relative; display: flex; height: 16px; border-radius: 999px; box-shadow: 0 0 0 2px rgba(0,0,0,.6); }
+    .kracht-balk span { height: 100%; }
+    .kracht-balk span:first-child { border-radius: 999px 0 0 999px; }
+    .kracht-balk .z-hard { border-radius: 0 999px 999px 0; }
+    .z-zacht { width: 28%; background: #ff5a5a; }
+    .z-goed { width: 22%; background: #f5c542; }
+    .z-perfect { width: 14%; background: #1db954; box-shadow: 0 0 12px #1db954; }
+    .kracht-balk .z-goed:nth-child(4) { width: 24%; }
+    .z-hard { width: 12%; background: #ff5a5a; }
+    .naald { position: absolute; top: -7px; left: 0; width: 6px; height: 30px; margin-left: -3px; border-radius: 3px; background: #fff;
+             box-shadow: 0 0 0 2px #000, 0 0 10px #fff; }
+    .kracht p { margin: 8px 0 0; font-weight: 800; font-size: clamp(.8rem, 2vw, 1rem); text-shadow: 0 1px 4px #000; }
+    .vorm-tabs { display: inline-flex; background: #000; border: 1px solid var(--rand); border-radius: 999px; padding: 4px; }
+    .vorm-tabs button { border: 0; background: none; color: var(--grijs); padding: 8px 16px; border-radius: 999px; cursor: pointer; font-weight: 800; }
+    .vorm-tabs button[aria-pressed="true"] { background: var(--wit); color: #000; }
+    #chipKnop { justify-self: end; align-self: start; font-size: 1.15rem; padding: 16px 34px; }
+    .richt-blok[hidden] { display: none; }
     .vizier { position: absolute; width: 7%; aspect-ratio: 1; z-index: 5; pointer-events: none; opacity: 0; transition: opacity .2s;
               transform: translate(-50%, -50%); border: 2px solid var(--goud); border-radius: 50%; box-shadow: 0 0 0 2px rgba(0,0,0,.4); }
     .vizier::before, .vizier::after { content: ""; position: absolute; background: var(--goud); left: 50%; top: 50%; transform: translate(-50%, -50%); }
@@ -466,7 +505,8 @@
       <ul class="menu" id="menu">
         <li><a href="#home">Home</a></li>
         <li><a href="#wij">Wie zijn wij</a></li>
-        <li><a href="#spel">Penalty's</a></li>
+        <li><a href="#spel" data-naar-vorm="penalty">Penalty's</a></li>
+        <li><a href="#spel" data-naar-vorm="panenka">Panenka</a></li>
         <li><a href="#hooghouden">Hooghouden</a></li>
         <li><a href="#koppen">Overkoppen</a></li>
         <li><a href="#foto">Foto</a></li>
@@ -566,10 +606,14 @@
         <div class="spel-kop verschijn">
           <div class="sectie-kop" style="margin:0">
             <p class="label">Speel mee</p>
-            <h2 class="kop">Penaltyserie</h2>
-            <p>Richt met je muis of vinger en klik om te schieten. Vijf penalty's: hoeveel maak jij er?</p>
+            <h2 class="kop" id="spelTitel">Penaltyserie</h2>
+            <p id="spelUitleg">Richt met je muis of vinger en klik om te schieten. Vijf penalty's: hoeveel maak jij er?</p>
           </div>
           <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center">
+            <div class="vorm-tabs" role="group" aria-label="Spelvorm">
+              <button data-vorm="penalty" aria-pressed="true">⚽ Penalty</button>
+              <button data-vorm="panenka" aria-pressed="false">🥄 Panenka</button>
+            </div>
             <div class="niveaus" role="group" aria-label="Moeilijkheid">
               <button data-niveau="makkelijk" aria-pressed="false">Makkelijk</button>
               <button data-niveau="normaal" aria-pressed="true">Normaal</button>
@@ -650,6 +694,24 @@
           <div class="keeper-schaduw" id="keeperSchaduw" aria-hidden="true"></div>
           <div class="spoor"></div><div class="spoor"></div><div class="spoor"></div><div class="spoor"></div><div class="spoor"></div>
           <div class="schaduw" id="schaduw"></div>
+          <div class="schutter" id="schutter" aria-hidden="true">
+            <svg viewBox="0 0 60 110">
+              <g class="been been-l"><rect x="19" y="62" width="9" height="34" rx="4" fill="#d9a77e"/><rect x="18" y="80" width="11" height="16" rx="3" fill="#fff"/><rect x="16" y="94" width="14" height="8" rx="4" fill="#111"/></g>
+              <g class="been been-r"><rect x="32" y="62" width="9" height="34" rx="4" fill="#d9a77e"/><rect x="31" y="80" width="11" height="16" rx="3" fill="#fff"/><rect x="30" y="94" width="14" height="8" rx="4" fill="#111"/></g>
+              <path d="M16 56 H44 L43 70 H17 Z" fill="#111"/>
+              <g class="arm arm-l"><rect x="6" y="26" width="8" height="28" rx="4" fill="#f5c542"/><circle cx="10" cy="55" r="4" fill="#d9a77e"/></g>
+              <g class="arm arm-r"><rect x="46" y="26" width="8" height="28" rx="4" fill="#f5c542"/><circle cx="50" cy="55" r="4" fill="#d9a77e"/></g>
+              <path d="M13 26 Q30 20 47 26 L45 58 H15 Z" fill="#f5c542"/>
+              <text x="30" y="36" font-size="6" text-anchor="middle" fill="#111" font-family="Inter, sans-serif" font-weight="800">S&amp;N</text>
+              <text x="30" y="53" font-size="16" text-anchor="middle" fill="#111" font-family="Bebas Neue, sans-serif">10</text>
+              <g class="hoofd"><circle cx="30" cy="15" r="10" fill="#d9a77e"/>
+                <path d="M20 15 Q20 4 30 4 Q40 4 40 15 Q40 20 38 22 H22 Q20 20 20 15Z" fill="#23160d"/></g>
+            </svg>
+          </div>
+          <div class="kracht" id="kracht" hidden>
+            <div class="kracht-balk"><span class="z-zacht"></span><span class="z-goed"></span><span class="z-perfect"></span><span class="z-goed"></span><span class="z-hard"></span><i class="naald" id="naald"></i></div>
+            <p id="krachtTekst">Tik om de chip te laden</p>
+          </div>
           <div class="bal" id="bal"><svg viewBox="0 0 40 40"><use href="#balvorm"/></svg></div>
           <div class="vizier aan" id="vizier"></div>
           <div class="scene-tekst" id="sceneTekst" aria-hidden="true"></div>
@@ -661,7 +723,8 @@
             <div class="serie" id="serie" aria-label="Penaltyserie"></div>
             <p class="spel-info" id="spelInfo" aria-live="polite">Penalty 1 van 5</p>
           </div>
-          <div>
+          <button class="knop vol" id="chipKnop" hidden>🥄 Chip!</button>
+          <div class="richt-blok">
             <p class="label" style="margin-bottom:8px">Of kies een hoek</p>
             <div class="richtknoppen">
               <button data-x="26" data-y="27" aria-label="Hoog links">↖</button>
@@ -849,7 +912,7 @@
     // Actieve menu-link volgt de sectie in beeld
     const links = [...menu.querySelectorAll('a')];
     const sectieObserver = new IntersectionObserver(items => items.forEach(item => {
-      if (item.isIntersecting) links.forEach(a => a.classList.toggle('actief', a.hash === '#' + item.target.id));
+      if (item.isIntersecting) links.forEach(a => a.classList.toggle('actief', a.hash === '#' + item.target.id && (!a.dataset.naarVorm || a.dataset.naarVorm === vorm)));
     }), { rootMargin: '-45% 0px -50% 0px' });
     document.querySelectorAll('main > section[id]').forEach(s => sectieObserver.observe(s));
 
@@ -1201,8 +1264,8 @@
     function nieuweSerie() {
       serie = [];
       tekenSerie();
-      spelInfo.innerHTML = `Penalty 1 van 5 · Record: <b>${record}</b> van 5`;
-      sceneHint.textContent = 'Klik of tik in het doel om te schieten';
+      spelInfo.innerHTML = `${vorm === 'panenka' ? 'Panenka' : 'Penalty'} 1 van 5 · Record: <b>${record}</b> van 5`;
+      sceneHint.textContent = vorm === 'panenka' ? 'Tik om te laden, en nog een keer om te chippen' : 'Klik of tik in het doel om te schieten';
       sceneHint.style.opacity = 1;
     }
 
@@ -1293,74 +1356,215 @@
     tekenTribune();
     addEventListener('resize', tekenTribune);
 
-    async function schiet(tx, ty) {
+    /* ---------- Schutter: aanloop, celebrations en balen ---------- */
+    const schutter = $('#schutter');
+    let schutterAnim = null;
+    const pauze = ms => new Promise(r => setTimeout(r, ms));
+    function schutterPose(...poses) {
+      schutter.classList.remove('armen-omhoog', 'armen-wijd', 'handen-hoofd', 'trap');
+      schutter.classList.add(...poses);
+    }
+    function schutterBeweeg(frames, duur, easing = 'ease-in-out') {
+      schutterAnim?.cancel();
+      if (rustig) return pauze(Math.min(duur, 400));
+      schutterAnim = schutter.animate(frames, { duration: duur, easing, fill: 'forwards' });
+      return schutterAnim.finished.catch(() => {});
+    }
+    async function aanloop() {
+      schutterPose();
+      await schutterBeweeg([{ transform: 'translate(-50%, 0)' }, { transform: 'translate(15%, -6%) scale(.97)' }], 240, 'ease-in');
+      schutterPose('trap');
+    }
+    const T0 = 'translate(-50%, 0)';
+    const VIERINGEN = [
+      { naam: '🕺 SIUUU!', pose: 'armen-wijd', duur: 1900, frames: [
+        { transform: T0 }, { transform: 'translate(160%, -45%) scale(.85)', offset: .3 },
+        { transform: 'translate(160%, -140%) scale(.85) rotateY(180deg)', offset: .55 },
+        { transform: 'translate(160%, -150%) scale(.85) rotateY(360deg)', offset: .68 },
+        { transform: 'translate(160%, -45%) scale(.9) rotateY(360deg)', offset: .82 }, { transform: 'translate(160%, -45%) scale(.9) rotateY(360deg)' }] },
+      { naam: '✈️ Vliegtuigje!', pose: 'armen-wijd', duur: 2000, frames: [
+        { transform: T0 }, { transform: 'translate(90%, -30%) rotate(-16deg)' }, { transform: 'translate(260%, -12%) rotate(16deg)' },
+        { transform: 'translate(120%, -55%) rotate(-16deg)' }, { transform: 'translate(220%, -35%) rotate(10deg)' }] },
+      { naam: '🛷 Knieslide!', pose: 'armen-omhoog', duur: 1700, frames: [
+        { transform: T0 }, { transform: 'translate(110%, -25%)', offset: .35 },
+        { transform: 'translate(330%, -12%) rotate(-12deg) scaleY(.8)', offset: .85 }, { transform: 'translate(340%, -12%) rotate(-12deg) scaleY(.8)' }] },
+      { naam: '🤸 Salto!', pose: 'armen-omhoog', duur: 1400, frames: [
+        { transform: T0 }, { transform: 'translate(40%, -90%) rotate(-180deg)', offset: .45 },
+        { transform: 'translate(80%, -120%) rotate(-360deg)', offset: .7 }, { transform: 'translate(90%, 0) rotate(-360deg)' }] },
+      { naam: '💃 Dansje!', pose: 'armen-omhoog', duur: 1900, frames: [
+        { transform: T0 }, { transform: 'translate(0%, -14%) rotate(-10deg)' }, { transform: 'translate(-100%, 0) rotate(10deg)' },
+        { transform: 'translate(0%, -14%) rotate(-10deg)' }, { transform: 'translate(-100%, 0) rotate(10deg)' },
+        { transform: 'translate(0%, -14%) rotate(-10deg)' }, { transform: 'translate(-50%, 0) rotate(0)' }] },
+    ];
+    async function vier() {
+      const v = VIERINGEN[Math.floor(Math.random() * VIERINGEN.length)];
+      schutterPose(v.pose);
+      sceneHint.textContent = `Celebration: ${v.naam}`;
+      sceneHint.style.opacity = 1;
+      await schutterBeweeg(v.frames, v.duur);
+    }
+    async function baal() {
+      await pauze(250);
+      schutterPose('handen-hoofd');
+      await schutterBeweeg([{ transform: T0 }, { transform: 'translate(-50%, 4%) rotate(-4deg)', offset: .3 }, { transform: 'translate(-50%, 4%) rotate(4deg)', offset: .7 }, { transform: 'translate(-50%, 4%) rotate(-3deg)' }], 1100);
+    }
+    function schutterTerug() {
+      schutterAnim?.cancel(); schutterAnim = null;
+      schutterPose();
+      sceneHint.style.opacity = 0;
+    }
+
+    /* ---------- Spelvorm: gewone penalty of Panenka ---------- */
+    let vorm = 'penalty';
+    const BLIJFT_STAAN = { makkelijk: .12, normaal: .25, moeilijk: .4 };
+    const NAALD_SNELHEID = { makkelijk: 2.3, normaal: 3.1, moeilijk: 4.2 };
+    const krachtEl = $('#kracht'), naald = $('#naald'), krachtTekst = $('#krachtTekst');
+    let panenkaFase = 'klaar', naaldStart = 0, naaldWaarde = 0;
+    const recordSleutel = () => vorm === 'panenka' ? 'panenka-record' : 'penalty-record';
+
+    function zetVorm(nieuw) {
+      if (bezig) return;
+      vorm = nieuw;
+      document.querySelectorAll('.vorm-tabs button').forEach(b => b.setAttribute('aria-pressed', b.dataset.vorm === vorm));
+      $('#spelTitel').textContent = vorm === 'panenka' ? 'Panenka' : 'Penaltyserie';
+      links.forEach(a => { if (a.dataset.naarVorm) a.classList.toggle('actief', a.dataset.naarVorm === vorm); });
+      $('#spelUitleg').textContent = vorm === 'panenka'
+        ? 'Tik om te laden en tik nog een keer als de naald in het groen staat. Te zacht of te hard is mis, en blijft de keeper staan, dan pakt hij hem!'
+        : 'Richt met je muis of vinger en klik om te schieten. Vijf penalty\'s: hoeveel maak jij er?';
+      krachtEl.hidden = vorm !== 'panenka';
+      $('.richt-blok').hidden = vorm === 'panenka';
+      $('#chipKnop').hidden = vorm !== 'panenka';
+      vizier.classList.toggle('aan', vorm === 'penalty');
+      stadion.style.cursor = vorm === 'panenka' ? 'pointer' : '';
+      record = bewaar.lees(recordSleutel(), 0);
+      nieuweSerie();
+    }
+    document.querySelectorAll('.vorm-tabs button').forEach(b => b.addEventListener('click', () => zetVorm(b.dataset.vorm)));
+    document.querySelectorAll('[data-naar-vorm]').forEach(a => a.addEventListener('click', () => zetVorm(a.dataset.naarVorm)));
+
+    function panenkaKlik() {
+      if (vorm !== 'panenka' || bezig || serie.length >= 5) return;
+      if (panenkaFase === 'klaar') {
+        panenkaFase = 'laden'; naaldStart = performance.now();
+        krachtTekst.textContent = 'Tik nu… in het groen!';
+        requestAnimationFrame(beweegNaald);
+      } else if (panenkaFase === 'laden') {
+        panenkaFase = 'bezig';
+        schiet(50, 31, { panenka: true, kracht: naaldWaarde });
+      }
+    }
+    function beweegNaald(nu) {
+      if (panenkaFase !== 'laden') return;
+      naaldWaarde = (1 - Math.cos((nu - naaldStart) / 1000 * NAALD_SNELHEID[niveau])) / 2;
+      naald.style.left = (naaldWaarde * 100) + '%';
+      requestAnimationFrame(beweegNaald);
+    }
+    $('#chipKnop').addEventListener('click', panenkaKlik);
+    addEventListener('keydown', e => {
+      if (vorm !== 'panenka' || !stadionInBeeld || (e.code !== 'Space' && e.code !== 'Enter')) return;
+      if (document.activeElement && document.activeElement.closest('button, a, input')) return;
+      e.preventDefault(); panenkaKlik();
+    });
+
+    /* ---------- Schieten ---------- */
+    async function schiet(tx, ty, { panenka = false, kracht = .5 } = {}) {
       if (bezig || serie.length >= 5) return;
       bezig = true;
       ty = Math.min(ty, 48.5);
       vizier.classList.remove('aan');
       sceneHint.style.opacity = 0;
-      document.querySelectorAll('.richtknoppen button').forEach(b => b.disabled = true);
+      document.querySelectorAll('.richtknoppen button, #chipKnop').forEach(b => b.disabled = true);
 
-      // Wat gebeurt er? Paal/lat, naast/over, of de keeper
       const n = NIVEAUS[niveau];
-      let uitkomst;
-      const opPaal = (tx > DOEL.x1 - 1.6 && tx < DOEL.x1 + 1.2) || (tx > DOEL.x2 - 1.2 && tx < DOEL.x2 + 1.6);
-      const opLat = ty > DOEL.y1 - 1.6 && ty < DOEL.y1 + 1.4 && tx > DOEL.x1 && tx < DOEL.x2;
-      if (ty < DOEL.y1 - 1.6) uitkomst = 'over';
-      else if (tx < DOEL.x1 - 1.6 || tx > DOEL.x2 + 1.6) uitkomst = 'naast';
-      else if (opPaal) uitkomst = 'paal';
-      else if (opLat) uitkomst = 'lat';
-
-      // De keeper kiest een kant, of leest het schot
-      let kx, ky;
-      if (Math.random() < n.lezen) { kx = tx + willekeurig(-5, 5); ky = ty + willekeurig(-4, 4); }
-      else { kx = [31, 50, 69][Math.floor(Math.random() * 3)] + willekeurig(-5, 5); ky = willekeurig(28, 46); }
-      kx = grens(kx, 29, 71); ky = grens(ky, 28, 47);
-      if (!uitkomst) {
-        const inDeKruising = (tx < 27.5 || tx > 72.5) && ty < 28;
-        const afstand = Math.hypot(tx - kx, (ty - ky) * 1.3);
-        uitkomst = !inDeKruising && afstand < n.bereik ? 'gered' : 'goal';
+      let uitkomst, kx, ky, blijft = false;
+      if (panenka) {
+        // Panenka: kracht bepaalt of hij aankomt; een keeper die blijft staan pakt hem
+        blijft = Math.random() < BLIJFT_STAAN[niveau];
+        const perfect = kracht >= .5 && kracht <= .64;
+        if (kracht < .28) uitkomst = 'zacht';
+        else if (kracht > .88) uitkomst = 'over';
+        else if (blijft) uitkomst = perfect && Math.random() < .5 ? 'goal' : 'gepakt';
+        else uitkomst = 'goal';
+        kx = blijft ? 50 : (Math.random() < .5 ? 31 : 69); ky = blijft ? 33 : willekeurig(34, 44);
+        krachtTekst.textContent = perfect ? 'Perfect geraakt!' : kracht < .28 ? 'Te zacht…' : kracht > .88 ? 'Te hard…' : 'Goed geraakt!';
+      } else {
+        const opPaal = (tx > DOEL.x1 - 1.6 && tx < DOEL.x1 + 1.2) || (tx > DOEL.x2 - 1.2 && tx < DOEL.x2 + 1.6);
+        const opLat = ty > DOEL.y1 - 1.6 && ty < DOEL.y1 + 1.4 && tx > DOEL.x1 && tx < DOEL.x2;
+        if (ty < DOEL.y1 - 1.6) uitkomst = 'over';
+        else if (tx < DOEL.x1 - 1.6 || tx > DOEL.x2 + 1.6) uitkomst = 'naast';
+        else if (opPaal) uitkomst = 'paal';
+        else if (opLat) uitkomst = 'lat';
+        // De keeper kiest een kant, of leest het schot
+        if (Math.random() < n.lezen) { kx = tx + willekeurig(-5, 5); ky = ty + willekeurig(-4, 4); }
+        else { kx = [31, 50, 69][Math.floor(Math.random() * 3)] + willekeurig(-5, 5); ky = willekeurig(28, 46); }
+        kx = grens(kx, 29, 71); ky = grens(ky, 28, 47);
+        if (!uitkomst) {
+          const afstand = Math.hypot(tx - kx, (ty - ky) * 1.3);
+          uitkomst = !inKruising(tx, ty) && afstand < n.bereik ? 'gered' : 'goal';
+        }
       }
 
       fluit();
-      setTimeout(() => trapGeluid(), 250);
-      await new Promise(r => setTimeout(r, 250));
-      setTimeout(() => duik(kx, ky), n.reactie);
-      await vlieg(STIP, { x: tx, y: ty }, { duur: 560, boog: 4 + (50 - ty) * .15, schaal: [1, .52] });
+      await aanloop();
+      trapGeluid();
+      // Bij een Panenka duikt de keeper vroeg weg (of blijft hij staan en springt hij pas als de bal komt)
+      setTimeout(() => duik(kx, ky), panenka ? (blijft ? 700 : 60) : n.reactie);
+      if (panenka) {
+        if (uitkomst === 'zacht') await vlieg(STIP, { x: 50, y: 60 }, { duur: 1300, boog: 9, schaal: [1, .8], draai: 200 });
+        else if (uitkomst === 'over') await vlieg(STIP, { x: 50, y: 13 }, { duur: 1000, boog: 24, schaal: [1, .45], draai: 260 });
+        else await vlieg(STIP, { x: tx + willekeurig(-3, 3), y: ty }, { duur: 1150, boog: 24, schaal: [1, .55], draai: 240 });
+      } else {
+        await vlieg(STIP, { x: tx, y: ty }, { duur: 560, boog: 4 + (50 - ty) * .15, schaal: [1, .52] });
+      }
+      const balX = parseFloat(bal.style.left), balY = parseFloat(bal.style.top);
 
       const doelRect = stadion.getBoundingClientRect();
+      let viering = pauze(0);
       if (uitkomst === 'goal') {
         doel.classList.remove('bol'); void doel.offsetWidth; doel.classList.add('bol');
         stadion.classList.add('schud');
-        publiekReageert(true, '🙌 JAAA!');
+        publiekReageert(true, panenka ? '🙌 Wat een lef!' : '🙌 JAAA!');
         speel('net');
         juichGeluid();
-        toonTekst(inKruising(tx, ty) ? 'KRUISING!' : 'GOAL!', 'goal');
-        confetti(stadion, tx / 100 * doelRect.width, ty / 100 * doelRect.height);
-        await vlieg({ x: tx, y: ty }, { x: tx + (tx - 50) * .05, y: 48 }, { duur: 450, boog: -2, schaal: [.52, .48], draai: 180, schaduwMee: false });
-      } else if (uitkomst === 'gered') {
-        redGeluid();
-        publiekReageert(false, '😩 Ooooh… 👏 knappe redding!');
-        toonTekst('GERED!', 'mis');
-        const kant = tx < kx ? -1 : 1;
-        await vlieg({ x: tx, y: ty }, { x: tx + kant * willekeurig(12, 22), y: ty + willekeurig(20, 30) }, { duur: 600, boog: 8, schaal: [.52, .7], draai: -540, vervaag: true });
-      } else if (uitkomst === 'paal' || uitkomst === 'lat') {
-        paalGeluid(); oohGeluid();
-        stadion.classList.add('schud');
-        publiekReageert(false, '😱 Ooooh! Zo dichtbij!');
-        toonTekst(uitkomst === 'paal' ? 'PAAL!' : 'LAT!', 'mis');
-        await vlieg({ x: tx, y: ty }, { x: tx + (tx < 50 ? 10 : -10), y: 72 }, { duur: 700, boog: 10, schaal: [.52, .9], draai: -360 });
+        toonTekst(panenka ? 'PANENKA!' : inKruising(tx, ty) ? 'KRUISING!' : 'GOAL!', 'goal');
+        confetti(stadion, balX / 100 * doelRect.width, balY / 100 * doelRect.height);
+        viering = vier();
+        await vlieg({ x: balX, y: balY }, { x: balX + (balX - 50) * .05, y: 48 }, { duur: 450, boog: -2, schaal: [.52, .48], draai: 180, schaduwMee: false });
       } else {
-        oohGeluid();
-        publiekReageert(false, '😩 Ooooh…');
-        toonTekst(uitkomst === 'over' ? 'OVER!' : 'NAAST!', 'mis');
-        await vlieg({ x: tx, y: ty }, { x: tx + (tx - 50) * .3, y: ty - 12 }, { duur: 450, schaal: [.52, .35], draai: 360, schaduwMee: false, vervaag: true });
+        viering = baal();
+        if (uitkomst === 'gepakt') {
+          speel('handschoen'); oohGeluid();
+          publiekReageert(false, '😬 De keeper bleef gewoon staan!');
+          toonTekst('GEPAKT!', 'mis');
+        } else if (uitkomst === 'zacht') {
+          oohGeluid();
+          publiekReageert(false, '😩 Te zacht…');
+          toonTekst('TE ZACHT!', 'mis');
+        } else if (uitkomst === 'gered') {
+          redGeluid();
+          publiekReageert(false, '😩 Ooooh… 👏 knappe redding!');
+          toonTekst('GERED!', 'mis');
+          const kant = tx < kx ? -1 : 1;
+          await vlieg({ x: tx, y: ty }, { x: tx + kant * willekeurig(12, 22), y: ty + willekeurig(20, 30) }, { duur: 600, boog: 8, schaal: [.52, .7], draai: -540, vervaag: true });
+        } else if (uitkomst === 'paal' || uitkomst === 'lat') {
+          paalGeluid(); oohGeluid();
+          stadion.classList.add('schud');
+          publiekReageert(false, '😱 Ooooh! Zo dichtbij!');
+          toonTekst(uitkomst === 'paal' ? 'PAAL!' : 'LAT!', 'mis');
+          await vlieg({ x: tx, y: ty }, { x: tx + (tx < 50 ? 10 : -10), y: 72 }, { duur: 700, boog: 10, schaal: [.52, .9], draai: -360 });
+        } else {
+          oohGeluid();
+          publiekReageert(false, '😩 Ooooh…');
+          toonTekst(uitkomst === 'over' ? 'OVER!' : 'NAAST!', 'mis');
+          await vlieg({ x: balX, y: balY }, { x: balX + (balX - 50) * .3, y: balY - 12 }, { duur: 450, schaal: [.52, .35], draai: 360, schaduwMee: false, vervaag: true });
+        }
       }
 
       serie.push(uitkomst === 'goal');
       tekenSerie();
       const goals = serie.filter(Boolean).length;
-      await new Promise(r => setTimeout(r, 900));
+      await Promise.all([viering, pauze(900)]);
+      await pauze(250);
 
       // Terug naar de stip
       stadion.classList.remove('juich', 'balen', 'schud');
@@ -1369,10 +1573,14 @@
       keeperSchaduw.style.transform = ''; keeperSchaduw.style.opacity = 1;
       bal.style.opacity = 1;
       zet(bal, STIP.x, STIP.y); zet(schaduw, STIP.x, STIP.y + 3); schaduw.style.opacity = .9;
+      schutterTerug();
+      naald.style.left = '0%';
+      panenkaFase = 'klaar';
+      krachtTekst.textContent = 'Tik om de chip te laden';
 
       if (serie.length === 5) {
         const nieuw = goals > record;
-        if (nieuw) { record = goals; bewaar.schrijf('penalty-record', record); }
+        if (nieuw) { record = goals; bewaar.schrijf(recordSleutel(), record); }
         spelInfo.innerHTML = `Serie klaar: <b>${goals} van de 5</b> gescoord${nieuw ? ' · <b>Nieuw record!</b>' : ` · Record: <b>${record}</b>`}
           <button class="klein" id="opnieuw" style="margin-left:8px">Nieuwe serie</button>`;
         $('#opnieuw').addEventListener('click', nieuweSerie);
@@ -1380,10 +1588,10 @@
         sceneHint.style.opacity = 1;
         if (goals === 5) confetti(stadion, doelRect.width / 2, doelRect.height / 3, 140);
       } else {
-        spelInfo.innerHTML = `Penalty ${serie.length + 1} van 5 · Gescoord: <b>${goals}</b> · Record: <b>${record}</b> van 5`;
+        spelInfo.innerHTML = `${vorm === 'panenka' ? 'Panenka' : 'Penalty'} ${serie.length + 1} van 5 · Gescoord: <b>${goals}</b> · Record: <b>${record}</b> van 5`;
       }
-      vizier.classList.add('aan');
-      document.querySelectorAll('.richtknoppen button').forEach(b => b.disabled = false);
+      vizier.classList.toggle('aan', vorm === 'penalty');
+      document.querySelectorAll('.richtknoppen button, #chipKnop').forEach(b => b.disabled = false);
       bezig = false;
     }
     const inKruising = (tx, ty) => (tx < 27.5 || tx > 72.5) && ty < 28;
@@ -1409,6 +1617,7 @@
       vizier.style.top = (e.clientY - r.top) + 'px';
     });
     stadion.addEventListener('click', e => {
+      if (vorm === 'panenka') return panenkaKlik();
       const r = stadion.getBoundingClientRect();
       schiet((e.clientX - r.left) / r.width * 100, (e.clientY - r.top) / r.height * 100);
     });
