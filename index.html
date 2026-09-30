@@ -161,8 +161,29 @@
     .publiek::after { content: ""; position: absolute; inset: 0;
       background: repeating-linear-gradient(90deg, rgba(245,197,66,.35) 0 22px, rgba(255,255,255,.1) 22px 40px, rgba(29,185,84,.3) 40px 64px, rgba(0,0,0,.2) 64px 90px);
       mix-blend-mode: overlay; }
-    .stadion.juich .publiek { animation: juichen .25s steps(2) 6; }
-    @keyframes juichen { 50% { transform: translateY(-4px); } }
+    .publiek { transition: filter .5s, transform .5s; }
+    .stadion.juich .publiek { animation: juichen .22s steps(2) 9; filter: brightness(1.4) saturate(1.4); }
+    @keyframes juichen { 50% { transform: translateY(-5px); } }
+    .stadion.balen .publiek { transform: translateY(5px); filter: brightness(.5) saturate(.6); }
+    /* Handen die omhoog gaan bij een goal */
+    .handen { position: absolute; left: 0; right: 0; top: 9%; height: 17%; z-index: 1; pointer-events: none; opacity: 0;
+      transform: translateY(60%); transition: opacity .3s, transform .3s;
+      background-image:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 20'%3E%3Cpath d='M8 20L5 6M16 20l3-14' stroke='%23f1c9a5' stroke-width='2.6' stroke-linecap='round'/%3E%3Ccircle cx='5' cy='5' r='2.2' fill='%23f1c9a5'/%3E%3Ccircle cx='19' cy='5' r='2.2' fill='%23f1c9a5'/%3E%3C/svg%3E"),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 20'%3E%3Cpath d='M8 20L5 6M16 20l3-14' stroke='%238a5a3b' stroke-width='2.6' stroke-linecap='round'/%3E%3Ccircle cx='5' cy='5' r='2.2' fill='%238a5a3b'/%3E%3Ccircle cx='19' cy='5' r='2.2' fill='%238a5a3b'/%3E%3C/svg%3E");
+      background-size: 30px 26px, 34px 28px; background-position: 0 100%, 15px 100%; background-repeat: repeat-x; }
+    .stadion.juich .handen { opacity: 1; transform: none; animation: zwaai .3s ease-in-out 7 alternate; }
+    @keyframes zwaai { to { transform: translateY(-8%) ; background-position: 6px 100%, 9px 100%; } }
+    .stadion.juich::before { animation: flits .18s steps(2) 8; }
+    @keyframes flits { 50% { opacity: .4; } }
+    .publiek-reactie { position: absolute; left: 50%; top: 64%; z-index: 6; pointer-events: none; opacity: 0; white-space: nowrap;
+      transform: translateX(-50%); padding: .2em .8em; border-radius: 999px; background: rgba(0,0,0,.65); backdrop-filter: blur(4px);
+      font-family: "Bebas Neue", sans-serif; font-size: clamp(1rem, 3vw, 1.9rem); letter-spacing: .04em; }
+    .publiek-reactie.blij { color: var(--goud); border: 2px solid var(--goud); }
+    .publiek-reactie.sip { color: #ddd; border: 2px solid #555; }
+    .publiek-reactie.toon { animation: reactie 1.9s cubic-bezier(.2,1.3,.4,1) both; }
+    @keyframes reactie { 0% { opacity: 0; transform: translate(-50%, -20px) scale(.6); } 15% { opacity: 1; transform: translate(-50%, 0) scale(1.08); }
+                         25% { transform: translate(-50%, 0) scale(1); } 85% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, 0); } }
     .led { position: absolute; left: 0; right: 0; top: 25.5%; height: 4.5%; background: #050505; overflow: hidden; z-index: 1;
            border-top: 1px solid #333; border-bottom: 1px solid #333; }
     .led-rij { display: flex; width: max-content; height: 100%; align-items: center; animation: loop 18s linear infinite; }
@@ -247,6 +268,11 @@
     .tuin-melding.toon { animation: pop 1.8s both; }
     .tuin-knoppen { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 16px; }
     .tuin-knoppen .spel-info { margin: 0 0 0 auto; }
+    .kleuren { display: inline-flex; flex-wrap: wrap; gap: 8px; padding: 4px 6px; }
+    .kleur-bal { width: 34px; height: 34px; border-radius: 50%; cursor: pointer; border: 2px solid #000;
+                 background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.7), transparent 45%), var(--k);
+                 box-shadow: 0 0 0 2px var(--rand); transition: transform .2s, box-shadow .2s; }
+    .kleur-bal:hover { transform: scale(1.18) rotate(20deg); box-shadow: 0 0 0 2px var(--k); }
 
     /* ---------- Foto ---------- */
     .foto-groot { border-radius: 26px; overflow: hidden; border: 1px solid var(--rand); margin: 0; }
@@ -445,6 +471,8 @@
 
         <div class="stadion verschijn" id="stadion" aria-label="Voetbalstadion: klik in het doel om te schieten">
           <div class="publiek"></div>
+          <div class="handen" aria-hidden="true"></div>
+          <div class="publiek-reactie" id="publiekReactie" aria-hidden="true"></div>
           <div class="led" aria-hidden="true"><div class="led-rij">
             <span>SILL-VYAN &amp; NAOUFAL</span><span>PENALTY CUP</span><span>SAMEN STERK</span><span>SILL-VYAN &amp; NAOUFAL</span><span>PENALTY CUP</span><span>SAMEN STERK</span>
             <span>SILL-VYAN &amp; NAOUFAL</span><span>PENALTY CUP</span><span>SAMEN STERK</span><span>SILL-VYAN &amp; NAOUFAL</span><span>PENALTY CUP</span><span>SAMEN STERK</span>
@@ -546,7 +574,16 @@
         </div>
         <div class="tuin-knoppen">
           <button class="klein" id="balErbij">+ Bal erbij</button>
-          <button class="klein" id="goudenBal">+ Gouden bal</button>
+          <span class="kleuren" role="group" aria-label="Gekleurde bal erbij">
+            <button class="kleur-bal" data-kleur="#f5c542" style="--k:#f5c542" aria-label="Gouden bal"></button>
+            <button class="kleur-bal" data-kleur="#ff4d4d" style="--k:#ff4d4d" aria-label="Rode bal"></button>
+            <button class="kleur-bal" data-kleur="#ff9f1c" style="--k:#ff9f1c" aria-label="Oranje bal"></button>
+            <button class="kleur-bal" data-kleur="#2ee66b" style="--k:#2ee66b" aria-label="Groene bal"></button>
+            <button class="kleur-bal" data-kleur="#35c6ff" style="--k:#35c6ff" aria-label="Blauwe bal"></button>
+            <button class="kleur-bal" data-kleur="#a66bff" style="--k:#a66bff" aria-label="Paarse bal"></button>
+            <button class="kleur-bal" data-kleur="#ff6fc8" style="--k:#ff6fc8" aria-label="Roze bal"></button>
+          </span>
+          <button class="klein" id="regenboog">🌈 Regenboog</button>
           <button class="klein" id="tuinReset">Opnieuw</button>
           <button class="klein geluid-knop" aria-pressed="true">🔊 Geluid aan</button>
           <p class="spel-info">Record: <b id="tuinRecord">0</b></p>
@@ -689,10 +726,11 @@
     zetGeluid(bewaar.lees('geluid', true));
     geluidKnoppen.forEach(k => k.addEventListener('click', () => {
       zetGeluid(!geluidAan);
-      if (geluidAan) { ctx().resume(); fluit(); }
+      if (geluidAan) { ctx().resume(); fluit(); startGeroezemoes(); }
+      else stopGeroezemoes();
     }));
     // Browsers laten pas geluid toe na de eerste klik of tik
-    addEventListener('pointerdown', () => { if (geluidAan) ctx().resume(); }, { once: true });
+    addEventListener('pointerdown', () => { if (geluidAan) { ctx().resume(); startGeroezemoes(); } }, { once: true });
     function toon(freq, duur, type = 'sine', volume = .2, glijNaar) {
       if (!geluidAan) return;
       const a = ctx(), o = a.createOscillator(), g = a.createGain(), t = a.currentTime;
@@ -719,9 +757,72 @@
       g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.35, t + .02); g.gain.exponentialRampToValueAtTime(.0001, t + .4);
       o.connect(g).connect(uitgang()); o.start(t); lfo.start(t); o.stop(t + .42); lfo.stop(t + .42);
     }
+    // Publiek: veel stemmen tegelijk die samen omhoog ("JAAA!") of omlaag ("Ooooh...") gaan
+    function stemmen(aantal, vanHz, naarHz, duur, volume, filterHz) {
+      if (!geluidAan) return;
+      const a = ctx(), t = a.currentTime;
+      const filter = a.createBiquadFilter(), g = a.createGain();
+      filter.type = 'lowpass'; filter.frequency.value = filterHz; filter.Q.value = .7;
+      g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(volume, t + duur * .2); g.gain.exponentialRampToValueAtTime(.0001, t + duur);
+      filter.connect(g).connect(uitgang());
+      for (let i = 0; i < aantal; i++) {
+        const f = vanHz * willekeurig(.75, 1.3), begin = t + willekeurig(0, .15);
+        const o = a.createOscillator(), lfo = a.createOscillator(), lg = a.createGain(), vg = a.createGain();
+        o.type = 'sawtooth';
+        o.frequency.setValueAtTime(f, begin); o.frequency.exponentialRampToValueAtTime(naarHz * f / vanHz, t + duur);
+        lfo.frequency.value = willekeurig(4, 7); lg.gain.value = f * .025;
+        lfo.connect(lg).connect(o.frequency);
+        vg.gain.value = 1.4 / aantal;
+        o.connect(vg).connect(filter);
+        o.start(begin); lfo.start(begin); o.stop(t + duur); lfo.stop(t + duur);
+      }
+    }
+    // Applaus: honderden korte klapjes op willekeurige momenten
+    function klappen(duur, perSeconde, volume, vertraging = 0) {
+      if (!geluidAan) return;
+      const a = ctx(), sr = a.sampleRate, n = Math.floor(sr * duur);
+      const buf = a.createBuffer(1, n, sr), d = buf.getChannelData(0), klapLengte = Math.floor(sr * .025);
+      for (let k = 0; k < duur * perSeconde; k++) {
+        const pos = Math.floor(Math.random() * (n - klapLengte)), sterkte = willekeurig(.3, 1) * (1 - pos / n * .7);
+        for (let j = 0; j < klapLengte; j++) d[pos + j] += (Math.random() * 2 - 1) * Math.exp(-j / (sr * .004)) * sterkte;
+      }
+      const bron = a.createBufferSource(), filter = a.createBiquadFilter(), g = a.createGain(), t = a.currentTime + vertraging;
+      bron.buffer = buf; filter.type = 'bandpass'; filter.frequency.value = 1600; filter.Q.value = .6; g.gain.value = volume;
+      bron.connect(filter).connect(g).connect(uitgang()); bron.start(t);
+    }
+    // Zacht geroezemoes op de achtergrond zolang het stadion in beeld is
+    let geroezemoes = null, stadionInBeeld = false;
+    function startGeroezemoes() {
+      if (!geluidAan || !audio || geroezemoes || !stadionInBeeld) return;
+      const a = ctx(), n = a.sampleRate * 3, buf = a.createBuffer(1, n, a.sampleRate), d = buf.getChannelData(0);
+      for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+      const bron = a.createBufferSource(), filter = a.createBiquadFilter(), g = a.createGain(), golf = a.createOscillator(), golfSterkte = a.createGain();
+      bron.buffer = buf; bron.loop = true;
+      filter.type = 'bandpass'; filter.frequency.value = 650; filter.Q.value = .5;
+      g.gain.setValueAtTime(.0001, a.currentTime); g.gain.exponentialRampToValueAtTime(.16, a.currentTime + 1.2);
+      golf.frequency.value = .25; golfSterkte.gain.value = .05; golf.connect(golfSterkte).connect(g.gain);
+      bron.connect(filter).connect(g).connect(uitgang()); bron.start(); golf.start();
+      geroezemoes = { bron, golf, g };
+    }
+    function stopGeroezemoes() {
+      if (!geroezemoes) return;
+      const a = ctx(), { bron, golf, g } = geroezemoes;
+      g.gain.setTargetAtTime(.0001, a.currentTime, .3);
+      bron.stop(a.currentTime + 1.5); golf.stop(a.currentTime + 1.5);
+      geroezemoes = null;
+    }
+
     const trapGeluid = () => toon(140, .15, 'sine', .9, 60);
-    const juichGeluid = () => ruis(2.2, 1100, .9);
-    const oohGeluid = () => ruis(1.2, 450, .7);
+    const juichGeluid = () => {                      // JAAA! + gebrul + applaus
+      stemmen(16, 240, 430, 1.8, .55, 1400);
+      ruis(3, 1000, .8);
+      klappen(3.2, 45, 1.1, .35);
+    };
+    const oohGeluid = () => {                        // Ooooh... teleurgesteld
+      stemmen(16, 330, 170, 1.7, .6, 800);
+      ruis(1.5, 380, .45);
+    };
+    const redGeluid = () => { oohGeluid(); klappen(1.8, 22, .7, .6); };   // ooh, en applaus voor de keeper
     const paalGeluid = () => toon(900, .35, 'triangle', .7, 700);
 
     /* ================= Confetti ================= */
@@ -858,23 +959,27 @@
       const doelRect = stadion.getBoundingClientRect();
       if (uitkomst === 'goal') {
         doel.classList.remove('bol'); void doel.offsetWidth; doel.classList.add('bol');
-        stadion.classList.add('juich', 'schud');
+        stadion.classList.add('schud');
+        publiekReageert(true, '🙌 JAAA!');
         juichGeluid();
         toonTekst(inKruising(tx, ty) ? 'KRUISING!' : 'GOAL!', 'goal');
         confetti(stadion, tx / 100 * doelRect.width, ty / 100 * doelRect.height);
         await vlieg({ x: tx, y: ty }, { x: tx + (tx - 50) * .05, y: 48 }, { duur: 450, boog: -2, schaal: [.52, .48], draai: 180, schaduwMee: false });
       } else if (uitkomst === 'gered') {
-        oohGeluid();
+        redGeluid();
+        publiekReageert(false, '😩 Ooooh… 👏 knappe redding!');
         toonTekst('GERED!', 'mis');
         const kant = tx < kx ? -1 : 1;
         await vlieg({ x: tx, y: ty }, { x: tx + kant * willekeurig(12, 22), y: ty + willekeurig(20, 30) }, { duur: 600, boog: 8, schaal: [.52, .7], draai: -540, vervaag: true });
       } else if (uitkomst === 'paal' || uitkomst === 'lat') {
         paalGeluid(); oohGeluid();
         stadion.classList.add('schud');
+        publiekReageert(false, '😱 Ooooh! Zo dichtbij!');
         toonTekst(uitkomst === 'paal' ? 'PAAL!' : 'LAT!', 'mis');
         await vlieg({ x: tx, y: ty }, { x: tx + (tx < 50 ? 10 : -10), y: 72 }, { duur: 700, boog: 10, schaal: [.52, .9], draai: -360 });
       } else {
         oohGeluid();
+        publiekReageert(false, '😩 Ooooh…');
         toonTekst(uitkomst === 'over' ? 'OVER!' : 'NAAST!', 'mis');
         await vlieg({ x: tx, y: ty }, { x: tx + (tx - 50) * .3, y: ty - 12 }, { duur: 450, schaal: [.52, .35], draai: 360, schaduwMee: false, vervaag: true });
       }
@@ -885,7 +990,7 @@
       await new Promise(r => setTimeout(r, 900));
 
       // Terug naar de stip
-      stadion.classList.remove('juich', 'schud');
+      stadion.classList.remove('juich', 'balen', 'schud');
       keeper.classList.remove('duikt');
       keeper.style.transform = '';
       bal.style.opacity = 1;
@@ -909,6 +1014,21 @@
     }
     const inKruising = (tx, ty) => (tx < 27.5 || tx > 72.5) && ty < 28;
 
+    // Het publiek juicht (handen omhoog, lichten flitsen) of baalt (zakt in, wordt donker)
+    const publiekReactie = $('#publiekReactie');
+    function publiekReageert(blij, tekst) {
+      stadion.classList.remove('juich', 'balen'); void stadion.offsetWidth;
+      stadion.classList.add(blij ? 'juich' : 'balen');
+      publiekReactie.textContent = tekst;
+      publiekReactie.className = 'publiek-reactie ' + (blij ? 'blij' : 'sip');
+      void publiekReactie.offsetWidth;
+      publiekReactie.classList.add('toon');
+    }
+    new IntersectionObserver(([item]) => {
+      stadionInBeeld = item.isIntersecting;
+      stadionInBeeld ? startGeroezemoes() : stopGeroezemoes();
+    }).observe(stadion);
+
     stadion.addEventListener('pointermove', e => {
       const r = stadion.getBoundingClientRect();
       vizier.style.left = (e.clientX - r.left) + 'px';
@@ -931,6 +1051,11 @@
     /* ================= Speeltuin: hooghouden met echte natuurkunde ================= */
     const tuin = $('#tuin'), reeksEl = $('#reeks'), tuinMelding = $('#tuinMelding'), tuinRecordEl = $('#tuinRecord');
     const ZWAARTEKRACHT = 1900;
+    const KLEUREN = ['#ff4d4d', '#ff9f1c', '#f5c542', '#2ee66b', '#35c6ff', '#a66bff', '#ff6fc8'];
+    function melding(tekst) {
+      tuinMelding.textContent = tekst;
+      tuinMelding.className = 'tuin-melding'; void tuinMelding.offsetWidth; tuinMelding.classList.add('toon');
+    }
     let ballen = [], B = 0, H = 0, reeks = 0, laatste = null, loopt = false, vorige = 0;
     let tuinRecord = bewaar.lees('hooghouden-record', 0);
     tuinRecordEl.textContent = tuinRecord;
@@ -938,14 +1063,14 @@
     const maat = () => { const r = tuin.getBoundingClientRect(); B = r.width; H = r.height; };
     const balMaat = () => innerWidth < 600 ? 58 : 70;
 
-    function nieuweBal(goud = false) {
-      if (ballen.length >= 8) return;
+    function nieuweBal(kleur = null) {
+      if (ballen.length >= 15) { melding("Vol! Maximaal 15 ballen"); return; }
       maat();
       const r = balMaat() / 2;
       const el = document.createElement('div');
       el.className = 'tuin-bal';
       el.style.setProperty('--maat', r * 2 + 'px');
-      if (goud) el.style.setProperty('--bal', '#f5c542');
+      if (kleur) el.style.setProperty('--bal', kleur);
       el.innerHTML = '<svg viewBox="0 0 40 40"><use href="#balvorm"/></svg>';
       tuin.appendChild(el);
       const b = { el, r, x: willekeurig(r, B - r), y: r + 10, vx: willekeurig(-200, 200), vy: 0, hoek: 0, grijp: null, sleept: false, getrapt: false };
@@ -1001,6 +1126,7 @@
         tuinMelding.innerHTML = nieuw ? `Nieuw record: ${reeks}! 🏆` : `Op de grond! ${reeks} keer`;
         tuinMelding.className = 'tuin-melding'; void tuinMelding.offsetWidth; tuinMelding.classList.add('toon');
         if (nieuw) { confetti(tuin, B / 2, H / 2.5, 90); juichGeluid(); }
+        else if (reeks >= 3) oohGeluid();
       }
       reeks = 0;
       reeksEl.textContent = 0;
@@ -1052,14 +1178,15 @@
     new IntersectionObserver(([item]) => { zichtbaarTuin = item.isIntersecting; zichtbaarTuin ? start() : loopt = false; }).observe(tuin);
     addEventListener('resize', () => { maat(); ballen.forEach(b => { b.x = grens(b.x, b.r, B - b.r); b.y = grens(b.y, b.r, H - b.r); }); });
 
-    $('#balErbij').addEventListener('click', () => nieuweBal(false));
-    $('#goudenBal').addEventListener('click', () => nieuweBal(true));
+    $('#balErbij').addEventListener('click', () => nieuweBal());
+    document.querySelectorAll('.kleur-bal').forEach(k => k.addEventListener('click', () => nieuweBal(k.dataset.kleur)));
+    $('#regenboog').addEventListener('click', () => KLEUREN.forEach((k, i) => setTimeout(() => nieuweBal(k), i * 120)));
     $('#tuinReset').addEventListener('click', () => {
       ballen.forEach(b => b.el.remove());
       ballen = []; laatste = null; reeks = 0; reeksEl.textContent = 0;
-      nieuweBal(false);
+      nieuweBal();
     });
-    nieuweBal(false);
+    nieuweBal();
 
     document.getElementById('jaar').textContent = new Date().getFullYear();
   </script>
