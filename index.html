@@ -93,12 +93,7 @@
     .scroll-hint::after { content: ""; position: absolute; left: 50%; top: 8px; width: 4px; height: 8px; margin-left: -2px;
                           background: var(--wit); border-radius: 2px; animation: scrol 1.6s infinite; }
     @keyframes scrol { to { transform: translateY(14px); opacity: 0; } }
-    /* Zwevende ballen in de hero, bewegen mee met de muis */
-    .zweef { position: absolute; z-index: 1; pointer-events: none; opacity: .9;
-             transform: translate(calc(var(--px, 0) * var(--diepte)), calc(var(--py, 0) * var(--diepte))); transition: transform .3s ease-out; }
-    .zweef svg { width: 100%; height: 100%; animation: dobber 5s ease-in-out infinite, rol 9s linear infinite; }
     @keyframes dobber { 50% { translate: 0 -18px; } }
-    @keyframes rol { to { rotate: 360deg; } }
 
     .ios-tip { margin: 16px 0 0 !important; font-size: .95rem !important; color: var(--grijs) !important; max-width: 46ch; }
     .knop[hidden] { display: none; }
@@ -269,6 +264,33 @@
     .klein:hover { color: var(--wit); border-color: var(--goud); }
 
 
+    /* ---------- Pop-up: installeer de app ---------- */
+    .app-popup { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; padding: 16px;
+                 background: rgba(0,0,0,.72); backdrop-filter: blur(6px); animation: infaden .3s both; }
+    .app-popup[hidden] { display: none; }
+    .app-kaart { position: relative; width: min(420px, 100%); max-height: calc(100svh - 32px); overflow: auto; text-align: center;
+                 background: linear-gradient(160deg, #1a1a1a, #0a0a0a); border: 1px solid rgba(245,197,66,.45); border-radius: 26px;
+                 padding: 30px 24px 24px; box-shadow: 0 30px 80px rgba(0,0,0,.7), 0 0 60px rgba(245,197,66,.12);
+                 animation: popIn .5s cubic-bezier(.2,1.3,.4,1) both; }
+    @keyframes popIn { from { opacity: 0; transform: translateY(40px) scale(.9); } }
+    .app-sluit { position: absolute; right: 14px; top: 14px; }
+    .app-icoon { width: 88px; height: 88px; border-radius: 22px; margin: 0 auto 14px; box-shadow: 0 10px 30px rgba(245,197,66,.25);
+                 animation: dobber 3s ease-in-out infinite; }
+    .app-kaart h3 { font-size: clamp(2.2rem, 7vw, 2.8rem); color: var(--goud); }
+    .app-kaart p { color: #ddd; margin: 10px 0 16px; }
+    .app-voordelen { list-style: none; padding: 0; margin: 0 0 20px; display: grid; gap: 8px; text-align: left; }
+    .app-voordelen[hidden] { display: none; }
+    .app-voordelen li { background: #000; border: 1px solid var(--rand); border-radius: 12px; padding: 10px 14px; font-weight: 600; }
+    .app-ios { text-align: left; margin: 0 0 20px; padding: 14px 14px 14px 34px; background: #000; border: 1px solid var(--rand); border-radius: 12px; display: grid; gap: 8px; }
+    .app-ios[hidden] { display: none; }
+    .app-knoppen { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    .app-knoppen .knop { flex: 1 1 140px; justify-content: center; }
+    @media (max-width: 760px) {
+      .app-popup { place-items: end center; padding: 0; }
+      .app-kaart { border-radius: 26px 26px 0 0; width: 100%; padding-bottom: calc(24px + env(safe-area-inset-bottom)); animation-name: schuifOp; }
+      @keyframes schuifOp { from { transform: translateY(100%); } }
+    }
+
     /* ---------- Geluidspaneel ---------- */
     .paneel-knop { position: fixed; right: 16px; bottom: 16px; z-index: 70; width: 56px; height: 56px; border-radius: 50%; border: 0;
                    background: var(--goud); color: #000; font-size: 1.5rem; cursor: pointer; box-shadow: 0 8px 24px rgba(0,0,0,.5);
@@ -399,7 +421,7 @@
       .hero-foto img { height: auto; }
       .hero-foto::after { content: ""; position: absolute; inset: 55% 0 0; background: linear-gradient(transparent, #000); }
       .hero-tekst { margin-top: -48px; padding-bottom: 56px; }
-      .scroll-hint, .zweef { display: none; }
+      .scroll-hint { display: none; }
       .tellers { grid-template-columns: 1fr; }
       .kaarten { grid-template-columns: minmax(0, 320px); }
       .spel-onder { grid-template-columns: 1fr; }
@@ -456,9 +478,6 @@
     <!-- Hero met foto -->
     <section class="hero" id="home">
       <div class="hero-foto" id="heroFoto"><img src="img/sill-vyan-en-naoufal.jpg" alt="" width="1402" height="1122"></div>
-      <div class="zweef" style="--diepte:30px; width:54px; height:54px; right:8%; top:22%"><svg viewBox="0 0 40 40"><use href="#balvorm"/></svg></div>
-      <div class="zweef" style="--diepte:-20px; width:34px; height:34px; right:22%; top:12%; --bal:#f5c542"><svg viewBox="0 0 40 40" style="animation-delay:-2s"><use href="#balvorm"/></svg></div>
-      <div class="zweef" style="--diepte:45px; width:26px; height:26px; left:6%; top:18%"><svg viewBox="0 0 40 40" style="animation-delay:-3.5s"><use href="#balvorm"/></svg></div>
       <div class="hero-tekst wrap">
         <p class="label" style="--d:.6s">Twee vrienden · één passie</p>
         <h1 class="kop">
@@ -753,6 +772,30 @@
   </footer>
 
 
+  <!-- Pop-up: installeer de app -->
+  <div class="app-popup" id="appPopup" role="dialog" aria-modal="true" aria-labelledby="appPopupTitel" hidden>
+    <div class="app-kaart">
+      <button class="probeer app-sluit" id="appSluit" aria-label="Sluiten">✕</button>
+      <img class="app-icoon" src="icons/icoon-192.png" alt="" width="88" height="88">
+      <h3 class="kop" id="appPopupTitel">Installeer de app!</h3>
+      <p>Zet <b>S&amp;N Voetbal</b> op je beginscherm. Dan start je de spellen met één tik.</p>
+      <ul class="app-voordelen">
+        <li>⚡ Opent supersnel</li>
+        <li>📴 Werkt ook zonder internet</li>
+        <li>🏆 Je records blijven bewaard</li>
+      </ul>
+      <ol class="app-ios" id="appIos" hidden>
+        <li>Tik onderin op <b>Deel</b> (het vierkantje met de pijl omhoog)</li>
+        <li>Kies <b>Zet op beginscherm</b></li>
+        <li>Tik rechtsboven op <b>Voeg toe</b></li>
+      </ol>
+      <div class="app-knoppen">
+        <button class="knop vol" id="appJa">📲 Installeren</button>
+        <button class="knop leeg" id="appLater">Later</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Geluidspaneel: altijd bereikbaar rechtsonder -->
   <button id="geluidPaneelKnop" class="paneel-knop" aria-expanded="false" aria-controls="geluidPaneel" aria-label="Geluiden instellen">🔊</button>
   <div id="geluidPaneel" class="geluid-paneel" role="dialog" aria-label="Geluiden" hidden>
@@ -785,13 +828,6 @@
       if (!rustig && innerWidth > 760 && scrollY < innerHeight) heroFoto.style.transform = `translateY(${scrollY * -0.15}px)`;
     }, { passive: true });
 
-    // Zwevende ballen volgen de muis een beetje
-    const hero = $('#home');
-    hero.addEventListener('pointermove', e => {
-      const r = hero.getBoundingClientRect();
-      hero.style.setProperty('--px', ((e.clientX - r.left) / r.width - .5).toFixed(3));
-      hero.style.setProperty('--py', ((e.clientY - r.top) / r.height - .5).toFixed(3));
-    });
 
     // Magnetische knoppen
     if (muis && !rustig) document.querySelectorAll('.magneet').forEach(k => {
@@ -1886,18 +1922,52 @@
       e.preventDefault();
       installatieVraag = e;
       if (!alsApp) installeerKnop.hidden = false;
+      planPopup();
     });
-    installeerKnop.addEventListener('click', async () => {
+    async function installeer() {
       if (!installatieVraag) return;
       installatieVraag.prompt();
       await installatieVraag.userChoice;
       installatieVraag = null;
       installeerKnop.hidden = true;
-    });
-    addEventListener('appinstalled', () => installeerKnop.hidden = true);
+    }
+    installeerKnop.addEventListener('click', installeer);
+    addEventListener('appinstalled', () => { installeerKnop.hidden = true; sluitPopup(false); });
     // iPhone/iPad hebben geen installatievraag: daar tonen we uitleg
     const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     if (isIOS && !alsApp) $('#iosTip').hidden = false;
+
+    // Pop-up "Installeer de app": na een tijdje op de pagina, en daarna pas weer na 3 dagen
+    const appPopup = $('#appPopup'), PAUZE = 3 * 24 * 60 * 60 * 1000, WACHT = 12000;
+    let popupGepland = false, vorigeFocus = null;
+    function planPopup() {
+      if (popupGepland || alsApp || Date.now() - bewaar.lees('app-popup-weg', 0) < PAUZE) return;
+      if (!installatieVraag && !isIOS) return;           // deze browser kan niet installeren
+      popupGepland = true;
+      setTimeout(toonPopup, WACHT);
+    }
+    function toonPopup() {
+      if (!appPopup.hidden || (!installatieVraag && !isIOS)) return;
+      $('#appIos').hidden = !isIOS;
+      $('.app-voordelen').hidden = isIOS;             // op iPhone zijn de stappen belangrijker
+      $('#appJa').hidden = isIOS;
+      $('#appLater').textContent = isIOS ? 'Begrepen' : 'Later';
+      vorigeFocus = document.activeElement;
+      appPopup.hidden = false;
+      (isIOS ? $('#appLater') : $('#appJa')).focus({ preventScroll: true });
+    }
+    function sluitPopup(onthoud = true) {
+      if (appPopup.hidden) return;
+      appPopup.hidden = true;
+      if (onthoud) bewaar.schrijf('app-popup-weg', Date.now());
+      vorigeFocus?.focus?.();
+    }
+    $('#appJa').addEventListener('click', async () => { await installeer(); sluitPopup(); });
+    $('#appLater').addEventListener('click', () => sluitPopup());
+    $('#appSluit').addEventListener('click', () => sluitPopup());
+    appPopup.addEventListener('click', e => { if (e.target === appPopup) sluitPopup(); });
+    addEventListener('keydown', e => { if (e.key === 'Escape') sluitPopup(); });
+    if (isIOS) planPopup();
 
     document.getElementById('jaar').textContent = new Date().getFullYear();
   </script>
