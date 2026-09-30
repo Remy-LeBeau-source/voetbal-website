@@ -438,7 +438,7 @@
               <button data-niveau="normaal" aria-pressed="true">Normaal</button>
               <button data-niveau="moeilijk" aria-pressed="false">Moeilijk</button>
             </div>
-            <button class="klein" id="geluidKnop" aria-pressed="false">🔇 Geluid uit</button>
+            <button class="klein geluid-knop" aria-pressed="true">🔊 Geluid aan</button>
             <button class="klein" id="penaltyReset">↺ Reset</button>
           </div>
         </div>
@@ -548,6 +548,7 @@
           <button class="klein" id="balErbij">+ Bal erbij</button>
           <button class="klein" id="goudenBal">+ Gouden bal</button>
           <button class="klein" id="tuinReset">Opnieuw</button>
+          <button class="klein geluid-knop" aria-pressed="true">🔊 Geluid aan</button>
           <p class="spel-info">Record: <b id="tuinRecord">0</b></p>
         </div>
       </div>
@@ -665,20 +666,40 @@
     /* ================= Geluid (zelf opgewekt, geen bestanden) ================= */
     let geluidAan = false, audio;
     const ctx = () => audio ??= new (window.AudioContext || window.webkitAudioContext)();
-    const geluidKnop = $('#geluidKnop');
-    geluidKnop.addEventListener('click', () => {
-      geluidAan = !geluidAan;
-      geluidKnop.setAttribute('aria-pressed', geluidAan);
-      geluidKnop.textContent = geluidAan ? '🔊 Geluid aan' : '🔇 Geluid uit';
+    // Alles loopt via één hoofdvolume met een begrenzer: harder zonder te kraken
+    let hoofd;
+    const uitgang = () => {
+      if (hoofd) return hoofd;
+      const a = ctx(), begrenzer = a.createDynamicsCompressor();
+      begrenzer.threshold.value = -10; begrenzer.ratio.value = 12;
+      hoofd = a.createGain(); hoofd.gain.value = 2.2;
+      hoofd.connect(begrenzer).connect(a.destination);
+      return hoofd;
+    };
+    // Geluid staat standaard aan; de keuze wordt onthouden. Alle geluidsknoppen lopen gelijk.
+    const geluidKnoppen = document.querySelectorAll('.geluid-knop');
+    function zetGeluid(aan) {
+      geluidAan = aan;
+      bewaar.schrijf('geluid', aan);
+      geluidKnoppen.forEach(k => {
+        k.setAttribute('aria-pressed', aan);
+        k.textContent = aan ? '🔊 Geluid aan' : '🔇 Geluid uit';
+      });
+    }
+    zetGeluid(bewaar.lees('geluid', true));
+    geluidKnoppen.forEach(k => k.addEventListener('click', () => {
+      zetGeluid(!geluidAan);
       if (geluidAan) { ctx().resume(); fluit(); }
-    });
+    }));
+    // Browsers laten pas geluid toe na de eerste klik of tik
+    addEventListener('pointerdown', () => { if (geluidAan) ctx().resume(); }, { once: true });
     function toon(freq, duur, type = 'sine', volume = .2, glijNaar) {
       if (!geluidAan) return;
       const a = ctx(), o = a.createOscillator(), g = a.createGain(), t = a.currentTime;
       o.type = type; o.frequency.setValueAtTime(freq, t);
       if (glijNaar) o.frequency.exponentialRampToValueAtTime(glijNaar, t + duur);
       g.gain.setValueAtTime(volume, t); g.gain.exponentialRampToValueAtTime(.0001, t + duur);
-      o.connect(g).connect(a.destination); o.start(t); o.stop(t + duur);
+      o.connect(g).connect(uitgang()); o.start(t); o.stop(t + duur);
     }
     function ruis(duur, freq, volume) {
       if (!geluidAan) return;
@@ -688,20 +709,20 @@
       const bron = a.createBufferSource(), filter = a.createBiquadFilter(), g = a.createGain();
       bron.buffer = buf; filter.type = 'bandpass'; filter.frequency.value = freq; filter.Q.value = .8;
       g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(volume, t + duur * .25); g.gain.exponentialRampToValueAtTime(.0001, t + duur);
-      bron.connect(filter).connect(g).connect(a.destination); bron.start(t);
+      bron.connect(filter).connect(g).connect(uitgang()); bron.start(t);
     }
     function fluit() {
       if (!geluidAan) return;
       const a = ctx(), t = a.currentTime, o = a.createOscillator(), lfo = a.createOscillator(), lg = a.createGain(), g = a.createGain();
       o.frequency.value = 2400; lfo.frequency.value = 30; lg.gain.value = 140;
       lfo.connect(lg).connect(o.frequency);
-      g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.12, t + .02); g.gain.exponentialRampToValueAtTime(.0001, t + .4);
-      o.connect(g).connect(a.destination); o.start(t); lfo.start(t); o.stop(t + .42); lfo.stop(t + .42);
+      g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.35, t + .02); g.gain.exponentialRampToValueAtTime(.0001, t + .4);
+      o.connect(g).connect(uitgang()); o.start(t); lfo.start(t); o.stop(t + .42); lfo.stop(t + .42);
     }
-    const trapGeluid = () => toon(140, .12, 'sine', .35, 60);
-    const juichGeluid = () => ruis(1.8, 1100, .3);
-    const oohGeluid = () => ruis(1, 450, .2);
-    const paalGeluid = () => toon(900, .25, 'triangle', .25, 700);
+    const trapGeluid = () => toon(140, .15, 'sine', .9, 60);
+    const juichGeluid = () => ruis(2.2, 1100, .9);
+    const oohGeluid = () => ruis(1.2, 450, .7);
+    const paalGeluid = () => toon(900, .35, 'triangle', .7, 700);
 
     /* ================= Confetti ================= */
     function confetti(houder, x, y, aantal = 70) {
