@@ -4,26 +4,419 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Sill-vyan &amp; Naoufal — Voetbal</title>
+  <meta name="description" content="Twee vrienden, één passie: voetbal. De website van Sill-vyan en Naoufal.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
   <style>
-    body { margin: 0; min-height: 100vh; display: grid; place-items: center;
-           font-family: system-ui, sans-serif; background: #000; color: #fff; text-align: center; }
-    main { width: min(900px, 100% - 32px); padding: 32px 0; }
-    h1 { font-size: clamp(2rem, 6vw, 3.5rem); margin: 0 0 1.5rem; }
-    figure { margin: 0 0 1.5rem; }
-    img { display: block; width: 100%; height: auto; border-radius: 16px; }
-    figcaption { margin-top: .75rem; font-size: 1.1rem; }
-    p { margin: 0; opacity: .85; }
+    :root {
+      --zwart: #000;
+      --paneel: #0e0e0e;
+      --rand: #262626;
+      --wit: #fff;
+      --grijs: #b5b5b5;
+      --goud: #f5c542;
+      --goud-donker: #b8860b;
+      --gras: #1db954;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; background: var(--zwart); color: var(--wit); font-family: Inter, system-ui, sans-serif;
+           line-height: 1.6; overflow-x: hidden; }
+    img { max-width: 100%; display: block; }
+    a { color: inherit; }
+    :focus-visible { outline: 3px solid var(--goud); outline-offset: 3px; }
+    .wrap { width: min(1100px, 100% - 32px); margin-inline: auto; }
+    .kop { font-family: "Bebas Neue", Impact, sans-serif; letter-spacing: .02em; line-height: .95; margin: 0; }
+    .label { color: var(--goud); font-weight: 800; letter-spacing: .2em; text-transform: uppercase; font-size: .8rem; }
+
+    /* ---------- Navigatie ---------- */
+    header { position: fixed; inset: 0 0 auto; z-index: 50; transition: background .3s, backdrop-filter .3s; }
+    header.vast { background: rgba(0,0,0,.8); backdrop-filter: blur(10px); border-bottom: 1px solid var(--rand); }
+    nav { display: flex; align-items: center; justify-content: space-between; height: 68px; }
+    .logo { font-family: "Bebas Neue", sans-serif; font-size: 1.7rem; text-decoration: none; letter-spacing: .04em; }
+    .logo span { color: var(--goud); }
+    .menu { display: flex; gap: 28px; list-style: none; margin: 0; padding: 0; }
+    .menu a { text-decoration: none; font-weight: 600; color: var(--grijs); transition: color .2s; }
+    .menu a:hover, .menu a.actief { color: var(--wit); }
+    .hamburger { display: none; background: none; border: 0; color: var(--wit); width: 44px; height: 44px; cursor: pointer; }
+    .hamburger span { display: block; width: 26px; height: 2px; background: currentColor; margin: 6px auto; transition: transform .3s, opacity .3s; }
+    .hamburger[aria-expanded="true"] span:nth-child(1) { transform: translateY(8px) rotate(45deg); }
+    .hamburger[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+    .hamburger[aria-expanded="true"] span:nth-child(3) { transform: translateY(-8px) rotate(-45deg); }
+
+    /* ---------- Hero ---------- */
+    .hero { position: relative; min-height: 100svh; display: grid; align-items: end; overflow: hidden; }
+    .hero-foto { position: absolute; inset: 0; }
+    .hero-foto img { width: 100%; height: 115%; object-fit: cover; object-position: center 30%; will-change: transform; }
+    .hero::after { content: ""; position: absolute; inset: 0;
+      background: linear-gradient(to top, #000 8%, rgba(0,0,0,.55) 45%, rgba(0,0,0,.15) 75%, rgba(0,0,0,.5)); }
+    .hero-tekst { position: relative; z-index: 1; padding-bottom: clamp(48px, 10vh, 110px); }
+    .hero h1 { font-size: clamp(3.4rem, 13vw, 9.5rem); }
+    .hero h1 .en { color: var(--goud); }
+    .hero p { font-size: clamp(1.05rem, 2.4vw, 1.4rem); color: #e6e6e6; margin: 14px 0 28px; max-width: 34ch; }
+    .knoppen { display: flex; flex-wrap: wrap; gap: 12px; }
+    .knop { display: inline-flex; align-items: center; gap: 8px; padding: 14px 26px; border-radius: 999px;
+            font-weight: 800; text-decoration: none; border: 2px solid var(--goud); transition: transform .2s, background .2s, color .2s; }
+    .knop.vol { background: var(--goud); color: #000; }
+    .knop:hover { transform: translateY(-2px); }
+    .knop.leeg:hover { background: var(--goud); color: #000; }
+    .scroll-hint { position: absolute; left: 50%; bottom: 18px; z-index: 1; translate: -50% 0; width: 26px; height: 42px;
+                   border: 2px solid rgba(255,255,255,.5); border-radius: 14px; }
+    .scroll-hint::after { content: ""; position: absolute; left: 50%; top: 8px; width: 4px; height: 8px; margin-left: -2px;
+                          background: var(--wit); border-radius: 2px; animation: scrol 1.6s infinite; }
+    @keyframes scrol { to { transform: translateY(14px); opacity: 0; } }
+
+    /* ---------- Lichtkrant ---------- */
+    .lichtkrant { background: var(--goud); color: #000; overflow: hidden; padding: 12px 0; }
+    .lichtkrant-rij { display: flex; width: max-content; animation: loop 28s linear infinite; }
+    .lichtkrant span { font-family: "Bebas Neue", sans-serif; font-size: 1.6rem; letter-spacing: .06em; padding-right: 36px; white-space: nowrap; }
+    @keyframes loop { to { transform: translateX(-50%); } }
+
+    /* ---------- Secties ---------- */
+    section { padding: clamp(72px, 12vw, 130px) 0; }
+    .sectie-kop { margin-bottom: 44px; }
+    .sectie-kop h2 { font-size: clamp(2.6rem, 7vw, 4.5rem); margin-top: 8px; }
+
+    /* Tellers */
+    .tellers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .teller { background: var(--paneel); border: 1px solid var(--rand); border-radius: 20px; padding: 28px 20px; text-align: center; }
+    .teller b { display: block; font-family: "Bebas Neue", sans-serif; font-size: clamp(3rem, 9vw, 5rem); line-height: 1; color: var(--goud); }
+    .teller span { color: var(--grijs); font-weight: 600; }
+
+    /* Spelerskaarten */
+    .kaarten { display: grid; grid-template-columns: repeat(2, minmax(0, 340px)); justify-content: center; gap: clamp(20px, 5vw, 60px); }
+    .kaart { perspective: 1200px; aspect-ratio: 3 / 4.2; cursor: pointer; }
+    .kaart-binnen { position: relative; width: 100%; height: 100%; transition: transform .7s cubic-bezier(.2,.8,.2,1); transform-style: preserve-3d; }
+    .kaart.om .kaart-binnen { transform: rotateY(180deg); }
+    .kaart-kant { position: absolute; inset: 0; backface-visibility: hidden; border-radius: 22px; padding: 26px 22px;
+                  display: flex; flex-direction: column; align-items: center; text-align: center; overflow: hidden;
+                  background: linear-gradient(155deg, #fff3b0 0%, var(--goud) 30%, var(--goud-donker) 100%); color: #1a1300;
+                  box-shadow: 0 20px 50px rgba(245,197,66,.18); }
+    .kaart-kant::before { content: ""; position: absolute; inset: 10px; border: 2px solid rgba(0,0,0,.18); border-radius: 16px; pointer-events: none; }
+    .kaart-kant::after { content: ""; position: absolute; inset: -50%; background: linear-gradient(115deg, transparent 40%, rgba(255,255,255,.45) 50%, transparent 60%);
+                         transform: translateX(-60%); transition: transform .9s; pointer-events: none; }
+    .kaart:hover .kaart-kant::after { transform: translateX(60%); }
+    .kaart-achter { transform: rotateY(180deg); justify-content: center; }
+    .kaart-nummer { font-family: "Bebas Neue", sans-serif; font-size: 1.2rem; align-self: flex-start; opacity: .7; }
+    .monogram { width: 58%; aspect-ratio: 1; border-radius: 50%; background: #111; color: var(--goud); display: grid; place-items: center;
+                font-family: "Bebas Neue", sans-serif; font-size: clamp(3.5rem, 12vw, 5.5rem); margin: 8px 0 18px; box-shadow: inset 0 0 0 4px rgba(245,197,66,.6); }
+    .kaart h3 { font-family: "Bebas Neue", sans-serif; font-size: clamp(2rem, 6vw, 2.6rem); margin: 0; line-height: 1; }
+    .kaart .tik { margin-top: auto; font-size: .85rem; font-weight: 600; opacity: .7; }
+    .kaart dl { width: 100%; margin: 14px 0 0; display: grid; gap: 10px; text-align: left; }
+    .kaart dl div { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px solid rgba(0,0,0,.15); padding-bottom: 8px; }
+    .kaart dt { font-weight: 800; }
+    .kaart dd { margin: 0; font-style: italic; opacity: .75; text-align: right; }
+
+    /* Penaltyspel */
+    .spel { display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; align-items: center; }
+    .veld { position: relative; aspect-ratio: 16 / 11; border-radius: 22px; overflow: hidden;
+            background: repeating-linear-gradient(0deg, #178a3f 0 40px, #1a9647 40px 80px); border: 1px solid var(--rand); }
+    .doel { position: absolute; left: 12%; right: 12%; top: 12%; height: 46%; border: 6px solid #fff; border-bottom: 0;
+            background-image: linear-gradient(rgba(255,255,255,.25) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.25) 1px, transparent 1px);
+            background-size: 16px 16px; background-color: rgba(0,0,0,.2); }
+    .keeper { position: absolute; left: 50%; bottom: 42%; width: 15%; aspect-ratio: 1 / 1.3; translate: -50% 0; transition: transform .45s cubic-bezier(.3,1.4,.5,1); }
+    .keeper.links { transform: translateX(-140%) rotate(-60deg); }
+    .keeper.rechts { transform: translateX(140%) rotate(60deg); }
+    .bal { position: absolute; left: 50%; bottom: 8%; width: 9%; aspect-ratio: 1; translate: -50% 0;
+           transition: transform .5s cubic-bezier(.2,.7,.3,1); }
+    .strafschopstip { position: absolute; left: 50%; bottom: 6%; width: 10px; height: 10px; margin-left: -5px; background: #fff; border-radius: 50%; opacity: .7; }
+    .richtingen { display: flex; gap: 10px; margin: 22px 0 16px; flex-wrap: wrap; }
+    .richtingen button { flex: 1 1 100px; padding: 14px; border-radius: 14px; border: 2px solid var(--rand); background: var(--paneel);
+                         color: var(--wit); font: 800 1rem Inter, sans-serif; cursor: pointer; transition: border-color .2s, transform .2s; }
+    .richtingen button:hover:not(:disabled) { border-color: var(--goud); transform: translateY(-2px); }
+    .richtingen button:disabled { opacity: .5; cursor: default; }
+    .uitslag { min-height: 2.4em; font-family: "Bebas Neue", sans-serif; font-size: 2rem; letter-spacing: .03em; }
+    .uitslag.goal { color: var(--gras); }
+    .uitslag.gered { color: #ff5a5a; }
+    .score { color: var(--grijs); font-weight: 600; }
+    .score b { color: var(--wit); }
+
+    /* Foto-sectie */
+    .foto-groot { border-radius: 26px; overflow: hidden; border: 1px solid var(--rand); }
+    .foto-groot img { width: 100%; height: auto; transition: transform 1.2s; }
+    .foto-groot:hover img { transform: scale(1.03); }
+    .citaat { font-family: "Bebas Neue", sans-serif; font-size: clamp(2.2rem, 6vw, 4rem); text-align: center; margin: 48px auto 0; max-width: 18ch; line-height: 1; }
+    .citaat span { color: var(--goud); }
+
+    footer { border-top: 1px solid var(--rand); padding: 34px 0; color: var(--grijs); text-align: center; font-size: .95rem; }
+
+    /* Verschijnen bij scrollen */
+    .verschijn { opacity: 0; transform: translateY(40px); transition: opacity .8s, transform .8s cubic-bezier(.2,.8,.2,1); }
+    .verschijn.zichtbaar { opacity: 1; transform: none; }
+
+    /* Breed scherm: titel op één regel, zodat de tekst onder de gezichten blijft */
+    @media (min-width: 761px) {
+      .hero h1 { font-size: clamp(3.4rem, 7.5vw, 7rem); }
+      .hero h1 br { display: none; }
+      .hero p { margin: 10px 0 22px; }
+    }
+
+    /* ---------- Mobiel ---------- */
+    @media (max-width: 760px) {
+      /* Hele foto bovenaan, tekst eronder: zo staan jullie er allebei helemaal op */
+      .hero { min-height: auto; display: block; padding-top: 68px !important; }
+      .hero::after { display: none; }
+      .hero-foto { position: relative; }
+      .hero-foto img { height: auto; }
+      .hero-foto::after { content: ""; position: absolute; inset: 55% 0 0; background: linear-gradient(transparent, #000); }
+      .hero-tekst { margin-top: -48px; padding-bottom: 56px; }
+      .scroll-hint { display: none; }
+      .hamburger { display: block; }
+      .menu { position: fixed; inset: 68px 0 auto; flex-direction: column; gap: 0; background: rgba(0,0,0,.95);
+              border-bottom: 1px solid var(--rand); transform: translateY(-120%); transition: transform .35s; z-index: -1; }
+      .menu.open { transform: none; }
+      .menu a { display: block; padding: 18px 24px; font-size: 1.15rem; border-top: 1px solid var(--rand); }
+      .tellers { grid-template-columns: 1fr; }
+      .kaarten { grid-template-columns: minmax(0, 320px); }
+      .spel { grid-template-columns: 1fr; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+      html { scroll-behavior: auto; }
+      .verschijn { opacity: 1; transform: none; }
+    }
   </style>
 </head>
 <body>
+  <header id="header">
+    <nav class="wrap" aria-label="Hoofdmenu">
+      <a class="logo" href="#home">S<span>&amp;</span>N</a>
+      <button class="hamburger" aria-label="Menu" aria-expanded="false" aria-controls="menu">
+        <span></span><span></span><span></span>
+      </button>
+      <ul class="menu" id="menu">
+        <li><a href="#home">Home</a></li>
+        <li><a href="#wij">Wie zijn wij</a></li>
+        <li><a href="#spel">Penaltyspel</a></li>
+        <li><a href="#foto">Foto</a></li>
+      </ul>
+    </nav>
+  </header>
+
   <main>
-    <h1>⚽ Sill-vyan &amp; Naoufal</h1>
-    <figure>
-      <img src="img/sill-vyan-en-naoufal.jpg" width="1402" height="1122"
-           alt="Sill-vyan en Naoufal in zwarte trainingspakken op het voetbalveld, met een gouden beker en een bal">
-      <figcaption>Wij houden allebei van voetbal!</figcaption>
-    </figure>
-    <p>Deze website is in aanbouw.</p>
+    <!-- Hero met foto -->
+    <section class="hero" id="home" style="padding:0">
+      <div class="hero-foto"><img id="heroFoto" src="img/sill-vyan-en-naoufal.jpg" alt="" width="1402" height="1122"></div>
+      <div class="hero-tekst wrap">
+        <p class="label">Twee vrienden · één passie</p>
+        <h1 class="kop">Sill-vyan <br><span class="en">&amp;</span> Naoufal</h1>
+        <p>Wij houden allebei van voetbal. Dit is onze eigen website.</p>
+        <div class="knoppen">
+          <a class="knop vol" href="#wij">Leer ons kennen</a>
+          <a class="knop leeg" href="#spel">Neem een penalty ⚽</a>
+        </div>
+      </div>
+      <div class="scroll-hint" aria-hidden="true"></div>
+    </section>
+
+    <!-- Lichtkrant -->
+    <div class="lichtkrant" aria-hidden="true">
+      <div class="lichtkrant-rij">
+        <span>Sill-vyan ⚽ Naoufal ⚽ Voetbal is ons leven ⚽ Samen sterk ⚽ Altijd gas geven ⚽</span>
+        <span>Sill-vyan ⚽ Naoufal ⚽ Voetbal is ons leven ⚽ Samen sterk ⚽ Altijd gas geven ⚽</span>
+      </div>
+    </div>
+
+    <!-- Wie zijn wij -->
+    <section id="wij">
+      <div class="wrap">
+        <div class="sectie-kop verschijn">
+          <p class="label">Het team</p>
+          <h2 class="kop">Wie zijn wij?</h2>
+        </div>
+
+        <div class="tellers verschijn">
+          <div class="teller"><b data-tel="2">0</b><span>vrienden</span></div>
+          <div class="teller"><b data-tel="1">0</b><span>passie: voetbal</span></div>
+          <div class="teller"><b data-tel="100">0</b><span>procent inzet</span></div>
+        </div>
+
+        <div class="kaarten" style="margin-top:56px">
+          <div class="kaart verschijn" tabindex="0" role="button" aria-label="Spelerskaart Sill-vyan, klik om om te draaien">
+            <div class="kaart-binnen">
+              <div class="kaart-kant">
+                <span class="kaart-nummer">Speler 1</span>
+                <div class="monogram">S</div>
+                <h3>Sill-vyan</h3>
+                <span class="tik">Klik om de kaart om te draaien</span>
+              </div>
+              <div class="kaart-kant kaart-achter">
+                <h3>Sill-vyan</h3>
+                <dl>
+                  <div><dt>Positie</dt><dd>nog invullen</dd></div>
+                  <div><dt>Favoriete club</dt><dd>nog invullen</dd></div>
+                  <div><dt>Favoriete speler</dt><dd>nog invullen</dd></div>
+                  <div><dt>Rugnummer</dt><dd>nog invullen</dd></div>
+                </dl>
+              </div>
+            </div>
+          </div>
+
+          <div class="kaart verschijn" tabindex="0" role="button" aria-label="Spelerskaart Naoufal, klik om om te draaien">
+            <div class="kaart-binnen">
+              <div class="kaart-kant">
+                <span class="kaart-nummer">Speler 2</span>
+                <div class="monogram">N</div>
+                <h3>Naoufal</h3>
+                <span class="tik">Klik om de kaart om te draaien</span>
+              </div>
+              <div class="kaart-kant kaart-achter">
+                <h3>Naoufal</h3>
+                <dl>
+                  <div><dt>Positie</dt><dd>nog invullen</dd></div>
+                  <div><dt>Favoriete club</dt><dd>nog invullen</dd></div>
+                  <div><dt>Favoriete speler</dt><dd>nog invullen</dd></div>
+                  <div><dt>Rugnummer</dt><dd>nog invullen</dd></div>
+                </dl>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Penaltyspel -->
+    <section id="spel" style="background:var(--paneel)">
+      <div class="wrap spel">
+        <div class="veld verschijn" aria-hidden="true">
+          <div class="doel"></div>
+          <svg class="keeper" id="keeper" viewBox="0 0 60 78">
+            <circle cx="30" cy="12" r="10" fill="#f1c9a5"/>
+            <rect x="14" y="24" width="32" height="30" rx="8" fill="#f5c542"/>
+            <rect x="2" y="26" width="14" height="8" rx="4" fill="#f5c542"/>
+            <rect x="44" y="26" width="14" height="8" rx="4" fill="#f5c542"/>
+            <circle cx="4" cy="30" r="5" fill="#fff"/><circle cx="56" cy="30" r="5" fill="#fff"/>
+            <rect x="17" y="52" width="10" height="24" rx="4" fill="#111"/>
+            <rect x="33" y="52" width="10" height="24" rx="4" fill="#111"/>
+          </svg>
+          <div class="strafschopstip"></div>
+          <svg class="bal" id="bal" viewBox="0 0 40 40">
+            <circle cx="20" cy="20" r="19" fill="#fff" stroke="#111" stroke-width="1.5"/>
+            <polygon points="20,12 27,17 24.5,25 15.5,25 13,17" fill="#111"/>
+            <path d="M20 12V3M27 17l8-3M24.5 25l5 7M15.5 25l-5 7M13 17l-8-3" stroke="#111" stroke-width="1.5"/>
+          </svg>
+        </div>
+        <div class="verschijn">
+          <p class="label">Speel mee</p>
+          <h2 class="kop" style="font-size:clamp(2.6rem,7vw,4.5rem)">Penaltyspel</h2>
+          <p style="color:var(--grijs)">Kies een hoek en schiet. Kun jij de keeper verslaan?</p>
+          <div class="richtingen">
+            <button data-hoek="links">⬅ Links</button>
+            <button data-hoek="midden">⬆ Midden</button>
+            <button data-hoek="rechts">Rechts ➡</button>
+          </div>
+          <div class="uitslag" id="uitslag" aria-live="polite"></div>
+          <p class="score">Goals: <b id="goals">0</b> · Pogingen: <b id="pogingen">0</b></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Foto -->
+    <section id="foto">
+      <div class="wrap">
+        <div class="sectie-kop verschijn">
+          <p class="label">Samen</p>
+          <h2 class="kop">Kampioenen in de maak</h2>
+        </div>
+        <figure class="foto-groot verschijn" style="margin:0">
+          <img src="img/sill-vyan-en-naoufal.jpg" width="1402" height="1122" loading="lazy"
+               alt="Sill-vyan en Naoufal in zwarte trainingspakken op het voetbalveld, met een gouden beker en een bal">
+        </figure>
+        <p class="citaat verschijn">Samen winnen we <span>alles</span>.</p>
+      </div>
+    </section>
   </main>
+
+  <footer>
+    <div class="wrap">⚽ Sill-vyan &amp; Naoufal · <span id="jaar"></span></div>
+  </footer>
+
+  <script>
+    const rustig = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // Header wordt donker bij scrollen, hero-foto beweegt mee (parallax)
+    const header = document.getElementById('header');
+    const heroFoto = document.getElementById('heroFoto');
+    addEventListener('scroll', () => {
+      header.classList.toggle('vast', scrollY > 40);
+      if (!rustig && innerWidth > 760 && scrollY < innerHeight) heroFoto.style.transform = `translateY(${scrollY * -0.15}px)`;
+    }, { passive: true });
+
+    // Mobiel menu
+    const hamburger = document.querySelector('.hamburger');
+    const menu = document.getElementById('menu');
+    hamburger.addEventListener('click', () => {
+      const open = menu.classList.toggle('open');
+      hamburger.setAttribute('aria-expanded', open);
+    });
+    menu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
+      menu.classList.remove('open');
+      hamburger.setAttribute('aria-expanded', 'false');
+    }));
+
+    // Actieve menu-link volgt de sectie in beeld
+    const links = [...menu.querySelectorAll('a')];
+    const sectieObserver = new IntersectionObserver(items => items.forEach(item => {
+      if (item.isIntersecting) links.forEach(a => a.classList.toggle('actief', a.hash === '#' + item.target.id));
+    }), { rootMargin: '-45% 0px -50% 0px' });
+    document.querySelectorAll('main > section[id]').forEach(s => sectieObserver.observe(s));
+
+    // Verschijnen bij scrollen + tellers laten oplopen
+    const tel = el => {
+      const doel = +el.dataset.tel, start = performance.now(), duur = 1400;
+      const stap = nu => {
+        const t = Math.min((nu - start) / duur, 1);
+        el.textContent = Math.round(doel * (1 - Math.pow(1 - t, 3)));
+        if (t < 1) requestAnimationFrame(stap);
+      };
+      requestAnimationFrame(stap);
+    };
+    const verschijnObserver = new IntersectionObserver(items => items.forEach(item => {
+      if (!item.isIntersecting) return;
+      item.target.classList.add('zichtbaar');
+      item.target.querySelectorAll('[data-tel]').forEach(el => rustig ? el.textContent = el.dataset.tel : tel(el));
+      verschijnObserver.unobserve(item.target);
+    }), { threshold: 0.2 });
+    document.querySelectorAll('.verschijn').forEach(el => verschijnObserver.observe(el));
+
+    // Spelerskaarten omdraaien met klik of Enter/spatie
+    document.querySelectorAll('.kaart').forEach(kaart => {
+      const draai = () => kaart.classList.toggle('om');
+      kaart.addEventListener('click', draai);
+      kaart.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); draai(); } });
+    });
+
+    // Penaltyspel
+    const keeper = document.getElementById('keeper');
+    const bal = document.getElementById('bal');
+    const uitslag = document.getElementById('uitslag');
+    const knoppen = document.querySelectorAll('.richtingen button');
+    let goals = 0, pogingen = 0;
+    const balDoel = { links: 'translate(-330%, -470%)', midden: 'translate(0, -520%)', rechts: 'translate(330%, -470%)' };
+    knoppen.forEach(knop => knop.addEventListener('click', () => {
+      const hoek = knop.dataset.hoek;
+      const duik = ['links', 'midden', 'rechts'][Math.floor(Math.random() * 3)];
+      knoppen.forEach(k => k.disabled = true);
+      uitslag.textContent = ''; uitslag.className = 'uitslag';
+      bal.style.transform = balDoel[hoek] + ' scale(.65)';
+      keeper.className.baseVal = 'keeper' + (duik === 'midden' ? '' : ' ' + duik);
+      setTimeout(() => {
+        pogingen++;
+        if (hoek === duik) { uitslag.textContent = 'Gered door de keeper!'; uitslag.classList.add('gered'); }
+        else { goals++; uitslag.textContent = 'GOAL! ⚽'; uitslag.classList.add('goal'); }
+        document.getElementById('goals').textContent = goals;
+        document.getElementById('pogingen').textContent = pogingen;
+      }, 550);
+      setTimeout(() => {
+        bal.style.transform = '';
+        keeper.className.baseVal = 'keeper';
+        knoppen.forEach(k => k.disabled = false);
+      }, 1700);
+    }));
+
+    document.getElementById('jaar').textContent = new Date().getFullYear();
+  </script>
 </body>
 </html>
