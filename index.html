@@ -249,6 +249,34 @@
     .klein { background: none; border: 1px solid var(--rand); color: var(--grijs); border-radius: 999px; padding: 8px 16px; cursor: pointer; font-weight: 700; }
     .klein:hover { color: var(--wit); border-color: var(--goud); }
 
+
+    /* ---------- Geluidspaneel ---------- */
+    .paneel-knop { position: fixed; right: 16px; bottom: 16px; z-index: 70; width: 56px; height: 56px; border-radius: 50%; border: 0;
+                   background: var(--goud); color: #000; font-size: 1.5rem; cursor: pointer; box-shadow: 0 8px 24px rgba(0,0,0,.5);
+                   transition: transform .2s; }
+    .paneel-knop:hover { transform: scale(1.1) rotate(-8deg); }
+    .geluid-paneel { position: fixed; right: 16px; bottom: 84px; z-index: 70; width: min(370px, 100% - 32px); max-height: min(75vh, 620px);
+                     overflow: auto; background: #111; border: 1px solid #3a3320; border-radius: 18px; padding: 16px 18px;
+                     box-shadow: 0 20px 60px rgba(0,0,0,.7); }
+    .geluid-paneel[hidden] { display: none; }
+    .paneel-kop { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 1.15rem; }
+    .hoofdregel, .volume-regel { display: flex; align-items: center; gap: 12px; font-weight: 700; padding: 8px 0; }
+    .volume-regel input { flex: 1; accent-color: var(--goud); }
+    .geluid-paneel ul { list-style: none; margin: 8px 0 0; padding: 0; border-top: 1px solid var(--rand); transition: opacity .3s; }
+    .geluid-paneel.stil ul { opacity: .4; }
+    .geluid-paneel li { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--rand); }
+    .geluid-naam { flex: 1; font-size: .95rem; line-height: 1.3; }
+    .probeer { flex: none; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--rand); background: #000; color: var(--goud); cursor: pointer; }
+    .probeer:hover { border-color: var(--goud); }
+    .paneel-tip { color: var(--grijs); font-size: .85rem; margin: 10px 0 0; }
+    .schakel { position: relative; flex: none; width: 46px; height: 26px; display: inline-block; cursor: pointer; }
+    .schakel input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+    .schakel span { position: absolute; inset: 0; border-radius: 999px; background: #3a3a3a; transition: background .2s; pointer-events: none; }
+    .schakel span::before { content: ""; position: absolute; left: 3px; top: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: transform .2s; }
+    .schakel input:checked + span { background: var(--gras); }
+    .schakel input:checked + span::before { transform: translateX(20px); }
+    .schakel input:focus-visible + span { outline: 3px solid var(--goud); outline-offset: 2px; }
+
     /* ---------- Speeltuin: hooghouden ---------- */
     .tuin { position: relative; height: clamp(380px, 62vh, 540px); border-radius: 22px; overflow: hidden; border: 1px solid var(--rand);
             background: radial-gradient(ellipse at 50% 120%, #1f8a41, #0b3d1d 60%, #051a0c); touch-action: pan-y; user-select: none; }
@@ -465,6 +493,7 @@
               <button data-niveau="moeilijk" aria-pressed="false">Moeilijk</button>
             </div>
             <button class="klein geluid-knop" aria-pressed="true">🔊 Geluid aan</button>
+            <button class="klein open-geluiden">Per geluid ›</button>
             <button class="klein" id="penaltyReset">↺ Reset</button>
           </div>
         </div>
@@ -586,6 +615,7 @@
           <button class="klein" id="regenboog">🌈 Regenboog</button>
           <button class="klein" id="tuinReset">Opnieuw</button>
           <button class="klein geluid-knop" aria-pressed="true">🔊 Geluid aan</button>
+            <button class="klein open-geluiden">Per geluid ›</button>
           <p class="spel-info">Record: <b id="tuinRecord">0</b></p>
         </div>
       </div>
@@ -610,6 +640,17 @@
   <footer>
     <div class="wrap">⚽ Sill-vyan &amp; Naoufal · <span id="jaar"></span></div>
   </footer>
+
+
+  <!-- Geluidspaneel: altijd bereikbaar rechtsonder -->
+  <button id="geluidPaneelKnop" class="paneel-knop" aria-expanded="false" aria-controls="geluidPaneel" aria-label="Geluiden instellen">🔊</button>
+  <div id="geluidPaneel" class="geluid-paneel" role="dialog" aria-label="Geluiden" hidden>
+    <div class="paneel-kop"><strong>🔊 Geluiden</strong><button id="paneelDicht" class="probeer" aria-label="Sluiten">✕</button></div>
+    <label class="hoofdregel"><span class="schakel"><input type="checkbox" id="alleGeluiden" checked><span></span></span> Alle geluiden</label>
+    <label class="volume-regel">Volume <input type="range" id="volume" min="0" max="150" step="5"></label>
+    <ul id="geluidLijst"></ul>
+    <p class="paneel-tip">Tik op ▶ om een geluid te horen.</p>
+  </div>
 
   <script>
     const $ = s => document.querySelector(s);
@@ -701,129 +742,267 @@
     });
 
     /* ================= Geluid (zelf opgewekt, geen bestanden) ================= */
-    let geluidAan = false, audio;
+    // Elk geluid apart aan/uit; keuzes en volume worden onthouden.
+    const GELUIDEN = {
+      fluit:       'Fluitje van de scheidsrechter',
+      trap:        'Trap tegen de bal',
+      net:         'Bal in het net',
+      juich:       'Publiek juicht bij een goal',
+      ooh:         'Publiek: "Ooooh" bij een misser',
+      applaus:     'Applaus',
+      paal:        'Paal en lat',
+      handschoen:  'Keeper redt (handschoen)',
+      geroezemoes: 'Geroezemoes in het stadion',
+    };
+    let geluidAan = true, audio, hoofd, galm;
+    const geluidKeuze = Object.assign(Object.fromEntries(Object.keys(GELUIDEN).map(k => [k, true])), bewaar.lees('geluiden', {}));
+    let volume = bewaar.lees('volume', 1);
+
     const ctx = () => audio ??= new (window.AudioContext || window.webkitAudioContext)();
-    // Alles loopt via één hoofdvolume met een begrenzer: harder zonder te kraken
-    let hoofd;
-    const uitgang = () => {
+    // Hoofdvolume -> begrenzer -> luidspreker, plus een stadiongalm (echo) waar geluiden naartoe kunnen
+    function uitgang() {
       if (hoofd) return hoofd;
       const a = ctx(), begrenzer = a.createDynamicsCompressor();
-      begrenzer.threshold.value = -10; begrenzer.ratio.value = 12;
-      hoofd = a.createGain(); hoofd.gain.value = 2.2;
+      begrenzer.threshold.value = -12; begrenzer.ratio.value = 10; begrenzer.attack.value = .003;
+      hoofd = a.createGain(); hoofd.gain.value = 2 * volume;
       hoofd.connect(begrenzer).connect(a.destination);
+      // Galm: zelf gemaakte "impulsrespons" van een groot stadion
+      const sr = a.sampleRate, n = Math.floor(sr * 2.6), ir = a.createBuffer(2, n, sr);
+      for (let ch = 0; ch < 2; ch++) {
+        const d = ir.getChannelData(ch);
+        for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 3.2) * (i < sr * .02 ? i / (sr * .02) : 1);
+      }
+      const conv = a.createConvolver(); conv.buffer = ir;
+      galm = a.createGain(); galm.gain.value = .5;
+      galm.connect(conv).connect(hoofd);
       return hoofd;
-    };
-    // Geluid staat standaard aan; de keuze wordt onthouden. Alle geluidsknoppen lopen gelijk.
-    const geluidKnoppen = document.querySelectorAll('.geluid-knop');
-    function zetGeluid(aan) {
-      geluidAan = aan;
-      bewaar.schrijf('geluid', aan);
-      geluidKnoppen.forEach(k => {
-        k.setAttribute('aria-pressed', aan);
-        k.textContent = aan ? '🔊 Geluid aan' : '🔇 Geluid uit';
-      });
     }
-    zetGeluid(bewaar.lees('geluid', true));
-    geluidKnoppen.forEach(k => k.addEventListener('click', () => {
-      zetGeluid(!geluidAan);
-      if (geluidAan) { ctx().resume(); fluit(); startGeroezemoes(); }
-      else stopGeroezemoes();
-    }));
-    // Browsers laten pas geluid toe na de eerste klik of tik
-    addEventListener('pointerdown', () => { if (geluidAan) { ctx().resume(); startGeroezemoes(); } }, { once: true });
-    function toon(freq, duur, type = 'sine', volume = .2, glijNaar) {
-      if (!geluidAan) return;
-      const a = ctx(), o = a.createOscillator(), g = a.createGain(), t = a.currentTime;
-      o.type = type; o.frequency.setValueAtTime(freq, t);
-      if (glijNaar) o.frequency.exponentialRampToValueAtTime(glijNaar, t + duur);
-      g.gain.setValueAtTime(volume, t); g.gain.exponentialRampToValueAtTime(.0001, t + duur);
-      o.connect(g).connect(uitgang()); o.start(t); o.stop(t + duur);
+    // Stuur een geluid naar de uitgang, met links/rechts (pan) en hoeveel galm
+    function naarUit(node, { pan = 0, echo = .3 } = {}) {
+      const a = ctx(), p = a.createStereoPanner();
+      p.pan.value = grens(pan, -1, 1);
+      node.connect(p).connect(uitgang());
+      if (echo > 0) { const s = a.createGain(); s.gain.value = echo; p.connect(s).connect(galm); }
     }
-    function ruis(duur, freq, volume) {
-      if (!geluidAan) return;
-      const a = ctx(), t = a.currentTime, n = a.sampleRate * duur;
-      const buf = a.createBuffer(1, n, a.sampleRate), d = buf.getChannelData(0);
-      for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
-      const bron = a.createBufferSource(), filter = a.createBiquadFilter(), g = a.createGain();
-      bron.buffer = buf; filter.type = 'bandpass'; filter.frequency.value = freq; filter.Q.value = .8;
-      g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(volume, t + duur * .25); g.gain.exponentialRampToValueAtTime(.0001, t + duur);
-      bron.connect(filter).connect(g).connect(uitgang()); bron.start(t);
+    let ruisBuf;
+    function ruisBron(lus = false) {
+      const a = ctx();
+      if (!ruisBuf) {
+        const n = a.sampleRate * 3; ruisBuf = a.createBuffer(2, n, a.sampleRate);
+        for (let ch = 0; ch < 2; ch++) { const d = ruisBuf.getChannelData(ch); for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1; }
+      }
+      const b = a.createBufferSource(); b.buffer = ruisBuf; b.loop = lus;
+      b.playbackRate.value = willekeurig(.9, 1.1);
+      return b;
     }
-    function fluit() {
-      if (!geluidAan) return;
-      const a = ctx(), t = a.currentTime, o = a.createOscillator(), lfo = a.createOscillator(), lg = a.createGain(), g = a.createGain();
-      o.frequency.value = 2400; lfo.frequency.value = 30; lg.gain.value = 140;
-      lfo.connect(lg).connect(o.frequency);
-      g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.35, t + .02); g.gain.exponentialRampToValueAtTime(.0001, t + .4);
-      o.connect(g).connect(uitgang()); o.start(t); lfo.start(t); o.stop(t + .42); lfo.stop(t + .42);
+    const filter = (type, freq, Q = 1) => { const f = ctx().createBiquadFilter(); f.type = type; f.frequency.value = freq; f.Q.value = Q; return f; };
+    function omhulsel(g, t, piek, aan, duur, uit = duur) {       // volume: snel op, rustig af
+      g.gain.setValueAtTime(.0001, t);
+      g.gain.exponentialRampToValueAtTime(piek, t + aan);
+      g.gain.setValueAtTime(piek, t + Math.max(aan, duur - uit));
+      g.gain.exponentialRampToValueAtTime(.0001, t + duur);
     }
-    // Publiek: veel stemmen tegelijk die samen omhoog ("JAAA!") of omlaag ("Ooooh...") gaan
-    function stemmen(aantal, vanHz, naarHz, duur, volume, filterHz) {
-      if (!geluidAan) return;
-      const a = ctx(), t = a.currentTime;
-      const filter = a.createBiquadFilter(), g = a.createGain();
-      filter.type = 'lowpass'; filter.frequency.value = filterHz; filter.Q.value = .7;
-      g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(volume, t + duur * .2); g.gain.exponentialRampToValueAtTime(.0001, t + duur);
-      filter.connect(g).connect(uitgang());
+    // Klinkers voor het publiek: "aaa" (juichen) en "ooo" (teleurgesteld)
+    const KLINKERS = { aa: [[800, 1], [1150, .55], [2600, .2]], oo: [[350, 1], [750, .45], [2400, .12]] };
+    function klinkerFilter(klinker) {
+      const a = ctx(), in_ = a.createGain(), uit = a.createGain();
+      for (const [f, sterkte] of KLINKERS[klinker]) {
+        const bp = filter('bandpass', f, 6), g = a.createGain(); g.gain.value = sterkte * 3;
+        in_.connect(bp).connect(g).connect(uit);
+      }
+      return { in_, uit };
+    }
+    // Een menigte stemmen, verspreid over links en rechts
+    function menigte({ klinker, aantal = 26, duur, toonVan, toonNaar, piek = .5, aan = .15, ruisSterkte = .35 }) {
+      const a = ctx(), t = a.currentTime, kf = klinkerFilter(klinker), env = a.createGain();
+      omhulsel(env, t, piek, aan, duur, duur * .6);
+      kf.uit.connect(env); naarUit(env, { echo: .55 });
       for (let i = 0; i < aantal; i++) {
-        const f = vanHz * willekeurig(.75, 1.3), begin = t + willekeurig(0, .15);
-        const o = a.createOscillator(), lfo = a.createOscillator(), lg = a.createGain(), vg = a.createGain();
+        const basis = Math.random() < .5 ? willekeurig(105, 165) : willekeurig(190, 330);   // lage en hoge stemmen
+        const o = a.createOscillator(), vib = a.createOscillator(), vibG = a.createGain(), p = a.createStereoPanner(), g = a.createGain();
+        const start = t + willekeurig(0, .18), eind = t + duur * willekeurig(.8, 1);
         o.type = 'sawtooth';
-        o.frequency.setValueAtTime(f, begin); o.frequency.exponentialRampToValueAtTime(naarHz * f / vanHz, t + duur);
-        lfo.frequency.value = willekeurig(4, 7); lg.gain.value = f * .025;
-        lfo.connect(lg).connect(o.frequency);
-        vg.gain.value = 1.4 / aantal;
-        o.connect(vg).connect(filter);
-        o.start(begin); lfo.start(begin); o.stop(t + duur); lfo.stop(t + duur);
+        o.frequency.setValueAtTime(basis * toonVan, start);
+        o.frequency.exponentialRampToValueAtTime(basis * toonNaar, start + duur * .45);
+        vib.frequency.value = willekeurig(4.5, 6.5); vibG.gain.value = basis * .03;
+        vib.connect(vibG).connect(o.frequency);
+        p.pan.value = willekeurig(-.9, .9);
+        g.gain.setValueAtTime(.0001, start); g.gain.exponentialRampToValueAtTime(1 / aantal, start + .12); g.gain.setTargetAtTime(.0001, eind - .3, .15);
+        o.connect(g).connect(p).connect(kf.in_);
+        o.start(start); vib.start(start); o.stop(eind + .5); vib.stop(eind + .5);
       }
+      const r = ruisBron(), rg = a.createGain(); rg.gain.value = ruisSterkte;
+      r.connect(rg).connect(kf.in_); r.start(t); r.stop(t + duur + .2);
     }
-    // Applaus: honderden korte klapjes op willekeurige momenten
-    function klappen(duur, perSeconde, volume, vertraging = 0) {
-      if (!geluidAan) return;
-      const a = ctx(), sr = a.sampleRate, n = Math.floor(sr * duur);
-      const buf = a.createBuffer(1, n, sr), d = buf.getChannelData(0), klapLengte = Math.floor(sr * .025);
-      for (let k = 0; k < duur * perSeconde; k++) {
-        const pos = Math.floor(Math.random() * (n - klapLengte)), sterkte = willekeurig(.3, 1) * (1 - pos / n * .7);
-        for (let j = 0; j < klapLengte; j++) d[pos + j] += (Math.random() * 2 - 1) * Math.exp(-j / (sr * .004)) * sterkte;
-      }
-      const bron = a.createBufferSource(), filter = a.createBiquadFilter(), g = a.createGain(), t = a.currentTime + vertraging;
-      bron.buffer = buf; filter.type = 'bandpass'; filter.frequency.value = 1600; filter.Q.value = .6; g.gain.value = volume;
-      bron.connect(filter).connect(g).connect(uitgang()); bron.start(t);
+
+    const MAKERS = {
+      fluit() {           // twee tonen die zweven + het ratelende balletje in het fluitje
+        const a = ctx(), t = a.currentTime, env = a.createGain(), rammel = a.createGain();
+        omhulsel(env, t, .5, .015, .42, .08);
+        rammel.gain.value = .55;
+        const lfo = a.createOscillator(); lfo.type = 'square'; lfo.frequency.setValueAtTime(38, t); lfo.frequency.linearRampToValueAtTime(46, t + .4);
+        const lfoG = a.createGain(); lfoG.gain.value = .45; lfo.connect(lfoG).connect(rammel.gain);
+        for (const f of [2950, 3125]) { const o = a.createOscillator(); o.frequency.value = f; o.connect(rammel); o.start(t); o.stop(t + .45); }
+        const adem = ruisBron(), ag = a.createGain(); ag.gain.value = .08; adem.connect(filter('highpass', 3500)).connect(ag).connect(env);
+        adem.start(t); adem.stop(t + .45);
+        rammel.connect(env); naarUit(env, { echo: .35 });
+        lfo.start(t); lfo.stop(t + .45);
+      },
+      trap({ pan = 0, licht = false } = {}) {   // doffe dreun + korte klik
+        const a = ctx(), t = a.currentTime;
+        const o = a.createOscillator(), g = a.createGain();
+        o.frequency.setValueAtTime(licht ? 220 : 165, t); o.frequency.exponentialRampToValueAtTime(48, t + .13);
+        omhulsel(g, t, licht ? .6 : .95, .004, .16, .15);
+        o.connect(g); naarUit(g, { pan, echo: .12 }); o.start(t); o.stop(t + .2);
+        const klik = ruisBron(), kg = a.createGain(); omhulsel(kg, t, .5, .001, .03, .028);
+        klik.connect(filter('lowpass', 3000)).connect(kg); naarUit(kg, { pan, echo: .1 }); klik.start(t); klik.stop(t + .05);
+        const pok = a.createOscillator(), pg = a.createGain(); pok.type = 'triangle';
+        pok.frequency.setValueAtTime(750, t); pok.frequency.exponentialRampToValueAtTime(380, t + .04);
+        omhulsel(pg, t, .18, .002, .05, .045); pok.connect(pg); naarUit(pg, { pan, echo: 0 }); pok.start(t); pok.stop(t + .06);
+      },
+      net() {             // zoef van de bal in het net
+        const a = ctx(), t = a.currentTime, r = ruisBron(), bp = filter('bandpass', 3200, 1.2), g = a.createGain();
+        bp.frequency.exponentialRampToValueAtTime(700, t + .5);
+        omhulsel(g, t, .55, .02, .55, .45);
+        r.connect(bp).connect(g); naarUit(g, { echo: .25 }); r.start(t); r.stop(t + .6);
+      },
+      juich() {           // "JAAAA!" dat omhoog gaat + gebrul
+        menigte({ klinker: 'aa', aantal: 28, duur: 2.8, toonVan: .95, toonNaar: 1.4, piek: .7, aan: .18, ruisSterkte: .5 });
+        const a = ctx(), t = a.currentTime, r = ruisBron(), g = a.createGain();
+        omhulsel(g, t, .35, .25, 3, 1.8);
+        r.connect(filter('bandpass', 900, .7)).connect(g); naarUit(g, { echo: .5 }); r.start(t); r.stop(t + 3.1);
+      },
+      ooh() {             // "Ooooooh..." dat omlaag zakt
+        menigte({ klinker: 'oo', aantal: 26, duur: 1.9, toonVan: 1.3, toonNaar: .72, piek: .65, aan: .12, ruisSterkte: .25 });
+      },
+      applaus({ vertraging = 0, duur = 3.2, dichtheid = 55 } = {}) {   // honderden klapjes, links en rechts
+        const a = ctx(), sr = a.sampleRate, n = Math.floor(sr * duur), buf = a.createBuffer(2, n, sr), lengte = Math.floor(sr * .03);
+        const L = buf.getChannelData(0), R = buf.getChannelData(1);
+        for (let k = 0; k < duur * dichtheid; k++) {
+          const pos = Math.floor(Math.pow(Math.random(), 1.4) * (n - lengte)), sterkte = willekeurig(.25, 1) * (1 - pos / n * .8);
+          const kant = Math.random(), helder = willekeurig(.25, .8);
+          let vorig = 0;
+          for (let j = 0; j < lengte; j++) {
+            vorig += helder * ((Math.random() * 2 - 1) - vorig);      // elk klapje een iets andere klank
+            const s = vorig * Math.exp(-j / (sr * .005)) * sterkte;
+            L[pos + j] += s * (1 - kant); R[pos + j] += s * kant;
+          }
+        }
+        const b = a.createBufferSource(), g = a.createGain(); b.buffer = buf; g.gain.value = 1.3;
+        b.connect(filter('highpass', 500)).connect(g); naarUit(g, { echo: .45 }); b.start(a.currentTime + vertraging);
+      },
+      paal() {            // metalen PLING met natrillen
+        const a = ctx(), t = a.currentTime;
+        [[587, 1.6, .35], [1397, 1.1, .25], [2489, .7, .18], [3721, .45, .12], [5117, .3, .08]].forEach(([f, lang, sterkte]) => {
+          const o = a.createOscillator(), g = a.createGain(); o.frequency.value = f * willekeurig(.995, 1.005);
+          g.gain.setValueAtTime(sterkte, t); g.gain.exponentialRampToValueAtTime(.0001, t + lang);
+          o.connect(g); naarUit(g, { echo: .5 }); o.start(t); o.stop(t + lang);
+        });
+        const tik = ruisBron(), tg = a.createGain(); omhulsel(tg, t, .6, .001, .02, .018);
+        tik.connect(filter('highpass', 2000)).connect(tg); naarUit(tg, { echo: .2 }); tik.start(t); tik.stop(t + .03);
+      },
+      handschoen() {      // doffe klap van de keepershandschoen
+        const a = ctx(), t = a.currentTime, r = ruisBron(), g = a.createGain();
+        omhulsel(g, t, .9, .002, .09, .085);
+        r.connect(filter('lowpass', 700)).connect(g); naarUit(g, { echo: .2 }); r.start(t); r.stop(t + .12);
+        const o = a.createOscillator(), og = a.createGain(); o.frequency.setValueAtTime(110, t); o.frequency.exponentialRampToValueAtTime(60, t + .1);
+        omhulsel(og, t, .5, .003, .1, .09); o.connect(og); naarUit(og, { echo: .1 }); o.start(t); o.stop(t + .12);
+      },
+    };
+
+    // Speel een geluid, maar alleen als geluid aan staat én dit geluid aan staat
+    function speel(naam, opties) {
+      if (!geluidAan || !geluidKeuze[naam]) return;
+      try { ctx().resume(); MAKERS[naam](opties); } catch {}
     }
-    // Zacht geroezemoes op de achtergrond zolang het stadion in beeld is
+
+    // Geroezemoes: blijft zacht doorlopen zolang het stadion in beeld is
     let geroezemoes = null, stadionInBeeld = false;
-    function startGeroezemoes() {
-      if (!geluidAan || !audio || geroezemoes || !stadionInBeeld) return;
-      const a = ctx(), n = a.sampleRate * 3, buf = a.createBuffer(1, n, a.sampleRate), d = buf.getChannelData(0);
-      for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
-      const bron = a.createBufferSource(), filter = a.createBiquadFilter(), g = a.createGain(), golf = a.createOscillator(), golfSterkte = a.createGain();
-      bron.buffer = buf; bron.loop = true;
-      filter.type = 'bandpass'; filter.frequency.value = 650; filter.Q.value = .5;
-      g.gain.setValueAtTime(.0001, a.currentTime); g.gain.exponentialRampToValueAtTime(.16, a.currentTime + 1.2);
-      golf.frequency.value = .25; golfSterkte.gain.value = .05; golf.connect(golfSterkte).connect(g.gain);
-      bron.connect(filter).connect(g).connect(uitgang()); bron.start(); golf.start();
-      geroezemoes = { bron, golf, g };
+    function startGeroezemoes(voorbeeld = false) {
+      if (geroezemoes || !audio || !geluidAan || !geluidKeuze.geroezemoes || !(stadionInBeeld || voorbeeld)) return;
+      const a = ctx(), t = a.currentTime, kf = klinkerFilter('aa'), env = a.createGain(), delen = [];
+      env.gain.setValueAtTime(.0001, t); env.gain.exponentialRampToValueAtTime(.22, t + 1.5);
+      kf.uit.connect(filter('lowpass', 1400)).connect(env); naarUit(env, { echo: .6 });
+      for (const pan of [-.7, .7]) {
+        const r = ruisBron(true), g = a.createGain(), golf = a.createOscillator(), golfG = a.createGain(), p = a.createStereoPanner();
+        g.gain.value = .35; golf.frequency.value = willekeurig(.15, .35); golfG.gain.value = .15;
+        golf.connect(golfG).connect(g.gain); p.pan.value = pan;
+        r.connect(g).connect(p).connect(kf.in_); r.start(t); golf.start(t);
+        delen.push(r, golf);
+      }
+      geroezemoes = { env, delen };
+      if (voorbeeld) setTimeout(stopGeroezemoes, 3000);
     }
     function stopGeroezemoes() {
       if (!geroezemoes) return;
-      const a = ctx(), { bron, golf, g } = geroezemoes;
-      g.gain.setTargetAtTime(.0001, a.currentTime, .3);
-      bron.stop(a.currentTime + 1.5); golf.stop(a.currentTime + 1.5);
+      const a = ctx(), { env, delen } = geroezemoes;
+      env.gain.setTargetAtTime(.0001, a.currentTime, .4);
+      delen.forEach(d => d.stop(a.currentTime + 2));
       geroezemoes = null;
     }
 
-    const trapGeluid = () => toon(140, .15, 'sine', .9, 60);
-    const juichGeluid = () => {                      // JAAA! + gebrul + applaus
-      stemmen(16, 240, 430, 1.8, .55, 1400);
-      ruis(3, 1000, .8);
-      klappen(3.2, 45, 1.1, .35);
-    };
-    const oohGeluid = () => {                        // Ooooh... teleurgesteld
-      stemmen(16, 330, 170, 1.7, .6, 800);
-      ruis(1.5, 380, .45);
-    };
-    const redGeluid = () => { oohGeluid(); klappen(1.8, 22, .7, .6); };   // ooh, en applaus voor de keeper
-    const paalGeluid = () => toon(900, .35, 'triangle', .7, 700);
+    // Namen die de spellen gebruiken
+    const fluit = () => speel('fluit');
+    const trapGeluid = opties => speel('trap', opties);
+    const juichGeluid = () => { speel('juich'); speel('applaus', { vertraging: .5 }); };
+    const oohGeluid = () => speel('ooh');
+    const redGeluid = () => { speel('handschoen'); speel('ooh'); speel('applaus', { vertraging: .7, duur: 2, dichtheid: 30 }); };
+    const paalGeluid = () => speel('paal');
+
+    /* ---------- Knoppen en geluidspaneel ---------- */
+    const geluidKnoppen = document.querySelectorAll('.geluid-knop');
+    const paneel = $('#geluidPaneel'), paneelKnop = $('#geluidPaneelKnop');
+    function zetGeluid(aan) {
+      geluidAan = aan;
+      bewaar.schrijf('geluid', aan);
+      geluidKnoppen.forEach(k => { k.setAttribute('aria-pressed', aan); k.textContent = aan ? '🔊 Geluid aan' : '🔇 Geluid uit'; });
+      paneelKnop.textContent = aan ? '🔊' : '🔇';
+      $('#alleGeluiden').checked = aan;
+      paneel.classList.toggle('stil', !aan);
+      if (aan && audio) startGeroezemoes(); else stopGeroezemoes();
+    }
+    // Rijen in het paneel: schakelaar + naam + ▶ om te proberen
+    const lijst = $('#geluidLijst');
+    for (const [sleutel, naam] of Object.entries(GELUIDEN)) {
+      const rij = document.createElement('li');
+      rij.innerHTML = `<label class="schakel"><input type="checkbox" ${geluidKeuze[sleutel] ? 'checked' : ''}><span></span></label>
+        <span class="geluid-naam">${naam}</span><button class="probeer" aria-label="Probeer: ${naam}">▶</button>`;
+      rij.querySelector('input').addEventListener('change', e => {
+        geluidKeuze[sleutel] = e.target.checked;
+        bewaar.schrijf('geluiden', geluidKeuze);
+        if (sleutel === 'geroezemoes') e.target.checked ? startGeroezemoes() : stopGeroezemoes();
+      });
+      rij.querySelector('.probeer').addEventListener('click', () => {
+        if (!geluidAan) zetGeluid(true);
+        ctx().resume();
+        if (!geluidKeuze[sleutel]) return;
+        if (sleutel === 'geroezemoes') { stopGeroezemoes(); startGeroezemoes(true); }
+        else speel(sleutel, sleutel === 'applaus' ? { duur: 2.5 } : undefined);
+      });
+      lijst.appendChild(rij);
+    }
+    $('#alleGeluiden').addEventListener('change', e => { ctx().resume(); zetGeluid(e.target.checked); });
+    const volumeSchuif = $('#volume');
+    volumeSchuif.value = Math.round(volume * 100);
+    volumeSchuif.addEventListener('input', () => {
+      volume = volumeSchuif.value / 100;
+      bewaar.schrijf('volume', volume);
+      if (hoofd) hoofd.gain.setTargetAtTime(2 * volume, ctx().currentTime, .05);
+    });
+    paneelKnop.addEventListener('click', () => {
+      const open = paneel.hidden;
+      paneel.hidden = !open;
+      paneelKnop.setAttribute('aria-expanded', open);
+    });
+    $('#paneelDicht').addEventListener('click', () => { paneel.hidden = true; paneelKnop.setAttribute('aria-expanded', 'false'); paneelKnop.focus(); });
+    document.querySelectorAll('.open-geluiden').forEach(k => k.addEventListener('click', () => { paneel.hidden = false; paneelKnop.setAttribute('aria-expanded', 'true'); }));
+    geluidKnoppen.forEach(k => k.addEventListener('click', () => {
+      zetGeluid(!geluidAan);
+      if (geluidAan) { ctx().resume(); fluit(); startGeroezemoes(); }
+    }));
+    zetGeluid(bewaar.lees('geluid', true));
+    // Browsers laten pas geluid toe na de eerste klik of tik
+    addEventListener('pointerdown', () => { if (geluidAan) { ctx().resume(); startGeroezemoes(); } }, { once: true });
 
     /* ================= Confetti ================= */
     function confetti(houder, x, y, aantal = 70) {
@@ -961,6 +1140,7 @@
         doel.classList.remove('bol'); void doel.offsetWidth; doel.classList.add('bol');
         stadion.classList.add('schud');
         publiekReageert(true, '🙌 JAAA!');
+        speel('net');
         juichGeluid();
         toonTekst(inKruising(tx, ty) ? 'KRUISING!' : 'GOAL!', 'goal');
         confetti(stadion, tx / 100 * doelRect.width, ty / 100 * doelRect.height);
@@ -1116,7 +1296,7 @@
       reeksEl.textContent = reeks;
       reeksEl.classList.add('tik');
       setTimeout(() => reeksEl.classList.remove('tik'), 120);
-      trapGeluid();
+      trapGeluid({ pan: b.x / B * 2 - 1, licht: true });
     }
 
     function eindeReeks() {
