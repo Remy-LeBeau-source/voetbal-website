@@ -302,6 +302,39 @@
                  box-shadow: 0 0 0 2px var(--rand); transition: transform .2s, box-shadow .2s; }
     .kleur-bal:hover { transform: scale(1.18) rotate(20deg); box-shadow: 0 0 0 2px var(--k); }
 
+    /* ---------- Minigame: overkoppen ---------- */
+    .kop-score { display: flex; align-items: center; justify-content: center; gap: clamp(12px, 4vw, 40px); margin-bottom: 14px; }
+    .kop-score b { font-family: "Bebas Neue", sans-serif; font-size: clamp(2.4rem, 7vw, 3.6rem); line-height: 1; min-width: 3.4ch; text-align: center; }
+    .kop-naam { font-family: "Bebas Neue", sans-serif; font-size: clamp(1.3rem, 4vw, 2rem); letter-spacing: .04em; }
+    .kop-doek-houder { position: relative; border-radius: 22px; overflow: hidden; border: 1px solid var(--rand); background: #0d1733; }
+    #kopDoek { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; touch-action: none; }
+    .kop-scherm { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; text-align: center; gap: 10px;
+                  padding: 20px; background: rgba(0,0,0,.62); backdrop-filter: blur(3px); }
+    .kop-scherm[hidden] { display: none; }
+    .kop-scherm h3 { font-size: clamp(2.4rem, 8vw, 4.5rem); color: var(--goud); }
+    .kop-scherm p { margin: 0; color: #e6e6e6; }
+    .kop-modi { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 6px 0; }
+    .kop-uitleg { font-size: .85rem; color: var(--grijs) !important; max-width: 46ch; }
+    .kop-bediening { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
+    .kop-bediening .spel-info { margin: 0; }
+    .kop-knoppen { display: flex; gap: 8px; }
+    .kop-knoppen[hidden] { display: none; }
+    .kop-knoppen button { width: 60px; height: 60px; border-radius: 16px; border: 1px solid var(--rand); background: #000; color: var(--wit);
+                          font-size: 1.4rem; cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none; }
+    .kop-knoppen[data-speler="0"] button { border-color: rgba(245,197,66,.5); }
+    .kop-knoppen[data-speler="1"] button { border-color: rgba(53,198,255,.5); }
+    .kop-knoppen button.in { background: #222; transform: scale(.94); }
+    @media (pointer: fine) { .kop-knoppen button { width: 48px; height: 48px; font-size: 1.1rem; } }
+    @media (max-width: 760px) {
+      .kop-bediening .spel-info { order: -1; width: 100%; text-align: center; }
+      .kop-scherm { gap: 6px; padding: 10px; }
+      .kop-scherm h3 { font-size: 2rem; }
+      .kop-scherm p { font-size: .9rem; }
+      .kop-modi { flex-wrap: nowrap; margin: 2px 0; }
+      .kop-modi .knop { padding: 9px 14px; font-size: .9rem; }
+    }
+    @media (pointer: coarse) { .kop-uitleg { display: none; } }
+
     /* ---------- Foto ---------- */
     .foto-groot { border-radius: 26px; overflow: hidden; border: 1px solid var(--rand); margin: 0; }
     .foto-groot img { width: 100%; height: auto; transition: transform 1.2s; }
@@ -385,6 +418,7 @@
         <li><a href="#wij">Wie zijn wij</a></li>
         <li><a href="#spel">Penalty's</a></li>
         <li><a href="#hooghouden">Hooghouden</a></li>
+        <li><a href="#koppen">Overkoppen</a></li>
         <li><a href="#foto">Foto</a></li>
       </ul>
     </nav>
@@ -617,6 +651,49 @@
           <button class="klein geluid-knop" aria-pressed="true">🔊 Geluid aan</button>
             <button class="klein open-geluiden">Per geluid ›</button>
           <p class="spel-info">Record: <b id="tuinRecord">0</b></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Minigame: overkoppen -->
+    <section id="koppen" style="background:var(--paneel)">
+      <div class="wrap">
+        <div class="sectie-kop verschijn">
+          <p class="label">Minigame</p>
+          <h2 class="kop">Overkoppen</h2>
+          <p>Kop de bal over het net. Valt hij aan jouw kant op de grond, dan krijgt de ander een punt. Wie het eerst 5 punten heeft, wint!</p>
+        </div>
+        <div class="kop-spel verschijn">
+          <div class="kop-score" aria-live="polite">
+            <span class="kop-naam" style="color:#f5c542">Sill-vyan</span>
+            <b id="kopScore">0 – 0</b>
+            <span class="kop-naam" style="color:#35c6ff" id="kopNaamRechts">Naoufal</span>
+          </div>
+          <div class="kop-doek-houder">
+            <canvas id="kopDoek" width="800" height="450" aria-label="Overkoppen: twee spelers koppen een bal over een net"></canvas>
+            <div class="kop-scherm" id="kopScherm">
+              <h3 class="kop" id="kopTitel">Overkoppen</h3>
+              <p id="kopTekst">Kies hoe je wilt spelen</p>
+              <div class="kop-modi">
+                <button class="knop vol" data-modus="computer">Tegen de computer</button>
+                <button class="knop leeg" data-modus="samen">Met z'n tweeën</button>
+              </div>
+              <p class="kop-uitleg"><b>Sill-vyan:</b> A / D lopen · W springen &nbsp;·&nbsp; <b>Naoufal:</b> ← / → lopen · ↑ springen</p>
+            </div>
+          </div>
+          <div class="kop-bediening">
+            <div class="kop-knoppen" data-speler="0" aria-label="Knoppen Sill-vyan">
+              <button data-toets="links" aria-label="Sill-vyan naar links">◀</button>
+              <button data-toets="spring" aria-label="Sill-vyan springen">⤒</button>
+              <button data-toets="rechts" aria-label="Sill-vyan naar rechts">▶</button>
+            </div>
+            <p class="spel-info" id="kopInfo">Overgekopt: <b id="kopRally">0</b> · Record: <b id="kopRecord">0</b></p>
+            <div class="kop-knoppen" data-speler="1" aria-label="Knoppen Naoufal" hidden>
+              <button data-toets="links" aria-label="Naoufal naar links">◀</button>
+              <button data-toets="spring" aria-label="Naoufal springen">⤒</button>
+              <button data-toets="rechts" aria-label="Naoufal naar rechts">▶</button>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -1367,6 +1444,270 @@
       nieuweBal();
     });
     nieuweBal();
+
+    /* ================= Minigame: overkoppen ================= */
+    const kopDoek = $('#kopDoek'), kd = kopDoek.getContext('2d');
+    const KB = 800, KH = 450, GROND = 405, NET_X = 400, NET_TOP = 322, NET_HALF = 4;
+    const KOP_R = 25, LIJF_R = 24, BAL_R = 15, WINST = 5;
+    const SPELER_ZW = 1650, BAL_ZW = 780, LOOP = 340, SPRONG = 660;
+    const kopScherm = $('#kopScherm'), kopTitel = $('#kopTitel'), kopTekst = $('#kopTekst');
+    const kopScoreEl = $('#kopScore'), kopRallyEl = $('#kopRally'), kopRecordEl = $('#kopRecord');
+    let kopRecord = bewaar.lees('overkoppen-record', 0);
+    kopRecordEl.textContent = kopRecord;
+
+    const kopSpelers = [
+      { naam: 'Sill-vyan', kleur: '#f5c542', rand: '#9a7412', kant: -1, min: 30, max: NET_X - 30, start: 200,
+        toetsen: { links: ['KeyA'], rechts: ['KeyD'], spring: ['KeyW'] } },
+      { naam: 'Naoufal', kleur: '#35c6ff', rand: '#0b6f94', kant: 1, min: NET_X + 30, max: KB - 30, start: 600,
+        toetsen: { links: ['ArrowLeft'], rechts: ['ArrowRight'], spring: ['ArrowUp'] } },
+    ];
+    const kopBal = { x: 200, y: 120, vx: 0, vy: 0, hoek: 0 };
+    let kopModus = null, kopBezig = false, kopWacht = 0, rally = 0, laatsteKopper = null, balKant = -1, kopLoop = false, kopVorige = 0, kopInBeeld = false;
+    const ingedrukt = new Set();                  // toetsenbord
+    const knopIn = [{}, {}];                      // schermknoppen per speler
+
+    function kopReset(serveerder) {
+      kopSpelers.forEach(s => Object.assign(s, { x: s.start, y: GROND, vx: 0, vy: 0, loopFase: 0 }));
+      const s = kopSpelers[serveerder];
+      Object.assign(kopBal, { x: s.start + s.kant * -20, y: 110, vx: 0, vy: 0 });
+      balKant = s.kant; laatsteKopper = null; rally = 0; kopRallyEl.textContent = 0;
+      kopWacht = 1;                               // even wachten voordat de bal valt
+    }
+    function kopNieuwSpel(modus) {
+      kopModus = modus;
+      kopSpelers.forEach(s => s.score = 0);
+      kopSpelers[1].ai = modus === 'computer';
+      // Tegen de computer: jij mag zowel A/D/W als de pijltjes gebruiken
+      kopSpelers[0].toetsen = modus === 'computer'
+        ? { links: ['KeyA', 'ArrowLeft'], rechts: ['KeyD', 'ArrowRight'], spring: ['KeyW', 'ArrowUp', 'Space'] }
+        : { links: ['KeyA'], rechts: ['KeyD'], spring: ['KeyW'] };
+      $('#kopNaamRechts').textContent = modus === 'computer' ? 'Naoufal (computer)' : 'Naoufal';
+      document.querySelector('.kop-knoppen[data-speler="1"]').hidden = modus === 'computer';
+      kopScoreEl.textContent = '0 – 0';
+      kopScherm.hidden = true;
+      kopBezig = true;
+      kopReset(0);
+      fluit();
+      kopStart();
+    }
+    document.querySelectorAll('.kop-modi button').forEach(b => b.addEventListener('click', () => kopNieuwSpel(b.dataset.modus)));
+
+    // Invoer: toetsenbord (alleen als het spel loopt en in beeld is) en schermknoppen
+    const SPEL_TOETSEN = ['KeyA', 'KeyD', 'KeyW', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'Space'];
+    addEventListener('keydown', e => {
+      if (!kopBezig || !kopInBeeld || !SPEL_TOETSEN.includes(e.code)) return;
+      e.preventDefault(); ingedrukt.add(e.code);
+    });
+    addEventListener('keyup', e => ingedrukt.delete(e.code));
+    addEventListener('blur', () => ingedrukt.clear());
+    document.querySelectorAll('.kop-knoppen').forEach(groep => {
+      const nr = +groep.dataset.speler;
+      groep.querySelectorAll('button').forEach(k => {
+        const zet = aan => { knopIn[nr][k.dataset.toets] = aan; k.classList.toggle('in', aan); };
+        k.addEventListener('pointerdown', e => { e.preventDefault(); k.setPointerCapture(e.pointerId); zet(true); });
+        ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(t => k.addEventListener(t, () => zet(false)));
+        k.addEventListener('contextmenu', e => e.preventDefault());
+      });
+    });
+    const wil = (s, nr, actie) => !!knopIn[nr][actie] || s.toetsen[actie].some(c => ingedrukt.has(c));
+
+    // Computer: loopt naar waar de bal gaat vallen en springt op het juiste moment
+    function computerInvoer(s) {
+      let px = kopBal.x, py = kopBal.y, vx = kopBal.vx, vy = kopBal.vy;
+      for (let i = 0; i < 150 && !(py > GROND - 95 && vy > 0); i++) {
+        vy += BAL_ZW / 60; px += vx / 60; py += vy / 60;
+        if (px < BAL_R || px > KB - BAL_R) vx = -vx;
+      }
+      const opMijnKant = px > NET_X || kopBal.x > NET_X;
+      let doel = opMijnKant ? px + 13 : 610;       // net rechts van de bal staan, dan gaat de kopbal naar links
+      doel = grens(doel, s.min, s.max);
+      const dx = doel - s.x;
+      return {
+        links: dx < -6, rechts: dx > 6,
+        spring: kopBal.x > NET_X && Math.abs(kopBal.x - s.x) < 60 && kopBal.y > GROND - 250 && kopBal.y < GROND - 120 && kopBal.vy > -60,
+      };
+    }
+
+    function kopStap(dt) {
+      if (!kopBezig) return;
+      if (kopWacht > 0) { kopWacht -= dt; }
+      // Spelers
+      kopSpelers.forEach((s, nr) => {
+        const inv = s.ai ? computerInvoer(s) : { links: wil(s, nr, 'links'), rechts: wil(s, nr, 'rechts'), spring: wil(s, nr, 'spring') };
+        s.vx = ((inv.rechts ? 1 : 0) - (inv.links ? 1 : 0)) * LOOP * (s.ai ? .86 : 1);
+        if (inv.spring && s.y >= GROND) s.vy = -SPRONG * (s.ai ? .95 : 1);
+        s.vy += SPELER_ZW * dt;
+        s.x = grens(s.x + s.vx * dt, s.min, s.max);
+        s.y += s.vy * dt;
+        if (s.y > GROND) { s.y = GROND; s.vy = 0; }
+        s.loopFase += Math.abs(s.vx) * dt * .05;
+      });
+      if (kopWacht > 0) return;
+
+      // Bal
+      const b = kopBal;
+      b.vy += BAL_ZW * dt;
+      b.x += b.vx * dt; b.y += b.vy * dt;
+      b.hoek += b.vx * dt / BAL_R;
+      if (b.x < BAL_R) { b.x = BAL_R; b.vx = Math.abs(b.vx) * .85; }
+      if (b.x > KB - BAL_R) { b.x = KB - BAL_R; b.vx = -Math.abs(b.vx) * .85; }
+      if (b.y < BAL_R) { b.y = BAL_R; b.vy = Math.abs(b.vy) * .7; }
+      // Net (rechthoek): duw de bal eruit en kaats terug
+      const nx = grens(b.x, NET_X - NET_HALF, NET_X + NET_HALF), ny = grens(b.y, NET_TOP, GROND);
+      const ddx = b.x - nx, ddy = b.y - ny, dn = Math.hypot(ddx, ddy);
+      if (dn < BAL_R) {
+        const ux = dn ? ddx / dn : (b.x < NET_X ? -1 : 1), uy = dn ? ddy / dn : 0;
+        b.x = nx + ux * BAL_R; b.y = ny + uy * BAL_R;
+        const vn = b.vx * ux + b.vy * uy;
+        if (vn < 0) { b.vx -= 1.7 * vn * ux; b.vy -= 1.7 * vn * uy; }
+      }
+      // Kop en lijf van de spelers
+      kopSpelers.forEach(s => {
+        for (const [cx, cy, r, isKop] of [[s.x, s.y - 78, KOP_R, true], [s.x, s.y - 36, LIJF_R, false]]) {
+          const dx = b.x - cx, dy = b.y - cy, d = Math.hypot(dx, dy);
+          if (d === 0 || d >= r + BAL_R) continue;
+          const ux = dx / d, uy = dy / d;
+          b.x = cx + ux * (r + BAL_R); b.y = cy + uy * (r + BAL_R);
+          const vn = (b.vx - s.vx) * ux + (b.vy - s.vy) * uy;
+          if (vn >= 0) continue;
+          const kracht = isKop ? 560 : 360;
+          b.vx = ux * kracht + s.vx * .35 + (isKop ? -s.kant * 95 : 0);    // koppen stuurt de bal richting het net
+          b.vy = uy * kracht + Math.min(0, s.vy) * .35;
+          if (isKop && uy > -.4) b.vy -= 240;
+          if (isKop) { laatsteKopper = s; trapGeluid({ pan: (s.x / KB) * 2 - 1, licht: true }); }
+        }
+      });
+      // Over het net?
+      const kant = b.x < NET_X ? -1 : 1;
+      if (kant !== balKant) {
+        balKant = kant;
+        if (laatsteKopper) { rally++; kopRallyEl.textContent = rally; }
+        if (rally > kopRecord) { kopRecord = rally; bewaar.schrijf('overkoppen-record', kopRecord); kopRecordEl.textContent = kopRecord; }
+      }
+      // Grond: punt voor de ander
+      if (b.y > GROND - BAL_R) {
+        const verliezer = b.x < NET_X ? 0 : 1, winnaar = 1 - verliezer;
+        kopSpelers[winnaar].score++;
+        kopScoreEl.textContent = `${kopSpelers[0].score} – ${kopSpelers[1].score}`;
+        if (kopSpelers[winnaar].score >= WINST) return kopEinde(winnaar);
+        fluit();
+        (kopModus === 'computer' && winnaar === 1) ? oohGeluid() : speel('applaus', { duur: 1.6, dichtheid: 30 });
+        kopReset(verliezer);
+      }
+    }
+
+    function kopEinde(winnaar) {
+      kopBezig = false;
+      const w = kopSpelers[winnaar];
+      const jijWint = kopModus !== 'computer' || winnaar === 0;
+      kopTitel.textContent = kopModus === 'computer' ? (winnaar === 0 ? 'Jij wint!' : 'De computer wint!') : `${w.naam} wint!`;
+      kopTekst.textContent = `Eindstand ${kopSpelers[0].score} – ${kopSpelers[1].score} · Nog een keer?`;
+      kopScherm.hidden = false;
+      if (jijWint) { juichGeluid(); const r = kopDoek.getBoundingClientRect(); confetti(kopDoek.parentElement, r.width / 2, r.height / 3, 120); }
+      else oohGeluid();
+    }
+
+    /* ---------- Tekenen ---------- */
+    function tekenBal(x, y, hoek) {
+      kd.save(); kd.translate(x, y); kd.rotate(hoek);
+      kd.fillStyle = '#fff'; kd.strokeStyle = '#111'; kd.lineWidth = 1.5;
+      kd.beginPath(); kd.arc(0, 0, BAL_R, 0, Math.PI * 2); kd.fill(); kd.stroke();
+      kd.fillStyle = '#111'; kd.beginPath();
+      for (let i = 0; i < 5; i++) { const a = -Math.PI / 2 + i * Math.PI * 2 / 5; kd.lineTo(Math.cos(a) * 5.5, Math.sin(a) * 5.5); }
+      kd.closePath(); kd.fill();
+      for (let i = 0; i < 5; i++) { const a = -Math.PI / 2 + i * Math.PI * 2 / 5; kd.beginPath(); kd.moveTo(Math.cos(a) * 5.5, Math.sin(a) * 5.5); kd.lineTo(Math.cos(a) * BAL_R, Math.sin(a) * BAL_R); kd.stroke(); }
+      kd.restore();
+    }
+    function tekenSpeler(s) {
+      const { x, y } = s, lucht = GROND - y;
+      // schaduw
+      kd.fillStyle = `rgba(0,0,0,${.35 - Math.min(lucht, 150) / 600})`;
+      kd.beginPath(); kd.ellipse(x, GROND + 4, 26 - lucht / 12, 6, 0, 0, Math.PI * 2); kd.fill();
+      // benen
+      const zwaai = Math.sin(s.loopFase * 6) * (Math.abs(s.vx) > 1 && lucht < 1 ? 10 : 0);
+      kd.strokeStyle = '#111'; kd.lineWidth = 9; kd.lineCap = 'round';
+      kd.beginPath(); kd.moveTo(x - 7, y - 20); kd.lineTo(x - 8 + zwaai, y - 3); kd.moveTo(x + 7, y - 20); kd.lineTo(x + 8 - zwaai, y - 3); kd.stroke();
+      kd.strokeStyle = '#fff'; kd.lineWidth = 10;
+      kd.beginPath(); kd.moveTo(x - 10 + zwaai, y - 1); kd.lineTo(x - 3 + zwaai, y - 1); kd.moveTo(x + 3 - zwaai, y - 1); kd.lineTo(x + 10 - zwaai, y - 1); kd.stroke();
+      // shirt
+      kd.fillStyle = s.kleur; kd.strokeStyle = s.rand; kd.lineWidth = 2;
+      kd.beginPath(); kd.roundRect(x - 19, y - 58, 38, 40, 10); kd.fill(); kd.stroke();
+      kd.fillStyle = 'rgba(0,0,0,.55)'; kd.font = 'bold 15px Inter, sans-serif'; kd.textAlign = 'center'; kd.textBaseline = 'middle';
+      kd.fillText(s.naam[0], x, y - 38);
+      // armen
+      const armOp = lucht > 5 ? -14 : 0;
+      kd.strokeStyle = s.kleur; kd.lineWidth = 8;
+      kd.beginPath(); kd.moveTo(x - 17, y - 52); kd.lineTo(x - 27, y - 34 + armOp); kd.moveTo(x + 17, y - 52); kd.lineTo(x + 27, y - 34 + armOp); kd.stroke();
+      // hoofd
+      const hy = y - 78;
+      kd.fillStyle = '#d9a77e'; kd.beginPath(); kd.arc(x, hy, KOP_R, 0, Math.PI * 2); kd.fill();
+      kd.fillStyle = '#23160d'; kd.beginPath(); kd.arc(x, hy - 4, KOP_R, Math.PI * 1.05, Math.PI * 1.95); kd.fill();
+      // ogen kijken naar de bal
+      const kijk = Math.atan2(kopBal.y - hy, kopBal.x - x);
+      for (const ox of [-8, 8]) {
+        kd.fillStyle = '#fff'; kd.beginPath(); kd.arc(x + ox, hy + 2, 5.5, 0, Math.PI * 2); kd.fill();
+        kd.fillStyle = '#111'; kd.beginPath(); kd.arc(x + ox + Math.cos(kijk) * 2.5, hy + 2 + Math.sin(kijk) * 2.5, 2.6, 0, Math.PI * 2); kd.fill();
+      }
+      kd.strokeStyle = '#7a4a2a'; kd.lineWidth = 2; kd.beginPath(); kd.arc(x, hy + 10, 6, .15 * Math.PI, .85 * Math.PI); kd.stroke();
+    }
+    function kopTeken() {
+      const schaal = kopDoek.width / KB;
+      kd.setTransform(schaal, 0, 0, schaal, 0, 0);
+      // lucht en lichten
+      const lucht = kd.createLinearGradient(0, 0, 0, GROND);
+      lucht.addColorStop(0, '#070b1c'); lucht.addColorStop(1, '#1b3566');
+      kd.fillStyle = lucht; kd.fillRect(0, 0, KB, KH);
+      for (const lx of [90, 710]) {
+        const g = kd.createRadialGradient(lx, 30, 5, lx, 30, 170);
+        g.addColorStop(0, 'rgba(255,255,230,.5)'); g.addColorStop(1, 'rgba(255,255,230,0)');
+        kd.fillStyle = g; kd.fillRect(0, 0, KB, 250);
+      }
+      // publiek
+      for (let rij = 0; rij < 5; rij++) for (let i = 0; i < 62; i++) {
+        const px = i * 13 + (rij % 2) * 6, py = 175 + rij * 16 + Math.sin(i * 1.7 + rij) * 2;
+        kd.fillStyle = ['#f5c542', '#35c6ff', '#fff', '#1db954', '#ff6fc8'][(i + rij * 3) % 5];
+        kd.globalAlpha = .28; kd.fillRect(px - 4, py, 9, 10);
+        kd.globalAlpha = .45; kd.fillStyle = (i + rij) % 3 ? '#d9a77e' : '#8a5a3b';
+        kd.beginPath(); kd.arc(px, py - 3, 4, 0, Math.PI * 2); kd.fill();
+      }
+      kd.globalAlpha = 1;
+      // gras
+      for (let i = 0; i < 10; i++) { kd.fillStyle = i % 2 ? '#1f8a41' : '#1c7a3a'; kd.fillRect(i * 80, 262, 80, KH); }
+      kd.fillStyle = 'rgba(255,255,255,.7)'; kd.fillRect(0, GROND, KB, 3);
+      // net
+      kd.fillStyle = '#ddd'; kd.fillRect(NET_X - NET_HALF, NET_TOP - 4, NET_HALF * 2, GROND - NET_TOP + 4);
+      kd.strokeStyle = 'rgba(255,255,255,.5)'; kd.lineWidth = 1;
+      for (let y = NET_TOP; y < GROND; y += 8) { kd.beginPath(); kd.moveTo(NET_X - 14, y); kd.lineTo(NET_X + 14, y); kd.stroke(); }
+      kd.fillStyle = '#fff'; kd.fillRect(NET_X - 16, NET_TOP - 6, 32, 5);
+      // spelers en bal
+      kopSpelers.forEach(tekenSpeler);
+      const lucht2 = GROND - kopBal.y;
+      kd.fillStyle = `rgba(0,0,0,${Math.max(.08, .3 - lucht2 / 1200)})`;
+      kd.beginPath(); kd.ellipse(kopBal.x, GROND + 4, Math.max(5, 14 - lucht2 / 30), 4, 0, 0, Math.PI * 2); kd.fill();
+      tekenBal(kopBal.x, kopBal.y, kopBal.hoek);
+      if (kopBezig && kopWacht > 0) {
+        kd.fillStyle = 'rgba(255,255,255,.9)'; kd.font = '32px "Bebas Neue", sans-serif'; kd.textAlign = 'center';
+        kd.fillText('Klaar…', KB / 2, 110);
+      }
+    }
+    function kopMaat() {
+      const w = kopDoek.clientWidth * Math.min(devicePixelRatio || 1, 2);
+      if (w && kopDoek.width !== Math.round(w)) { kopDoek.width = Math.round(w); kopDoek.height = Math.round(w * KH / KB); }
+      kopTeken();
+    }
+    function kopFrame(nu) {
+      let dt = Math.min((nu - kopVorige) / 1000, .05);
+      kopVorige = nu;
+      if (kopBezig) { const stappen = Math.ceil(dt / (1 / 240)); for (let i = 0; i < stappen; i++) kopStap(dt / stappen); }
+      kopTeken();
+      if (kopBezig && kopInBeeld) requestAnimationFrame(kopFrame); else kopLoop = false;
+    }
+    function kopStart() { if (!kopLoop && kopInBeeld) { kopLoop = true; kopVorige = performance.now(); requestAnimationFrame(kopFrame); } }
+    new IntersectionObserver(([item]) => { kopInBeeld = item.isIntersecting; if (kopInBeeld) { kopMaat(); kopStart(); } else ingedrukt.clear(); })
+      .observe(kopDoek);
+    addEventListener('resize', kopMaat);
+    kopReset(0); kopWacht = 0;
+    kopMaat();
 
     document.getElementById('jaar').textContent = new Date().getFullYear();
   </script>
