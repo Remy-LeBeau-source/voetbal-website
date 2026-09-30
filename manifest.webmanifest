@@ -1,0 +1,19 @@
+{
+  "name": "Sill-vyan & Naoufal — Voetbal",
+  "short_name": "S&N Voetbal",
+  "description": "Twee vrienden, één passie: voetbal. Penalty's, hooghouden en overkoppen.",
+  "lang": "nl",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "categories": ["games", "sports"],
+  "icons": [
+    { "src": "icons/icoon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icoon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icoon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icoon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

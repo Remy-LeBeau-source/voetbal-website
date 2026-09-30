@@ -5,6 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Sill-vyan &amp; Naoufal — Voetbal</title>
   <meta name="description" content="Twee vrienden, één passie: voetbal. De website van Sill-vyan en Naoufal.">
+  <!-- App (PWA): installeerbaar op telefoon en computer -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#000000">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="S&amp;N Voetbal">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
@@ -91,6 +100,8 @@
     @keyframes dobber { 50% { translate: 0 -18px; } }
     @keyframes rol { to { rotate: 360deg; } }
 
+    .ios-tip { margin: 16px 0 0 !important; font-size: .95rem !important; color: var(--grijs) !important; max-width: 46ch; }
+    .knop[hidden] { display: none; }
     /* ---------- Lichtkrant ---------- */
     .lichtkrant { background: var(--goud); color: #000; overflow: hidden; padding: 12px 0; transform: rotate(-1.5deg) scale(1.03); margin: 10px 0; }
     .lichtkrant-rij { display: flex; width: max-content; animation: loop 28s linear infinite; }
@@ -440,7 +451,9 @@
         <div class="knoppen" style="--d:1s">
           <a class="knop vol magneet" href="#wij">Leer ons kennen</a>
           <a class="knop leeg magneet" href="#spel">Neem een penalty</a>
+          <button class="knop leeg magneet" id="installeer" hidden>📲 Installeer de app</button>
         </div>
+        <p class="ios-tip" id="iosTip" hidden>📲 <b>App op je iPhone of iPad?</b> Tik onderin op <b>Deel</b> <span aria-hidden="true">⎋</span> en kies <b>Zet op beginscherm</b>.</p>
       </div>
       <div class="scroll-hint" aria-hidden="true"></div>
     </section>
@@ -1708,6 +1721,30 @@
     addEventListener('resize', kopMaat);
     kopReset(0); kopWacht = 0;
     kopMaat();
+
+    /* ================= App (PWA) ================= */
+    if ('serviceWorker' in navigator && location.protocol !== 'file:')
+      addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+    const alsApp = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+    const installeerKnop = $('#installeer');
+    let installatieVraag = null;
+    // Chrome, Edge, Android: de browser geeft ons een installatievraag die we via onze knop tonen
+    addEventListener('beforeinstallprompt', e => {
+      e.preventDefault();
+      installatieVraag = e;
+      if (!alsApp) installeerKnop.hidden = false;
+    });
+    installeerKnop.addEventListener('click', async () => {
+      if (!installatieVraag) return;
+      installatieVraag.prompt();
+      await installatieVraag.userChoice;
+      installatieVraag = null;
+      installeerKnop.hidden = true;
+    });
+    addEventListener('appinstalled', () => installeerKnop.hidden = true);
+    // iPhone/iPad hebben geen installatievraag: daar tonen we uitleg
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    if (isIOS && !alsApp) $('#iosTip').hidden = false;
 
     document.getElementById('jaar').textContent = new Date().getFullYear();
   </script>
