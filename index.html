@@ -431,6 +431,10 @@
     @media (max-width: 760px) { .om-knop { width: 100%; justify-content: center; padding: 20px; font-size: 1.4rem; } }
 
     /* ---------- Minigame: jij bent de keeper ---------- */
+    .niveau-keuze { display: inline-flex; background: #000; border: 1px solid var(--rand); border-radius: 999px; padding: 4px; }
+    .niveau-keuze button { border: 0; background: none; color: var(--grijs); padding: 8px 16px; border-radius: 999px; cursor: pointer; font-weight: 700; }
+    .niveau-keuze button[aria-pressed="true"] { background: var(--goud); color: #000; }
+    @media (max-width: 760px) { .niveau-keuze button { padding: 6px 11px; font-size: .85rem; } }
     #rdDoek { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; touch-action: none; cursor: none; }
 
     /* ---------- Minigame: één tegen één ---------- */
@@ -872,12 +876,17 @@
             <div class="kop-scherm" id="rdScherm">
               <h3 class="kop" id="rdTitel">Jij bent de keeper</h3>
               <p id="rdTekst">Hoeveel ballen houd jij tegen? Je hebt 3 levens.</p>
+              <div class="niveau-keuze" id="rdNiveaus" role="group" aria-label="Moeilijkheid">
+                <button data-rd-niveau="makkelijk" aria-pressed="false">Makkelijk</button>
+                <button data-rd-niveau="normaal" aria-pressed="true">Normaal</button>
+                <button data-rd-niveau="moeilijk" aria-pressed="false">Moeilijk</button>
+              </div>
               <div class="kop-modi"><button class="knop vol" id="rdStartKnop">Start</button></div>
               <p class="kop-uitleg">Beweeg met je <b>muis</b> of je <b>vinger</b>, of gebruik de <b>pijltjestoetsen</b>.</p>
             </div>
           </div>
           <div class="kop-bediening">
-            <p class="spel-info">Reddingen: <b id="rdPunten">0</b> · Levens: <b id="rdLevens">❤❤❤</b> · Record: <b id="rdRecord">0</b></p>
+            <p class="spel-info">Niveau: <b id="rdNiveauNaam">Normaal</b> · Reddingen: <b id="rdPunten">0</b> · Levens: <b id="rdLevens">❤❤❤</b> · Record: <b id="rdRecord">0</b></p>
           </div>
         </div>
       </div>
@@ -2542,16 +2551,36 @@
     const HAND_R = 58;
     const rdScherm = $('#rdScherm'), rdTitel = $('#rdTitel'), rdTekst = $('#rdTekst');
     const rdPuntenEl = $('#rdPunten'), rdLevensEl = $('#rdLevens'), rdRecordEl = $('#rdRecord');
-    let rdRecord = bewaar.lees('keeper-record', 0);
-    rdRecordEl.textContent = rdRecord;
+    // Per niveau: hoe snel de bal is, hoeveel effect hij krijgt, hoe groot je handschoenen "pakken" en hoeveel levens je hebt
+    const RD_NIVEAUS = {
+      makkelijk: { naam: 'Makkelijk', start: 1.5, min: .8, sneller: .022, effectVanaf: 8, effect: .5, marge: 30, levens: 5, sleutel: 'keeper-record-makkelijk' },
+      normaal:   { naam: 'Normaal',   start: 1.15, min: .5, sneller: .035, effectVanaf: 3, effect: 1, marge: 14, levens: 3, sleutel: 'keeper-record' },
+      moeilijk:  { naam: 'Moeilijk',  start: .92, min: .38, sneller: .04, effectVanaf: 0, effect: 1.5, marge: 2, levens: 3, sleutel: 'keeper-record-moeilijk' },
+    };
+    let rdNiveau = bewaar.lees('keeper-niveau', 'normaal');
+    if (!RD_NIVEAUS[rdNiveau]) rdNiveau = 'normaal';
+    let rdRecord = 0;
+    function rdZetNiveau(naam) {
+      rdNiveau = naam;
+      bewaar.schrijf('keeper-niveau', naam);
+      document.querySelectorAll('#rdNiveaus button').forEach(b => b.setAttribute('aria-pressed', b.dataset.rdNiveau === naam));
+      $('#rdNiveauNaam').textContent = RD_NIVEAUS[naam].naam;
+      rdRecord = bewaar.lees(RD_NIVEAUS[naam].sleutel, 0);
+      rdRecordEl.textContent = rdRecord;
+      rdLevensEl.textContent = '❤'.repeat(RD_NIVEAUS[naam].levens);
+      rdTekst.textContent = 'Hoeveel ballen houd jij tegen? Je hebt ' + RD_NIVEAUS[naam].levens + ' levens.';
+    }
+    document.querySelectorAll('#rdNiveaus button').forEach(b => b.addEventListener('click', () => rdZetNiveau(b.dataset.rdNiveau)));
+    rdZetNiveau(rdNiveau);
     let rd = null, rdLoop = false, rdInBeeld = false, rdVorige = 0;
     const hand = { x: RB / 2, y: 300, doelX: RB / 2, doelY: 300 };
     const rdToetsen = new Set();
 
     function rdStart() {
-      rd = { bezig: true, punten: 0, levens: 3, fase: 'wacht', t: 0, schot: null, tekst: null, flits: 0, spitsTrap: 0 };
+      const niv = RD_NIVEAUS[rdNiveau];
+      rd = { bezig: true, punten: 0, levens: niv.levens, maxLevens: niv.levens, niv, fase: 'wacht', t: 0, schot: null, tekst: null, flits: 0, spitsTrap: 0 };
       rdScherm.hidden = true;
-      rdPuntenEl.textContent = 0; rdLevensEl.textContent = '❤❤❤';
+      rdPuntenEl.textContent = 0; rdLevensEl.textContent = '❤'.repeat(niv.levens);
       fluit();
       rdStartLoop();
     }
@@ -2559,9 +2588,10 @@
 
     function rdNieuwSchot() {
       const n = rd.punten;
-      const duur = Math.max(.5, 1.15 - n * .035);                 // steeds sneller
+      const niv = rd.niv;
+      const duur = Math.max(niv.min, niv.start - n * niv.sneller);   // steeds sneller
       const doel = { x: willekeurig(VAK.x1 + 50, VAK.x2 - 50), y: willekeurig(VAK.y1 + 45, VAK.y2 - 40) };
-      const effect = n >= 3 ? willekeurig(-1, 1) * Math.min(150, 40 + n * 10) : 0;   // later krijgt de bal effect
+      const effect = n >= niv.effectVanaf ? willekeurig(-1, 1) * Math.min(150, 40 + n * 10) * niv.effect : 0;   // de bal krijgt effect
       rd.schot = { doel, duur, effect, t: 0, klaar: false };
       rd.fase = 'schot'; rd.t = 0; rd.spitsTrap = 1;
       trapGeluid({ pan: 0 });
@@ -2599,14 +2629,14 @@
         s.t += dt;
         if (s.t >= s.duur) {
           const afstand = Math.hypot(hand.x - s.doel.x, hand.y - s.doel.y);
-          if (afstand < HAND_R + 14) {
+          if (afstand < HAND_R + rd.niv.marge) {
             rd.punten++; rdPuntenEl.textContent = rd.punten;
             s.gered = true;
             rdTekstToon(afstand < 22 ? 'KLEMVAST!' : 'GERED!', '#1db954');
             speel('handschoen'); speel('applaus', { duur: 1.4, dichtheid: 28 });
-            if (rd.punten > rdRecord) { rdRecord = rd.punten; bewaar.schrijf('keeper-record', rdRecord); rdRecordEl.textContent = rdRecord; }
+            if (rd.punten > rdRecord) { rdRecord = rd.punten; bewaar.schrijf(rd.niv.sleutel, rdRecord); rdRecordEl.textContent = rdRecord; }
           } else {
-            rd.levens--; rdLevensEl.textContent = '❤'.repeat(rd.levens) + '🖤'.repeat(3 - rd.levens);
+            rd.levens--; rdLevensEl.textContent = '❤'.repeat(rd.levens) + '🖤'.repeat(rd.maxLevens - rd.levens);
             rd.flits = 1;
             rdTekstToon('GOAL TEGEN…', '#ff5a5a');
             speel('net'); oohGeluid();
