@@ -433,6 +433,13 @@
     /* ---------- Minigame: jij bent de keeper ---------- */
     #rdDoek { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; touch-action: none; cursor: none; }
 
+    /* ---------- Minigame: één tegen één ---------- */
+    #eeDoek { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; touch-action: none; }
+    .ee-schiet { touch-action: none; user-select: none; -webkit-user-select: none; padding: 16px 26px; font-size: 1.1rem; }
+    .ee-schiet[data-speler="1"] { background: #35c6ff; border-color: #35c6ff; }
+    .ee-schiet.in { transform: scale(.94); filter: brightness(.85); }
+    .ee-schiet[hidden] { display: none; }
+
     /* ---------- Foto ---------- */
     .foto-groot { border-radius: 26px; overflow: hidden; border: 1px solid var(--rand); margin: 0; }
     .foto-groot img { width: 100%; height: auto; transition: transform 1.2s; }
@@ -519,6 +526,7 @@
         <li><a href="#koppen">Overkoppen</a></li>
         <li><a href="#omhaal">Omhaal</a></li>
         <li><a href="#redden">Keeper</a></li>
+        <li><a href="#eentegeneen">1 tegen 1</a></li>
         <li><a href="#foto">Foto</a></li>
       </ul>
     </nav>
@@ -870,6 +878,41 @@
           </div>
           <div class="kop-bediening">
             <p class="spel-info">Reddingen: <b id="rdPunten">0</b> · Levens: <b id="rdLevens">❤❤❤</b> · Record: <b id="rdRecord">0</b></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Minigame: één tegen één -->
+    <section id="eentegeneen">
+      <div class="wrap">
+        <div class="sectie-kop verschijn">
+          <p class="label">Minigame</p>
+          <h2 class="kop">Eén tegen één</h2>
+          <p>Een wedstrijdje op een klein veld: jij tegen de computer, of Sill-vyan tegen Naoufal. Loop tegen de bal om te dribbelen en schiet hem in het doel van de ander. Wie het eerst 5 goals heeft, wint!</p>
+        </div>
+        <div class="kop-spel verschijn">
+          <div class="kop-score" aria-live="polite">
+            <span class="kop-naam" style="color:#f5c542">Sill-vyan</span>
+            <b id="eeScore">0 – 0</b>
+            <span class="kop-naam" style="color:#35c6ff" id="eeNaamRechts">Naoufal</span>
+          </div>
+          <div class="kop-doek-houder">
+            <canvas id="eeDoek" width="800" height="450" aria-label="Eén tegen één: voetbalveld van bovenaf met twee spelers"></canvas>
+            <div class="kop-scherm" id="eeScherm">
+              <h3 class="kop" id="eeTitel">Eén tegen één</h3>
+              <p id="eeTekst">Kies hoe je wilt spelen</p>
+              <div class="kop-modi">
+                <button class="knop vol" data-modus="computer">Tegen de computer</button>
+                <button class="knop leeg" data-modus="samen">Met z'n tweeën</button>
+              </div>
+              <p class="kop-uitleg"><b>Sill-vyan:</b> W A S D lopen · spatie schieten &nbsp;·&nbsp; <b>Naoufal:</b> pijltjes lopen · Enter schieten</p>
+            </div>
+          </div>
+          <div class="kop-bediening">
+            <button class="knop vol ee-schiet" data-speler="0">⚽ Schiet</button>
+            <p class="spel-info">Sleep op het veld om te lopen</p>
+            <button class="knop vol ee-schiet" data-speler="1" hidden>Schiet ⚽</button>
           </div>
         </div>
       </div>
@@ -2709,6 +2752,272 @@
     new IntersectionObserver(([item]) => { rdInBeeld = item.isIntersecting; if (rdInBeeld) { rdMaat(); rdStartLoop(); } else rdToetsen.clear(); }).observe(rdDoek);
     addEventListener('resize', rdMaat);
     rdMaat();
+
+    /* ================= Minigame: één tegen één ================= */
+    const eeDoek = $('#eeDoek'), ec = eeDoek.getContext('2d');
+    const EB = 800, EH = 450, VELD = { x1: 46, x2: 754, y1: 22, y2: 428 }, MOND = { y1: 165, y2: 285 }, DOEL_DIEP = 34;
+    const SP_R = 18, B_R = 10, SNEL = 245, EE_WINST = 5, MID = { x: EB / 2, y: EH / 2 };
+    const eeScherm = $('#eeScherm'), eeTitel = $('#eeTitel'), eeTekst = $('#eeTekst'), eeScoreEl = $('#eeScore');
+    const eeSpelers = [
+      { naam: 'Sill-vyan', kleur: '#f5c542', rand: '#9a7412', startX: 230, doelX: VELD.x2, eigenX: VELD.x1 },   // valt aan naar rechts
+      { naam: 'Naoufal', kleur: '#35c6ff', rand: '#0b6f94', startX: 570, doelX: VELD.x1, eigenX: VELD.x2 },     // valt aan naar links
+    ];
+    const eeBal = { x: MID.x, y: MID.y, vx: 0, vy: 0, hoek: 0 };
+    let eeModus = null, eeBezig = false, eeWacht = 0, eeLoop = false, eeInBeeld = false, eeVorige = 0, eeMelding = null;
+    const eeToetsen = new Set(), eeDoelen = [null, null], eeWijzers = new Map(), eeSchietKnop = [false, false];
+
+    function eeAftrap() {
+      eeSpelers.forEach(s => Object.assign(s, { x: s.startX, y: MID.y, vx: 0, vy: 0, kijk: s.doelX > MID.x ? 0 : Math.PI, wachtSchot: 0, schietAnim: 0 }));
+      Object.assign(eeBal, { x: MID.x, y: MID.y, vx: 0, vy: 0 });
+      eeDoelen[0] = eeDoelen[1] = null;
+      eeWacht = 1;
+    }
+    function eeNieuw(modus) {
+      eeModus = modus;
+      eeSpelers.forEach(s => s.score = 0);
+      eeSpelers[1].ai = modus === 'computer';
+      eeSpelers[0].toetsen = modus === 'computer'
+        ? { op: ['KeyW', 'ArrowUp'], neer: ['KeyS', 'ArrowDown'], links: ['KeyA', 'ArrowLeft'], rechts: ['KeyD', 'ArrowRight'], schiet: ['Space', 'Enter'] }
+        : { op: ['KeyW'], neer: ['KeyS'], links: ['KeyA'], rechts: ['KeyD'], schiet: ['Space'] };
+      eeSpelers[1].toetsen = { op: ['ArrowUp'], neer: ['ArrowDown'], links: ['ArrowLeft'], rechts: ['ArrowRight'], schiet: ['Enter'] };
+      $('#eeNaamRechts').textContent = modus === 'computer' ? 'Naoufal (computer)' : 'Naoufal';
+      document.querySelector('.ee-schiet[data-speler="1"]').hidden = modus === 'computer';
+      eeScoreEl.textContent = '0 – 0';
+      eeScherm.hidden = true;
+      eeBezig = true; eeMelding = null;
+      eeAftrap();
+      fluit();
+      eeStartLoop();
+    }
+    document.querySelectorAll('#eeScherm [data-modus]').forEach(b => b.addEventListener('click', () => eeNieuw(b.dataset.modus)));
+
+    // Invoer: toetsenbord, slepen met vinger of muis, en schietknoppen
+    const EE_CODES = ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'Space', 'Enter', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
+    addEventListener('keydown', e => {
+      if (!eeBezig || !eeInBeeld || !EE_CODES.includes(e.code)) return;
+      if ((e.code === 'Space' || e.code === 'Enter') && document.activeElement?.closest('button, a, input')) return;
+      e.preventDefault(); eeToetsen.add(e.code);
+    });
+    addEventListener('keyup', e => eeToetsen.delete(e.code));
+    addEventListener('blur', () => eeToetsen.clear());
+    const eePunt = e => { const r = eeDoek.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width * EB, y: (e.clientY - r.top) / r.height * EH }; };
+    eeDoek.addEventListener('pointerdown', e => {
+      if (!eeBezig) return;
+      e.preventDefault(); eeDoek.setPointerCapture(e.pointerId);
+      const p = eePunt(e), nr = eeModus === 'samen' && p.x > MID.x ? 1 : 0;      // samen: ieder zijn eigen helft
+      eeWijzers.set(e.pointerId, nr); eeDoelen[nr] = p;
+    });
+    eeDoek.addEventListener('pointermove', e => { if (eeWijzers.has(e.pointerId)) eeDoelen[eeWijzers.get(e.pointerId)] = eePunt(e); });
+    const eeLos = e => { if (eeWijzers.has(e.pointerId)) { eeDoelen[eeWijzers.get(e.pointerId)] = null; eeWijzers.delete(e.pointerId); } };
+    eeDoek.addEventListener('pointerup', eeLos); eeDoek.addEventListener('pointercancel', eeLos);
+    document.querySelectorAll('.ee-schiet').forEach(k => {
+      const nr = +k.dataset.speler;
+      k.addEventListener('pointerdown', e => { e.preventDefault(); eeSchietKnop[nr] = true; k.classList.add('in'); });
+      ['pointerup', 'pointercancel', 'pointerleave'].forEach(t => k.addEventListener(t, () => { eeSchietKnop[nr] = false; k.classList.remove('in'); }));
+    });
+    const eeIn = (s, actie) => s.toetsen[actie].some(c => eeToetsen.has(c));
+
+    // Computer: loopt achter de bal langs, duwt hem naar het doel en schiet als hij goed staat
+    function eeComputer(s, tegen) {
+      const b = eeBal;
+      const rx = s.doelX - b.x, ry = MID.y - b.y, L = Math.hypot(rx, ry) || 1;
+      let dx = rx / L, dy = ry / L;                                            // richting van de bal naar het doel
+      // Staat de tegenstander in de weg? Dan schuin om hem heen dribbelen (anders zit de bal klem tussen twee spelers)
+      const tx = tegen.x - b.x, ty = tegen.y - b.y, langs = tx * dx + ty * dy, dwars = -tx * dy + ty * dx;
+      const geblokt = langs > -6 && langs < 95 && Math.abs(dwars) < 36;
+      if (geblokt) {
+        const draai = (Math.abs(dwars) > 2 ? (dwars > 0 ? -1 : 1) : Math.sign(dx || 1) * (b.y < MID.y ? 1 : -1)) * .8;
+        const c = Math.cos(draai), si = Math.sin(draai);
+        [dx, dy] = [dx * c - dy * si, dx * si + dy * c];
+      }
+      const achter = { x: b.x - dx * 30, y: b.y - dy * 30 };                   // plek achter de bal, in de duwrichting
+      const voorbij = (s.x - b.x) * dx + (s.y - b.y) * dy;                     // > 0: hij staat aan de verkeerde kant van de bal
+      const goedeKant = voorbij < 6;
+      const dBal = Math.hypot(b.x - s.x, b.y - s.y), dTegen = Math.hypot(tx, ty);
+      let doel;
+      const balBijEigenDoel = Math.abs(b.x - s.eigenX) < 250;
+      if (balBijEigenDoel && dTegen < dBal - 30 && !goedeKant) doel = { x: (b.x + s.eigenX) / 2, y: (b.y + MID.y) / 2 };   // verdedigen: tussen bal en doel
+      else if (!goedeKant) {                                                   // om de bal heen lopen, aan zijn eigen kant
+        const zij = ((s.x - b.x) * -dy + (s.y - b.y) * dx) >= 0 ? 1 : -1;
+        doel = { x: b.x - dx * 22 - dy * zij * 44, y: b.y - dy * 22 + dx * zij * 44 };
+      } else doel = Math.hypot(achter.x - s.x, achter.y - s.y) > 16 ? achter : { x: b.x + dx * 10, y: b.y + dy * 10 };
+      const inLijn = ((b.x - s.x) * dx + (b.y - s.y) * dy) / (dBal || 1) > .9;
+      // Alleen schieten als hij dichtbij genoeg is en goed achter de bal staat; anders dribbelt hij verder
+      const dichtbij = L < 330;
+      return { doel, schiet: goedeKant && inLijn && !geblokt && dichtbij && dBal < SP_R + B_R + 12, richting: [dx, dy] };
+    }
+
+    function eeStap(dt) {
+      if (!eeBezig) return;
+      if (eeMelding) eeMelding.t += dt;
+      const b = eeBal;
+      if (eeWacht > 0) { eeWacht -= dt; return; }
+      // Spelers
+      eeSpelers.forEach((s, nr) => {
+        let rx = 0, ry = 0, schiet = false, mik = null;
+        if (s.ai) {
+          const c = eeComputer(s, eeSpelers[0]);
+          rx = c.doel.x - s.x; ry = c.doel.y - s.y; schiet = c.schiet; mik = c.richting;
+        } else {
+          rx = (eeIn(s, 'rechts') ? 1 : 0) - (eeIn(s, 'links') ? 1 : 0); ry = (eeIn(s, 'neer') ? 1 : 0) - (eeIn(s, 'op') ? 1 : 0);
+          const d = eeDoelen[nr];
+          if (!rx && !ry && d) { rx = d.x - s.x; ry = d.y - s.y; if (Math.hypot(rx, ry) < 8) rx = ry = 0; }
+          schiet = eeIn(s, 'schiet') || eeSchietKnop[nr];
+        }
+        const L = Math.hypot(rx, ry), snel = SNEL * (s.ai ? .76 : 1);
+        const wx = L ? rx / L * snel : 0, wy = L ? ry / L * snel : 0;
+        s.vx += (wx - s.vx) * Math.min(1, dt * 11); s.vy += (wy - s.vy) * Math.min(1, dt * 11);
+        s.x = grens(s.x + s.vx * dt, VELD.x1 + SP_R, VELD.x2 - SP_R);
+        s.y = grens(s.y + s.vy * dt, VELD.y1 + SP_R, VELD.y2 - SP_R);
+        if (L) s.kijk = Math.atan2(s.vy, s.vx);
+        s.wachtSchot = Math.max(0, s.wachtSchot - dt); s.schietAnim = Math.max(0, s.schietAnim - dt * 4);
+        // Bal raken: dribbelen, of schieten als de schietknop is ingedrukt
+        const dx = b.x - s.x, dy = b.y - s.y, d = Math.hypot(dx, dy) || 1, ux = dx / d, uy = dy / d;
+        if (schiet && s.wachtSchot <= 0 && d < SP_R + B_R + 14) {
+          const [kx, ky] = mik || [ux, uy];                 // de computer mikt op het doel, jij schiet in je looprichting
+          b.vx = kx * 640 + s.vx * .3; b.vy = ky * 640 + s.vy * .3;
+          s.wachtSchot = .35; s.schietAnim = 1;
+          trapGeluid({ pan: (s.x / EB) * 2 - 1 });
+        } else if (d < SP_R + B_R) {
+          b.x = s.x + ux * (SP_R + B_R); b.y = s.y + uy * (SP_R + B_R);
+          const vn = (b.vx - s.vx) * ux + (b.vy - s.vy) * uy;
+          if (vn < 0) { b.vx -= 1.35 * vn * ux; b.vy -= 1.35 * vn * uy; }
+        }
+      });
+      // Spelers botsen tegen elkaar
+      const [p, q] = eeSpelers, sx = q.x - p.x, sy = q.y - p.y, sd = Math.hypot(sx, sy) || 1;
+      if (sd < SP_R * 2) { const o = (SP_R * 2 - sd) / 2, ux = sx / sd, uy = sy / sd; p.x -= ux * o; p.y -= uy * o; q.x += ux * o; q.y += uy * o; }
+
+      // Bal: wrijving, randen, palen en doelen
+      const rem = Math.pow(.42, dt);
+      b.vx *= rem; b.vy *= rem;
+      b.x += b.vx * dt; b.y += b.vy * dt;
+      b.hoek += Math.hypot(b.vx, b.vy) * dt / B_R * Math.sign(b.vx || 1);
+      if (b.y < VELD.y1 + B_R) { b.y = VELD.y1 + B_R; b.vy = Math.abs(b.vy) * .8; }
+      if (b.y > VELD.y2 - B_R) { b.y = VELD.y2 - B_R; b.vy = -Math.abs(b.vy) * .8; }
+      for (const px of [VELD.x1, VELD.x2]) for (const py of [MOND.y1, MOND.y2]) {       // de vier palen
+        const dx = b.x - px, dy = b.y - py, d = Math.hypot(dx, dy);
+        if (d && d < B_R + 5) {
+          const ux = dx / d, uy = dy / d, vn = b.vx * ux + b.vy * uy;
+          b.x = px + ux * (B_R + 5); b.y = py + uy * (B_R + 5);
+          if (vn < 0) { b.vx -= 1.8 * vn * ux; b.vy -= 1.8 * vn * uy; if (vn < -120) paalGeluid(); }
+        }
+      }
+      const inMond = b.y > MOND.y1 && b.y < MOND.y2;
+      if (!inMond) {
+        if (b.x < VELD.x1 + B_R) { b.x = VELD.x1 + B_R; b.vx = Math.abs(b.vx) * .8; }
+        if (b.x > VELD.x2 - B_R) { b.x = VELD.x2 - B_R; b.vx = -Math.abs(b.vx) * .8; }
+      } else if (b.x < VELD.x1 - B_R || b.x > VELD.x2 + B_R) {
+        return eeGoal(b.x > MID.x ? 0 : 1);
+      }
+    }
+
+    function eeGoal(nr) {
+      const s = eeSpelers[nr];
+      s.score++;
+      eeScoreEl.textContent = `${eeSpelers[0].score} – ${eeSpelers[1].score}`;
+      speel('net');
+      const r = eeDoek.getBoundingClientRect();
+      confetti(eeDoek.parentElement, (nr === 0 ? VELD.x2 : VELD.x1) / EB * r.width, r.height / 2, 60);
+      if (s.score >= EE_WINST) {
+        eeBezig = false;
+        const jijWint = eeModus !== 'computer' || nr === 0;
+        eeTitel.textContent = eeModus === 'computer' ? (nr === 0 ? 'Jij wint!' : 'De computer wint!') : `${s.naam} wint!`;
+        eeTekst.textContent = `Eindstand ${eeSpelers[0].score} – ${eeSpelers[1].score} · Nog een keer?`;
+        eeScherm.hidden = false;
+        jijWint ? juichGeluid() : oohGeluid();
+        return;
+      }
+      (eeModus === 'computer' && nr === 1) ? oohGeluid() : juichGeluid();
+      eeMelding = { tekst: 'GOAL!', kleur: s.kleur, t: 0 };
+      eeAftrap(); eeWacht = 1.5;
+    }
+
+    /* ---------- Tekenen ---------- */
+    function eeTeken() {
+      const schaal = eeDoek.width / EB;
+      ec.setTransform(schaal, 0, 0, schaal, 0, 0);
+      ec.fillStyle = '#0c3d1c'; ec.fillRect(0, 0, EB, EH);
+      // veld met maaistroken
+      for (let i = 0; i < 12; i++) { ec.fillStyle = i % 2 ? '#1f8a41' : '#1c7a3a'; ec.fillRect(VELD.x1 + i * (VELD.x2 - VELD.x1) / 12, VELD.y1, (VELD.x2 - VELD.x1) / 12 + 1, VELD.y2 - VELD.y1); }
+      ec.strokeStyle = 'rgba(255,255,255,.8)'; ec.lineWidth = 2.5;
+      ec.strokeRect(VELD.x1, VELD.y1, VELD.x2 - VELD.x1, VELD.y2 - VELD.y1);
+      ec.beginPath(); ec.moveTo(MID.x, VELD.y1); ec.lineTo(MID.x, VELD.y2); ec.stroke();
+      ec.beginPath(); ec.arc(MID.x, MID.y, 62, 0, Math.PI * 2); ec.stroke();
+      ec.fillStyle = '#fff'; ec.beginPath(); ec.arc(MID.x, MID.y, 4, 0, Math.PI * 2); ec.fill();
+      for (const [x, r] of [[VELD.x1, 1], [VELD.x2, -1]]) {
+        ec.strokeRect(r > 0 ? x : x - 110, 115, 110, 220);                               // strafschopgebied
+        ec.strokeRect(r > 0 ? x : x - 44, MOND.y1 - 22, 44, MOND.y2 - MOND.y1 + 44);     // doelgebied
+        // doel met net
+        const gx = r > 0 ? x - DOEL_DIEP : x;
+        ec.fillStyle = 'rgba(255,255,255,.12)'; ec.fillRect(gx, MOND.y1, DOEL_DIEP, MOND.y2 - MOND.y1);
+        ec.strokeStyle = 'rgba(255,255,255,.35)'; ec.lineWidth = 1;
+        for (let i = 6; i < DOEL_DIEP; i += 7) { ec.beginPath(); ec.moveTo(gx + i, MOND.y1); ec.lineTo(gx + i, MOND.y2); ec.stroke(); }
+        for (let y = MOND.y1 + 8; y < MOND.y2; y += 8) { ec.beginPath(); ec.moveTo(gx, y); ec.lineTo(gx + DOEL_DIEP, y); ec.stroke(); }
+        ec.strokeStyle = '#fff'; ec.lineWidth = 4; ec.strokeRect(gx, MOND.y1, DOEL_DIEP, MOND.y2 - MOND.y1);
+        ec.fillStyle = '#fff'; for (const py of [MOND.y1, MOND.y2]) { ec.beginPath(); ec.arc(x, py, 5, 0, Math.PI * 2); ec.fill(); }
+        ec.strokeStyle = 'rgba(255,255,255,.8)'; ec.lineWidth = 2.5;
+      }
+      // sleepdoel (vinger/muis)
+      eeDoelen.forEach((d, nr) => { if (d && eeBezig) { ec.strokeStyle = eeSpelers[nr].kleur; ec.globalAlpha = .6; ec.lineWidth = 2; ec.beginPath(); ec.arc(d.x, d.y, 14, 0, Math.PI * 2); ec.stroke(); ec.globalAlpha = 1; } });
+      // bal
+      const b = eeBal;
+      ec.fillStyle = 'rgba(0,0,0,.3)'; ec.beginPath(); ec.ellipse(b.x + 3, b.y + 5, B_R, B_R * .7, 0, 0, Math.PI * 2); ec.fill();
+      ec.save(); ec.translate(b.x, b.y); ec.rotate(b.hoek);
+      ec.fillStyle = '#fff'; ec.strokeStyle = '#111'; ec.lineWidth = 1.3;
+      ec.beginPath(); ec.arc(0, 0, B_R, 0, Math.PI * 2); ec.fill(); ec.stroke();
+      ec.fillStyle = '#111'; ec.beginPath();
+      for (let i = 0; i < 5; i++) { const a = -Math.PI / 2 + i * Math.PI * 2 / 5; ec.lineTo(Math.cos(a) * 4, Math.sin(a) * 4); }
+      ec.closePath(); ec.fill(); ec.restore();
+      // spelers (van bovenaf): schaduw, voeten, lijf en hoofd
+      for (const s of eeSpelers) {
+        if (s.x === undefined) continue;
+        ec.fillStyle = 'rgba(0,0,0,.3)'; ec.beginPath(); ec.ellipse(s.x + 3, s.y + 6, SP_R, SP_R * .8, 0, 0, Math.PI * 2); ec.fill();
+        ec.save(); ec.translate(s.x, s.y); ec.rotate(s.kijk);
+        const loop = Math.sin(performance.now() / 60) * Math.min(1, Math.hypot(s.vx, s.vy) / 120) * 6;
+        ec.fillStyle = '#111';
+        ec.beginPath(); ec.ellipse(6 + loop + s.schietAnim * 10, -8, 7, 4.5, 0, 0, Math.PI * 2); ec.fill();
+        ec.beginPath(); ec.ellipse(6 - loop, 8, 7, 4.5, 0, 0, Math.PI * 2); ec.fill();
+        ec.fillStyle = s.kleur; ec.strokeStyle = s.rand; ec.lineWidth = 2.5;
+        ec.beginPath(); ec.ellipse(0, 0, SP_R * .78, SP_R, 0, 0, Math.PI * 2); ec.fill(); ec.stroke();
+        ec.fillStyle = '#23160d'; ec.beginPath(); ec.arc(1, 0, 8.5, 0, Math.PI * 2); ec.fill();
+        ec.fillStyle = '#d9a77e'; ec.beginPath(); ec.arc(5, 0, 5, -Math.PI / 2, Math.PI / 2); ec.fill();
+        ec.restore();
+        ec.fillStyle = '#fff'; ec.font = 'bold 12px Inter, sans-serif'; ec.textAlign = 'center'; ec.textBaseline = 'bottom';
+        ec.strokeStyle = 'rgba(0,0,0,.6)'; ec.lineWidth = 3;
+        const label = s.ai ? 'Computer' : s.naam;
+        ec.strokeText(label, s.x, s.y - SP_R - 5); ec.fillText(label, s.x, s.y - SP_R - 5);
+      }
+      // meldingen
+      if (eeBezig && eeMelding && eeMelding.t < 1.4) {
+        const t = eeMelding.t, sc = t < .15 ? .4 + t / .15 * .8 : t < .3 ? 1.2 - (t - .15) / .15 * .2 : 1;
+        ec.save(); ec.translate(MID.x, MID.y - 70); ec.scale(sc, sc); ec.globalAlpha = t > 1.1 ? Math.max(0, 1 - (t - 1.1) / .3) : 1;
+        ec.font = '72px "Bebas Neue", sans-serif'; ec.textAlign = 'center'; ec.textBaseline = 'middle';
+        ec.lineWidth = 8; ec.strokeStyle = 'rgba(0,0,0,.6)'; ec.strokeText(eeMelding.tekst, 0, 0);
+        ec.fillStyle = eeMelding.kleur; ec.fillText(eeMelding.tekst, 0, 0); ec.restore();
+      } else if (eeBezig && eeWacht > 0) {
+        ec.fillStyle = 'rgba(255,255,255,.9)'; ec.font = '30px "Bebas Neue", sans-serif'; ec.textAlign = 'center'; ec.textBaseline = 'middle';
+        ec.fillText('Klaar…', MID.x, MID.y - 86);
+      }
+    }
+    function eeMaat() {
+      const w = eeDoek.clientWidth * Math.min(devicePixelRatio || 1, 2);
+      if (w && eeDoek.width !== Math.round(w)) { eeDoek.width = Math.round(w); eeDoek.height = Math.round(w * EH / EB); }
+      eeTeken();
+    }
+    function eeFrame(nu) {
+      const dt = Math.min((nu - eeVorige) / 1000, .05);
+      eeVorige = nu;
+      const stappen = Math.ceil(dt / (1 / 180));
+      for (let i = 0; i < stappen && eeBezig; i++) eeStap(dt / stappen);
+      eeTeken();
+      if (eeBezig && eeInBeeld) requestAnimationFrame(eeFrame); else eeLoop = false;
+    }
+    function eeStartLoop() { if (!eeLoop && eeInBeeld) { eeLoop = true; eeVorige = performance.now(); requestAnimationFrame(eeFrame); } }
+    new IntersectionObserver(([item]) => { eeInBeeld = item.isIntersecting; if (eeInBeeld) { eeMaat(); eeStartLoop(); } else eeToetsen.clear(); }).observe(eeDoek);
+    addEventListener('resize', eeMaat);
+    eeAftrap(); eeWacht = 0;
+    eeMaat();
 
     /* ================= App (PWA) ================= */
     if ('serviceWorker' in navigator && location.protocol !== 'file:')
