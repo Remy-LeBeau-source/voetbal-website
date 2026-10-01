@@ -849,7 +849,7 @@
             <canvas id="omDoek" width="800" height="450" aria-label="Omhaal-uitdaging: raak de voorzet met een omhaal"></canvas>
             <div class="kop-scherm" id="omScherm">
               <h3 class="kop" id="omTitel">Omhaal-uitdaging</h3>
-              <p id="omTekst">10 voorzetten. Perfect = 3 punten, goed = 2 punten.</p>
+              <p id="omTekst">10 voorzetten. Perfect = 3 punten, goed = 2. Scoor achter elkaar voor een combo-bonus!</p>
               <div class="kop-modi"><button class="knop vol" id="omStartKnop">Start</button></div>
               <p class="kop-uitleg">Druk op <b>spatie</b>, klik of tik in het veld, of gebruik de knop <b>OMHAAL!</b></p>
             </div>
@@ -2257,6 +2257,7 @@
       speler: { heupX: RAAK.x, heupY: OG - 45, hoek: 0, trap: 0, steun: 0, juich: false },
       keeper: { heupY: OG - 45, hoek: 0, doelY: OG - 45 },
       voorzetter: { trap: 0 }, tekst: null, netTril: 0, spoor: [],
+      traag: 0, zoom: 0, schud: 0, deeltjes: [], golf: null, vuur: false, reeks: 0, flitsen: [], flitsTijd: 0,
     });
 
     function omStart() {
@@ -2277,7 +2278,7 @@
       Object.assign(b, { x: 740, y: 392, zichtbaar: true, hoek: 0 });
       b.vx = (RAAK.x - b.x) / om.T;
       b.vy = (RAAK.y - b.y - .5 * OM_ZW * om.T * om.T) / om.T;
-      Object.assign(om, { fase: 'voorzet', faseTijd: 0, druk: null, uitkomst: null, gered: false, doelpunt: false, gemeld: false, tekst: null, spoor: [] });
+      Object.assign(om, { fase: 'voorzet', faseTijd: 0, druk: null, uitkomst: null, gered: false, doelpunt: false, gemeld: false, tekst: null, spoor: [], vuur: false, golf: null });
       Object.assign(om.speler, { heupX: RAAK.x, heupY: OG - 45, hoek: 0, trap: 0, steun: 0, juich: false });
       Object.assign(om.keeper, { heupY: OG - 45, hoek: 0, doelY: OG - 45 });
       om.voorzetter.trap = 1;
@@ -2309,12 +2310,36 @@
     }
     function toonOmTekst(tekst, kleur) { om.tekst = { tekst, kleur, t: 0 }; }
 
+    function omVonken(x, y, aantal, kleuren, kracht = 260) {
+      if (rustig) return;
+      for (let i = 0; i < aantal; i++) {
+        const hoek = willekeurig(0, Math.PI * 2), v = willekeurig(kracht * .3, kracht);
+        om.deeltjes.push({ x, y, vx: Math.cos(hoek) * v, vy: Math.sin(hoek) * v, leven: willekeurig(.3, .6), max: .6,
+                           grootte: willekeurig(1.5, 3.5), kleur: kleuren[Math.floor(Math.random() * kleuren.length)] });
+      }
+    }
+    function omMis() { om.reeks = 0; }
+    function omEffecten(dt) {            // loopt altijd op echte tijd, ook tijdens slow motion
+      om.traag = Math.max(0, om.traag - dt);
+      om.zoom += ((om.traag > 0 ? 1 : 0) - om.zoom) * Math.min(1, dt * 10);
+      om.schud = Math.max(0, om.schud - dt * 2.2);
+      om.flitsTijd = Math.max(0, om.flitsTijd - dt);
+      if (om.flitsTijd > 0 && Math.random() < dt * 40) om.flitsen.push({ x: willekeurig(0, OB), y: willekeurig(160, 246), leven: .12 });
+      for (let i = om.flitsen.length - 1; i >= 0; i--) { om.flitsen[i].leven -= dt; if (om.flitsen[i].leven <= 0) om.flitsen.splice(i, 1); }
+      if (om.golf) { om.golf.t += dt; if (om.golf.t > .5) om.golf = null; }
+    }
     function omStap(dt) {
       const s = om.speler, k = om.keeper, b = om.bal;
       om.faseTijd += dt;
       om.voorzetter.trap = Math.max(0, om.voorzetter.trap - dt * 3);
       om.netTril = Math.max(0, om.netTril - dt * 2.5);
       if (om.tekst) om.tekst.t += dt;
+      for (let i = om.deeltjes.length - 1; i >= 0; i--) {
+        const d = om.deeltjes[i];
+        d.leven -= dt; d.x += d.vx * dt; d.y += d.vy * dt; d.vy += 500 * dt;
+        if (d.leven <= 0) om.deeltjes.splice(i, 1);
+      }
+      if (om.vuur && om.bal.zichtbaar && om.fase === 'schot') omVonken(om.bal.x, om.bal.y, 2, ['#ff9f1c', '#f5c542', '#ff4d4d'], 90);
 
       if (om.fase === 'pauze') {
         if (om.faseTijd > (om.nr === 0 ? .8 : 1.7)) volgendeVoorzet();
@@ -2336,6 +2361,9 @@
           const u = om.uitkomst;
           if (u === 'perfect' || u === 'goed' || u === 'netmis') {
             trapGeluid({ pan: .1 });
+            om.traag = u === 'perfect' ? .34 : u === 'goed' ? .2 : 0;         // slow motion bij een goede trap
+            omVonken(b.x, b.y, u === 'perfect' ? 26 : 12, u === 'perfect' ? ['#f5c542', '#fff', '#ff9f1c'] : ['#fff', '#cfe8ff']);
+            if (u === 'perfect') { om.golf = { x: b.x, y: b.y, t: 0 }; om.vuur = true; }
             if (u === 'perfect') schotNaar(52, willekeurig(262, 272), .42);
             else if (u === 'goed') { om.gered = Math.random() < .4; schotNaar(50, willekeurig(292, 372), .5); }
             else Math.random() < .3 ? schotNaar(58, LAT_Y - 2, .45) : schotNaar(50, willekeurig(170, 215), .5);
@@ -2345,7 +2373,7 @@
             k.doelY = u === 'perfect' ? OG - 80 : grens(bijKeeperY + 40, OG - 150, OG - 45);
           } else {
             toonOmTekst(u === 'vroeg' ? 'TE VROEG!' : 'TE LAAT!', '#ff5a5a');
-            oohGeluid();
+            oohGeluid(); omMis();
             om.fase = 'gemist';
           }
         }
@@ -2353,7 +2381,7 @@
         om.druk = om.faseTijd;                  // niet gedrukt: speler laat de bal gaan
         om.gemeld = true; om.fase = 'gemist';
         s.hoek = 0; s.trap = 0;
-        toonOmTekst('TE LAAT!', '#ff5a5a'); oohGeluid();
+        toonOmTekst('TE LAAT!', '#ff5a5a'); oohGeluid(); omMis();
       }
 
       // Keeper beweegt naar zijn doel-hoogte
@@ -2369,21 +2397,27 @@
         if (om.fase === 'schot' && !om.doelpunt) {
           if (om.gered && b.x <= 112) {
             om.fase = 'klaar'; b.vx = 260; b.vy = -380;
-            speel('handschoen'); oohGeluid(); toonOmTekst('GERED!', '#ff5a5a');
+            speel('handschoen'); oohGeluid(); toonOmTekst('GERED!', '#ff5a5a'); omMis(); om.schud = .5;
+            omVonken(b.x, b.y, 10, ['#fff', '#9be15d']);
           } else if (b.x <= DOEL_X) {
             if (b.y > LAT_Y + 5) {
               om.doelpunt = true; om.fase = 'klaar';
-              const punten = om.uitkomst === 'perfect' ? 3 : 2;
+              om.reeks++;
+              const bonus = Math.min(3, om.reeks - 1);                    // combo: elke goal op rij geeft een extra punt (max +3)
+              const punten = (om.uitkomst === 'perfect' ? 3 : 2) + bonus;
               om.punten += punten; omPuntenEl.textContent = om.punten;
-              toonOmTekst(om.uitkomst === 'perfect' ? 'PERFECT! +3' : 'GOAL! +2', '#f5c542');
+              toonOmTekst((om.uitkomst === 'perfect' ? 'PERFECT! +' : 'GOAL! +') + punten, '#f5c542');
+              om.schud = om.uitkomst === 'perfect' ? 1 : .6; om.flitsTijd = 1.4;
+              omVonken(DOEL_X - 10, b.y, 18, ['#fff', '#f5c542']);
               speel('net'); juichGeluid(); om.netTril = 1; s.juich = true;
               const r = omDoek.getBoundingClientRect();
               confetti(omDoek.parentElement, DOEL_X / OB * r.width, b.y / OH * r.height, om.uitkomst === 'perfect' ? 110 : 60);
             } else if (b.y > LAT_Y - 9) {
               om.fase = 'klaar'; b.vx = Math.abs(b.vx) * .45; b.vy = -Math.abs(b.vy) * .4;
-              paalGeluid(); oohGeluid(); toonOmTekst('LAT!', '#ff5a5a');
+              paalGeluid(); oohGeluid(); toonOmTekst('LAT!', '#ff5a5a'); omMis(); om.schud = .7;
+              omVonken(b.x, b.y, 14, ['#fff', '#ddd']);
             } else {
-              om.fase = 'klaar'; oohGeluid(); toonOmTekst('OVER!', '#ff5a5a');
+              om.fase = 'klaar'; oohGeluid(); toonOmTekst('OVER!', '#ff5a5a'); omMis();
             }
           }
         }
@@ -2391,7 +2425,11 @@
         if (b.x < -40 || b.x > OB + 40) b.zichtbaar = false;
       }
       // Na een goal staat de speler op en juicht
-      if (s.juich && om.faseTijd - om.druk > .9) { s.hoek *= .85; s.heupY += (OG - 45 - s.heupY) * .15; s.trap *= .85; s.steun *= .85; }
+      if (s.juich && om.faseTijd - om.druk > .8) {
+        const jt = om.faseTijd - om.druk - .8;
+        s.hoek *= .8; s.trap *= .8; s.steun *= .8;
+        s.heupY += (OG - 45 - Math.abs(Math.sin(jt * 9)) * 34 - s.heupY) * .3;
+      }
 
       // Volgende voorzet
       if ((om.fase === 'klaar' || om.fase === 'gemist') && om.tekst && om.tekst.t > 1.6) { om.fase = 'pauze'; om.faseTijd = 0; b.zichtbaar = false; }
@@ -2438,6 +2476,11 @@
     function omTeken() {
       const schaal = omDoek.width / OB, nu = performance.now() / 1000;
       oc.setTransform(schaal, 0, 0, schaal, 0, 0);
+      oc.fillStyle = '#050817'; oc.fillRect(0, 0, OB, OH);
+      if (om && !rustig) {                 // camera: inzoomen tijdens slow motion, schudden bij een goal
+        const z = 1 + om.zoom * .16, sx = (Math.random() - .5) * om.schud * 14, sy = (Math.random() - .5) * om.schud * 10;
+        oc.translate(RAAK.x + sx, RAAK.y + 40 + sy); oc.scale(z, z); oc.translate(-RAAK.x, -RAAK.y - 40);
+      }
       // lucht, sterren, lichtmasten, tribune (zelfde stijl als overkoppen)
       const lucht = oc.createLinearGradient(0, 0, 0, OG);
       lucht.addColorStop(0, '#050817'); lucht.addColorStop(.55, '#12234a'); lucht.addColorStop(1, '#1b3566');
@@ -2467,8 +2510,14 @@
       const tw = oc.measureText(reclame).width, schuif = (nu * 40) % tw;
       for (let x = -schuif; x < OB; x += tw) oc.fillText(reclame, x, 256.5);
       oc.restore();
-      for (let i = 0; i < 10; i++) { oc.fillStyle = i % 2 ? '#1f8a41' : '#1c7a3a'; oc.fillRect(i * 80, 264, 80, OH); }
-      oc.fillStyle = 'rgba(255,255,255,.7)'; oc.fillRect(0, OG, OB, 3);
+      // cameraflitsen in het publiek
+      if (om) for (const f of om.flitsen) {
+        const g = oc.createRadialGradient(f.x, f.y, 0, f.x, f.y, 16);
+        g.addColorStop(0, 'rgba(255,255,255,.95)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+        oc.fillStyle = g; oc.fillRect(f.x - 16, f.y - 16, 32, 32);
+      }
+      for (let i = 0; i < 12; i++) { oc.fillStyle = i % 2 ? '#1f8a41' : '#1c7a3a'; oc.fillRect(i * 80 - 40, 264, 80, OH); }
+      oc.fillStyle = 'rgba(255,255,255,.7)'; oc.fillRect(-40, OG, OB + 80, 3);
       // doel (zijaanzicht) met trillend net
       const tril = Math.sin(nu * 40) * om?.netTril * 4 || 0;
       oc.fillStyle = 'rgba(255,255,255,.1)';
@@ -2480,14 +2529,25 @@
       oc.beginPath(); oc.moveTo(DOEL_X, OG); oc.lineTo(DOEL_X, LAT_Y); oc.lineTo(20, LAT_Y + 3); oc.stroke();
       // voorzetter rechts
       const vt = om ? om.voorzetter.trap : 0;
-      omPoppetje(770, OG - 45, 0, -vt * 1.2, .15, '#35c6ff', '7', false);
+      const inPauze = om?.bezig && om.fase === 'pauze';
+      const aanloopV = inPauze ? Math.max(0, 1 - om.faseTijd / (om.nr === 0 ? .8 : 1.7)) : 0;     // voorzetter loopt naar de bal toe
+      omPoppetje(770 + aanloopV * 26, OG - 45 - Math.abs(Math.sin(nu * 11)) * 5 * (inPauze ? 1 : 0), 0,
+                 inPauze ? Math.sin(nu * 11) * .6 : -vt * 1.2, inPauze ? -Math.sin(nu * 11) * .6 : .15, '#35c6ff', '7', false);
       // keeper
       const k = om ? om.keeper : { heupY: OG - 45, hoek: 0 };
       omPoppetje(102, k.heupY, k.hoek, .35, -.2, '#9be15d', '1', true, k.heupY < OG - 60);
       // speler
       const s = om ? om.speler : { heupX: RAAK.x, heupY: OG - 45, hoek: 0, trap: 0, steun: 0 };
       oc.fillStyle = 'rgba(0,0,0,.3)'; oc.beginPath(); oc.ellipse(s.heupX, OG + 4, 26, 6, 0, 0, Math.PI * 2); oc.fill();
-      omPoppetje(s.heupX, s.heupY, s.hoek, s.trap, s.steun, '#f5c542', '10', true, s.juich && s.hoek > -.4);
+      const wacht = om?.bezig && om.druk === null;                       // huppelen op de tenen tijdens het wachten
+      const hup = wacht ? Math.abs(Math.sin(nu * 7)) * 6 : 0, stapje = wacht ? Math.sin(nu * 7) * .25 : 0;
+      omPoppetje(s.heupX, s.heupY - hup, s.hoek, s.trap + stapje, s.steun - stapje, '#f5c542', '10', true, s.juich && s.hoek > -.4);
+      // schokgolf bij een perfecte trap
+      if (om?.golf) {
+        const g = om.golf, p = g.t / .5;
+        oc.strokeStyle = `rgba(245,197,66,${1 - p})`; oc.lineWidth = 6 * (1 - p) + 1;
+        oc.beginPath(); oc.arc(g.x, g.y, 14 + p * 110, 0, Math.PI * 2); oc.stroke();
+      }
       // timingringen
       if (om && om.fase === 'voorzet' && om.druk === null) {
         const rest = om.T - .1 - om.faseTijd;
@@ -2503,7 +2563,11 @@
       const b = om?.bal;
       if (b && b.zichtbaar) {
         oc.fillStyle = 'rgba(0,0,0,.25)'; oc.beginPath(); oc.ellipse(b.x, OG + 4, Math.max(4, 12 - (OG - b.y) / 30), 3.5, 0, 0, Math.PI * 2); oc.fill();
-        om.spoor.forEach(([x, y], i) => { oc.globalAlpha = i / om.spoor.length * .3; oc.fillStyle = '#fff'; oc.beginPath(); oc.arc(x, y, 7 + i * .6, 0, Math.PI * 2); oc.fill(); });
+        om.spoor.forEach(([x, y], i) => {
+          oc.globalAlpha = i / om.spoor.length * (om.vuur ? .6 : .3);
+          oc.fillStyle = om.vuur ? (i % 2 ? '#ff9f1c' : '#f5c542') : '#fff';
+          oc.beginPath(); oc.arc(x, y, (om.vuur ? 9 : 7) + i * .6, 0, Math.PI * 2); oc.fill();
+        });
         oc.globalAlpha = 1;
         oc.save(); oc.translate(b.x, b.y); oc.rotate(b.hoek);
         oc.fillStyle = '#fff'; oc.strokeStyle = '#111'; oc.lineWidth = 1.5;
@@ -2511,6 +2575,21 @@
         oc.fillStyle = '#111'; oc.beginPath();
         for (let i = 0; i < 5; i++) { const a = -Math.PI / 2 + i * Math.PI * 2 / 5; oc.lineTo(Math.cos(a) * 5, Math.sin(a) * 5); }
         oc.closePath(); oc.fill(); oc.restore();
+      }
+      // vonken
+      if (om) for (const d of om.deeltjes) {
+        oc.globalAlpha = Math.max(0, d.leven / d.max); oc.fillStyle = d.kleur;
+        oc.beginPath(); oc.arc(d.x, d.y, d.grootte, 0, Math.PI * 2); oc.fill();
+      }
+      oc.globalAlpha = 1;
+      // combo-teller
+      if (om?.bezig && om.reeks >= 2) {
+        const puls = 1 + Math.sin(nu * 10) * .06;
+        oc.save(); oc.translate(OB - 110, 60); oc.scale(puls, puls); oc.rotate(-.08);
+        oc.font = '40px "Bebas Neue", sans-serif'; oc.textAlign = 'center'; oc.textBaseline = 'middle';
+        oc.lineWidth = 6; oc.strokeStyle = 'rgba(0,0,0,.6)'; oc.strokeText('COMBO x' + om.reeks, 0, 0);
+        oc.fillStyle = om.reeks >= 4 ? '#ff4d4d' : '#ff9f1c'; oc.fillText('COMBO x' + om.reeks, 0, 0);
+        oc.restore();
       }
       // tekst
       if (om?.tekst) {
@@ -2534,7 +2613,7 @@
     function omFrame(nu) {
       const dt = Math.min((nu - omVorige) / 1000, .05);
       omVorige = nu;
-      if (om?.bezig) omStap(dt);
+      if (om?.bezig) { omEffecten(dt); omStap(dt * (om.traag > 0 && !rustig ? .22 : 1)); }
       omTeken();
       if (om?.bezig && omInBeeld) requestAnimationFrame(omFrame); else omLoop = false;
     }
