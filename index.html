@@ -275,7 +275,7 @@
     .vorm-tabs button[aria-pressed="true"] { background: var(--wit); color: #000; }
     #chipKnop { justify-self: end; align-self: start; font-size: 1.15rem; padding: 16px 34px; }
     .richt-blok[hidden] { display: none; }
-    .vizier { position: absolute; width: 7%; aspect-ratio: 1; z-index: 5; pointer-events: none; opacity: 0; transition: opacity .2s;
+    .vizier { position: absolute; left: -200px; top: -200px; width: 7%; aspect-ratio: 1; z-index: 5; pointer-events: none; opacity: 0; transition: opacity .2s;
               transform: translate(-50%, -50%); border: 2px solid var(--goud); border-radius: 50%; box-shadow: 0 0 0 2px rgba(0,0,0,.4); }
     .vizier::before, .vizier::after { content: ""; position: absolute; background: var(--goud); left: 50%; top: 50%; transform: translate(-50%, -50%); }
     .vizier::before { width: 2px; height: 140%; }
@@ -490,6 +490,49 @@
     /* Gloeiende bal bij een lange reeks hooghouden */
     .tuin-bal.gloeit svg { filter: drop-shadow(0 0 12px #ff9f1c) drop-shadow(0 0 4px #f5c542) drop-shadow(0 6px 8px rgba(0,0,0,.45)); }
 
+    /* ---------- Nog meer beweging ---------- */
+    #stof { position: fixed; inset: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; }
+    .vonk { position: fixed; z-index: 95; width: 7px; height: 7px; margin: -3.5px 0 0 -3.5px; border-radius: 50%; pointer-events: none; }
+    /* Voetbal die langs de rechterrand naar beneden rolt terwijl je scrolt */
+    .scrolbaan { position: fixed; right: 21px; top: 84px; bottom: 96px; width: 2px; background: rgba(255,255,255,.1); z-index: 40; pointer-events: none; }
+    .scrolbal { position: fixed; right: 9px; top: 84px; width: 26px; height: 26px; z-index: 41; pointer-events: none; will-change: transform;
+                filter: drop-shadow(0 3px 5px rgba(0,0,0,.6)); }
+    @media (max-width: 1250px) { .scrolbaan, .scrolbal { display: none; } }
+    /* Tweede lichtkrant, de andere kant op */
+    .lichtkrant.twee { background: #111; color: var(--goud); margin-top: -4px; border-block: 1px solid #2a2410;
+                       transform: rotate(1.2deg) scale(1.03) skewX(calc(var(--scheef, 0deg) * -1)); }
+    .lichtkrant.twee .lichtkrant-rij { animation-direction: reverse; animation-duration: 34s; }
+    /* Spelerskaarten zweven en glanzen */
+    .kaart { animation: zweefkaart 5s ease-in-out infinite; }
+    .kaart:nth-child(2) { animation-delay: -2.5s; }
+    .kaart:hover { animation-play-state: paused; }
+    @keyframes zweefkaart { 50% { translate: 0 -12px; } }
+    .kaart-kant { background: linear-gradient(115deg, transparent 42%, rgba(255,255,255,.55) 50%, transparent 58%) no-repeat 160% 0 / 260% 100%,
+                              linear-gradient(155deg, #fff3b0 0%, var(--goud) 30%, var(--goud-donker) 100%);
+                  animation: kaartglans 4.5s ease-in-out infinite; }
+    .kaart:nth-child(2) .kaart-kant { animation-delay: -2.2s; }
+    @keyframes kaartglans { 0%, 55% { background-position: 160% 0, 0 0; } 100% { background-position: -60% 0, 0 0; } }
+    /* Gloeiende startknop en glinsterende "&" */
+    .hero .knop.vol { animation: gloeiknop 2.4s ease-in-out 1.5s infinite; }
+    @keyframes gloeiknop { 50% { box-shadow: 0 0 0 10px rgba(245,197,66,0), 0 0 34px rgba(245,197,66,.65); } 0%, 100% { box-shadow: 0 0 0 0 rgba(245,197,66,.5), 0 0 0 rgba(245,197,66,0); } }
+    .hero h1 .en { background: linear-gradient(100deg, var(--goud) 20%, #fff8d0 50%, var(--goud) 80%) 0 0 / 220% 100%;
+                   -webkit-background-clip: text; background-clip: text; color: transparent; animation: glinster 3s linear infinite; }
+    @keyframes glinster { to { background-position: -220% 0; } }
+    .teller b { animation: tellergloed 3.2s ease-in-out infinite; }
+    .teller:nth-child(2) b { animation-delay: -.8s; } .teller:nth-child(3) b { animation-delay: -1.6s; } .teller:nth-child(4) b { animation-delay: -2.4s; }
+    @keyframes tellergloed { 50% { text-shadow: 0 0 22px rgba(245,197,66,.75); } }
+    /* Wave door het publiek in het penaltystadion */
+    .wave { position: absolute; left: 0; right: 0; top: 7%; height: 19%; z-index: 1; pointer-events: none;
+      background-image:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 20'%3E%3Cpath d='M8 20L5 6M16 20l3-14' stroke='%23f1c9a5' stroke-width='2.6' stroke-linecap='round'/%3E%3Ccircle cx='5' cy='5' r='2.2' fill='%23f1c9a5'/%3E%3Ccircle cx='19' cy='5' r='2.2' fill='%23f1c9a5'/%3E%3C/svg%3E"),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 20'%3E%3Cpath d='M8 20L5 6M16 20l3-14' stroke='%238a5a3b' stroke-width='2.6' stroke-linecap='round'/%3E%3Ccircle cx='5' cy='5' r='2.2' fill='%238a5a3b'/%3E%3Ccircle cx='19' cy='5' r='2.2' fill='%238a5a3b'/%3E%3C/svg%3E");
+      background-size: 30px 26px, 34px 28px; background-position: 0 100%, 15px 100%; background-repeat: repeat-x;
+      -webkit-mask: linear-gradient(90deg, transparent, #000 40%, #000 60%, transparent) no-repeat -30% 0 / 22% 100%;
+              mask: linear-gradient(90deg, transparent, #000 40%, #000 60%, transparent) no-repeat -30% 0 / 22% 100%;
+      animation: wave 9s linear infinite; }
+    @keyframes wave { 0%, 35% { -webkit-mask-position: -30% 0; mask-position: -30% 0; } 100% { -webkit-mask-position: 130% 0; mask-position: 130% 0; } }
+    .stadion.juich .wave, .stadion.balen .wave { opacity: 0; }
+
     /* ---------- Foto ---------- */
     .foto-groot { border-radius: 26px; overflow: hidden; border: 1px solid var(--rand); margin: 0; }
     .foto-groot.zichtbaar { transition: transform .25s ease-out, opacity .8s; }
@@ -563,7 +606,10 @@
     </defs>
   </svg>
 
+  <canvas id="stof" aria-hidden="true"></canvas>
   <div id="voortgang" aria-hidden="true"></div>
+  <div class="scrolbaan" aria-hidden="true"></div>
+  <svg class="scrolbal" id="scrolbal" viewBox="0 0 40 40" aria-hidden="true"><use href="#balvorm"/></svg>
 
   <header id="header">
     <nav class="wrap" aria-label="Hoofdmenu">
@@ -610,6 +656,13 @@
       <div class="lichtkrant-rij">
         <span>Sill-vyan ⚽ Naoufal ⚽ Voetbal is ons leven ⚽ Samen sterk ⚽ Altijd gas geven ⚽</span>
         <span>Sill-vyan ⚽ Naoufal ⚽ Voetbal is ons leven ⚽ Samen sterk ⚽ Altijd gas geven ⚽</span>
+      </div>
+    </div>
+
+    <div class="lichtkrant twee" aria-hidden="true">
+      <div class="lichtkrant-rij">
+        <span>Penalty's ⚽ Panenka ⚽ Hooghouden ⚽ Overkoppen ⚽ Omhaal ⚽ Keeper ⚽ 1 tegen 1 ⚽</span>
+        <span>Penalty's ⚽ Panenka ⚽ Hooghouden ⚽ Overkoppen ⚽ Omhaal ⚽ Keeper ⚽ 1 tegen 1 ⚽</span>
       </div>
     </div>
 
@@ -706,6 +759,7 @@
           <div class="dak" aria-hidden="true"></div>
           <div class="publiek"><canvas id="tribune"></canvas></div>
           <div class="handen" aria-hidden="true"></div>
+          <div class="wave" aria-hidden="true"></div>
           <div class="publiek-reactie" id="publiekReactie" aria-hidden="true"></div>
           <div class="led" aria-hidden="true"><div class="led-rij">
             <span>SILL-VYAN &amp; NAOUFAL</span><span>PENALTY CUP</span><span>SAMEN STERK</span><span>SILL-VYAN &amp; NAOUFAL</span><span>PENALTY CUP</span><span>SAMEN STERK</span>
@@ -1128,17 +1182,70 @@
         knop.appendChild(stip);
         setTimeout(() => stip.remove(), 650);     // ook als de knop intussen verborgen is
       });
-      // Lichtkrant: gaat sneller en schuiner als je scrolt
-      const krant = $('.lichtkrant'), krantRij = $('.lichtkrant-rij');
+      // Lichtkranten: gaan sneller en schuiner als je scrolt
+      const krantRijen = [...document.querySelectorAll('.lichtkrant-rij')];
       let vorigeY = scrollY, krantRust;
+      const krantTempo = t => krantRijen.forEach(rij => { const an = rij.getAnimations()[0]; if (an) an.playbackRate = t; });
       addEventListener('scroll', () => {
         const dv = scrollY - vorigeY; vorigeY = scrollY;
-        krant.style.setProperty('--scheef', grens(-dv * .35, -14, 14) + 'deg');
-        const anim = krantRij.getAnimations()[0];
-        if (anim) anim.playbackRate = 1 + Math.min(7, Math.abs(dv) * .12);
+        document.documentElement.style.setProperty('--scheef', grens(-dv * .35, -14, 14) + 'deg');
+        krantTempo(1 + Math.min(7, Math.abs(dv) * .12));
         clearTimeout(krantRust);
-        krantRust = setTimeout(() => { krant.style.setProperty('--scheef', '0deg'); if (anim) anim.playbackRate = 1; }, 140);
+        krantRust = setTimeout(() => { document.documentElement.style.setProperty('--scheef', '0deg'); krantTempo(1); }, 140);
+        // De voetbal aan de rechterkant rolt mee naar beneden
+        const max = document.documentElement.scrollHeight - innerHeight, p = max > 0 ? scrollY / max : 0;
+        scrolbal.style.transform = `translateY(${p * (innerHeight - 84 - 96 - 26)}px) rotate(${scrollY * .6}deg)`;
+        // Koppen schuiven een beetje mee
+        dynKoppen.forEach(k => { const rr = k.getBoundingClientRect(); if (rr.bottom > -100 && rr.top < innerHeight + 100) k.style.translate = grens((rr.top - innerHeight / 2) * .06, -26, 26) + 'px 0'; });
       }, { passive: true });
+      const scrolbal = $('#scrolbal'), dynKoppen = [...document.querySelectorAll('.sectie-kop h2')];
+
+      // Vonkjes op de plek waar je klikt of tikt (niet in de spellen zelf, daar is al genoeg te zien)
+      addEventListener('pointerdown', e => {
+        if (e.target.closest?.('canvas, .stadion, .tuin, .geluid-paneel, .app-popup')) return;
+        for (let i = 0; i < 9; i++) {
+          const v = document.createElement('div'), hoek = Math.PI * 2 * i / 9 + Math.random() * .5, ver = 28 + Math.random() * 34;
+          v.className = 'vonk'; v.style.left = e.clientX + 'px'; v.style.top = e.clientY + 'px';
+          v.style.background = i % 3 ? '#f5c542' : '#fff';
+          document.body.appendChild(v);
+          v.animate([{ transform: 'translate(0,0) scale(1)', opacity: 1 }, { transform: `translate(${Math.cos(hoek) * ver}px, ${Math.sin(hoek) * ver}px) scale(.2)`, opacity: 0 }],
+                    { duration: 480, easing: 'cubic-bezier(.2,.8,.3,1)' }).onfinish = () => v.remove();
+        }
+      });
+
+      // Gouden stofdeeltjes op de achtergrond: zweven omhoog en gaan opzij voor de muis
+      const stof = $('#stof'), sc = stof.getContext('2d');
+      let stofB = 0, stofH = 0, stofMuis = null, stofVorigeY = scrollY;
+      const deeltjesStof = Array.from({ length: innerWidth < 760 ? 26 : 64 }, () => ({
+        x: Math.random(), y: Math.random(), r: willekeurig(.8, 2.6), vx: willekeurig(-.008, .008), vy: willekeurig(-.022, -.006),
+        diep: willekeurig(.2, 1), fase: willekeurig(0, 6), dx: 0, dy: 0 }));
+      const stofMaat = () => { const d = Math.min(devicePixelRatio || 1, 1.5); stofB = innerWidth; stofH = innerHeight; stof.width = stofB * d; stof.height = stofH * d; sc.setTransform(d, 0, 0, d, 0, 0); };
+      stofMaat(); addEventListener('resize', stofMaat);
+      addEventListener('pointermove', e => { if (e.pointerType === 'mouse') stofMuis = [e.clientX, e.clientY]; });
+      let stofVorige = performance.now();
+      (function stofFrame(nu) {
+        const dt = Math.min((nu - stofVorige) / 1000 || 0, .05); stofVorige = nu;
+        if (!document.hidden) {
+          const dScroll = scrollY - stofVorigeY; stofVorigeY = scrollY;
+          sc.clearRect(0, 0, stofB, stofH);
+          for (const d of deeltjesStof) {
+            d.x += d.vx * dt; d.y += d.vy * dt - dScroll / stofH * .25 * d.diep;
+            d.x = (d.x + 1) % 1; d.y = (d.y + 1) % 1;
+            let px = d.x * stofB, py = d.y * stofH;
+            if (stofMuis) {                                   // opzij voor de muis
+              const mx = px - stofMuis[0], my = py - stofMuis[1], afstand = Math.hypot(mx, my);
+              if (afstand < 130 && afstand > 0) { const duw = (130 - afstand) / 130 * 46; d.dx += (mx / afstand * duw - d.dx) * .2; d.dy += (my / afstand * duw - d.dy) * .2; }
+            }
+            d.dx *= .92; d.dy *= .92;
+            sc.globalAlpha = (.18 + Math.sin(nu / 900 + d.fase) * .12) * (.5 + d.diep * .5) + .1;
+            sc.fillStyle = d.diep > .8 ? '#fff3b0' : '#f5c542';
+            sc.beginPath(); sc.arc(px + d.dx, py + d.dy, d.r * (.6 + d.diep * .6), 0, Math.PI * 2); sc.fill();
+          }
+          sc.globalAlpha = 1;
+        }
+        requestAnimationFrame(stofFrame);
+      })(performance.now());
+
       if (muis) {
         // Lichtvlek op de grote foto
         const held = $('#home');
@@ -2394,7 +2501,7 @@
       if (kopBezig) { const stappen = Math.ceil(dt / (1 / 240)); for (let i = 0; i < stappen; i++) kopStap(dt / stappen); }
       kopEffecten(dt);
       kopTeken();
-      if (kopBezig && kopInBeeld) requestAnimationFrame(kopFrame); else kopLoop = false;
+      if (kopInBeeld) requestAnimationFrame(kopFrame); else kopLoop = false;   // ook op het startscherm blijft het stadion bewegen
     }
     function kopStart() { if (!kopLoop && kopInBeeld) { kopLoop = true; kopVorige = performance.now(); requestAnimationFrame(kopFrame); } }
     new IntersectionObserver(([item]) => { kopInBeeld = item.isIntersecting; if (kopInBeeld) { kopMaat(); kopStart(); } else ingedrukt.clear(); })
@@ -2777,7 +2884,7 @@
       omVorige = nu;
       if (om?.bezig) { omEffecten(dt); omStap(dt * (om.traag > 0 && !rustig ? .22 : 1)); }
       omTeken();
-      if (om?.bezig && omInBeeld) requestAnimationFrame(omFrame); else omLoop = false;
+      if (omInBeeld) requestAnimationFrame(omFrame); else omLoop = false;
     }
     function omStartLoop() { if (!omLoop && omInBeeld) { omLoop = true; omVorige = performance.now(); requestAnimationFrame(omFrame); } }
     new IntersectionObserver(([item]) => { omInBeeld = item.isIntersecting; if (omInBeeld) { omMaat(); omStartLoop(); } }).observe(omDoek);
@@ -3043,7 +3150,7 @@
       rdVorige = nu;
       if (rd?.bezig) rdStap(dt);
       rdTeken();
-      if (rd?.bezig && rdInBeeld) requestAnimationFrame(rdFrame); else rdLoop = false;
+      if (rdInBeeld) requestAnimationFrame(rdFrame); else rdLoop = false;
     }
     function rdStartLoop() { if (!rdLoop && rdInBeeld) { rdLoop = true; rdVorige = performance.now(); requestAnimationFrame(rdFrame); } }
     new IntersectionObserver(([item]) => { rdInBeeld = item.isIntersecting; if (rdInBeeld) { rdMaat(); rdStartLoop(); } else rdToetsen.clear(); }).observe(rdDoek);
@@ -3442,7 +3549,7 @@
       for (let i = 0; i < stappen && eeBezig; i++) eeStap(dt / stappen);
       eeEffecten(dt);
       eeTeken();
-      if (eeBezig && eeInBeeld) requestAnimationFrame(eeFrame); else eeLoop = false;
+      if (eeInBeeld) requestAnimationFrame(eeFrame); else eeLoop = false;
     }
     function eeStartLoop() { if (!eeLoop && eeInBeeld) { eeLoop = true; eeVorige = performance.now(); requestAnimationFrame(eeFrame); } }
     new IntersectionObserver(([item]) => { eeInBeeld = item.isIntersecting; if (eeInBeeld) { eeMaat(); eeStartLoop(); } else eeToetsen.clear(); }).observe(eeDoek);
