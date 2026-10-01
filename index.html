@@ -1521,6 +1521,9 @@
         kx = blijft ? 50 : (Math.random() < .5 ? 31 : 69); ky = blijft ? 33 : willekeurig(34, 44);
         krachtTekst.textContent = perfect ? 'Perfect geraakt!' : kracht < .28 ? 'Te zacht…' : kracht > .88 ? 'Te hard…' : 'Goed geraakt!';
       } else {
+        // De kruising is riskant: het schot wijkt een beetje af, dus paal, lat of over kan ook
+        const mikOpKruising = inKruising(tx, ty);
+        if (mikOpKruising) { tx += willekeurig(-1.5, 1.5); ty += willekeurig(-1.5, 1.5); }
         const opPaal = (tx > DOEL.x1 - 1.6 && tx < DOEL.x1 + 1.2) || (tx > DOEL.x2 - 1.2 && tx < DOEL.x2 + 1.6);
         const opLat = ty > DOEL.y1 - 1.6 && ty < DOEL.y1 + 1.4 && tx > DOEL.x1 && tx < DOEL.x2;
         if (ty < DOEL.y1 - 1.6) uitkomst = 'over';
@@ -1533,7 +1536,11 @@
         kx = grens(kx, 29, 71); ky = grens(ky, 28, 47);
         if (!uitkomst) {
           const afstand = Math.hypot(tx - kx, (ty - ky) * 1.3);
-          uitkomst = !inKruising(tx, ty) && afstand < n.bereik ? 'gered' : 'goal';
+          if (mikOpKruising) {
+            // Ook in de kruising kan de keeper er soms nog bij: hij duikt dan helemaal naar de hoek
+            if (Math.random() < KRUISING_REDDING[niveau]) { uitkomst = 'gered'; kx = tx + (tx < 50 ? 1.5 : -1.5); ky = ty + 2; }
+            else uitkomst = 'goal';
+          } else uitkomst = afstand < n.bereik ? 'gered' : 'goal';
         }
       }
 
@@ -1628,6 +1635,7 @@
       bezig = false;
     }
     const inKruising = (tx, ty) => (tx < 27.5 || tx > 72.5) && ty < 28;
+    const KRUISING_REDDING = { makkelijk: .12, normaal: .25, moeilijk: .4 };   // kans dat de keeper een bal in de kruising toch pakt
 
     // Het publiek juicht (handen omhoog, lichten flitsen) of baalt (zakt in, wordt donker)
     const publiekReactie = $('#publiekReactie');
