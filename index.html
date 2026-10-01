@@ -55,8 +55,22 @@
     .logo span { color: var(--goud); display: inline-block; transition: transform .4s; }
     .logo:hover span { transform: rotate(360deg) scale(1.3); }
     .menu { display: flex; gap: 26px; list-style: none; margin: 0; padding: 0; }
-    @media (max-width: 1250px) and (min-width: 761px) { .menu { gap: 12px; } .menu a { font-size: .85rem; } }
-    @media (max-width: 980px) and (min-width: 761px) { .menu { gap: 7px; } .menu a { font-size: .74rem; } }
+    .menu { align-items: center; }
+    /* Uitklapmenu met alle spellen */
+    .sub { position: relative; }
+    .sub-knop { background: none; border: 0; padding: 0; cursor: pointer; font: inherit; font-weight: 600; color: var(--grijs); transition: color .2s; }
+    .sub-knop:hover, .sub-knop.actief, .sub.open .sub-knop { color: var(--wit); }
+    .sub-knop.actief { box-shadow: 0 6px 0 -4px var(--goud); }
+    .sub-knop span { display: inline-block; transition: transform .25s; }
+    .sub.open .sub-knop span, .sub:hover .sub-knop span { transform: rotate(180deg); }
+    .submenu { list-style: none; margin: 0; padding: 8px; position: absolute; right: -40px; top: calc(100% + 14px); min-width: 230px;
+               display: grid; grid-template-columns: 1fr 1fr; gap: 2px; background: rgba(8,8,8,.97); border: 1px solid #3a3320; border-radius: 16px;
+               box-shadow: 0 20px 50px rgba(0,0,0,.7); opacity: 0; visibility: hidden; transform: translateY(-8px); transition: opacity .2s, transform .2s, visibility .2s; }
+    .submenu::before { content: ""; position: absolute; left: 0; right: 0; top: -16px; height: 16px; }     /* geen gat tussen knop en menu */
+    .sub:hover .submenu, .sub:focus-within .submenu, .sub.open .submenu { opacity: 1; visibility: visible; transform: none; }
+    .submenu a { display: block; padding: 10px 14px; border-radius: 10px; white-space: nowrap; }
+    .submenu a::after { display: none; }
+    .submenu a:hover, .submenu a.actief { background: #1b1b1b; color: var(--goud); }
     .menu a { text-decoration: none; font-weight: 600; color: var(--grijs); transition: color .2s; position: relative; }
     .menu a::after { content: ""; position: absolute; left: 0; right: 0; bottom: -4px; height: 2px; background: var(--goud);
                      transform: scaleX(0); transition: transform .3s; }
@@ -546,6 +560,9 @@
     .dp-schiet { touch-action: none; user-select: none; -webkit-user-select: none; padding: 16px 26px; font-size: 1.1rem; }
     .dp-schiet.in { transform: scale(.94); filter: brightness(.85); }
 
+    /* ---------- Minigame: schietwand ---------- */
+    #swDoek { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; touch-action: none; cursor: crosshair; }
+
     /* ---------- Foto ---------- */
     .foto-groot { border-radius: 26px; overflow: hidden; border: 1px solid var(--rand); margin: 0; }
     .foto-groot.zichtbaar { transition: transform .25s ease-out, opacity .8s; }
@@ -574,7 +591,15 @@
       .menu { position: fixed; inset: 68px 0 auto; flex-direction: column; gap: 0; background: rgba(0,0,0,.95);
               border-bottom: 1px solid var(--rand); transform: translateY(-120%); transition: transform .35s; z-index: -1; }
       .menu.open { transform: none; }
-      .menu a { display: block; padding: 18px 24px; font-size: 1.15rem; border-top: 1px solid var(--rand); }
+      .menu { align-items: stretch; max-height: calc(100svh - 68px); overflow-y: auto; }
+      .menu a { display: block; padding: 14px 24px; font-size: 1.1rem; border-top: 1px solid var(--rand); }
+      /* Op de telefoon staan alle spellen gewoon onder elkaar in het menu */
+      .sub-knop { display: none; }
+      .submenu { position: static; display: block; min-width: 0; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none;
+                 opacity: 1; visibility: visible; transform: none; }
+      .submenu::before { display: none; }
+      .submenu a { padding: 14px 24px 14px 40px; border-radius: 0; white-space: normal; }
+      .submenu a:hover, .submenu a.actief { background: none; }
       .menu a::after { display: none; }
       /* Hele foto bovenaan, tekst eronder: zo staan jullie er allebei helemaal op */
       .hero { min-height: auto; display: block; padding-top: 68px; }
@@ -632,15 +657,22 @@
       </button>
       <ul class="menu" id="menu">
         <li><a href="#wij">Wie zijn wij</a></li>
-        <li><a href="#spel" data-naar-vorm="penalty">Penalty's</a></li>
-        <li><a href="#spel" data-naar-vorm="panenka">Panenka</a></li>
-        <li><a href="#hooghouden">Hooghouden</a></li>
-        <li><a href="#koppen">Overkoppen</a></li>
-        <li><a href="#omhaal">Omhaal</a></li>
-        <li><a href="#redden">Keeper</a></li>
-        <li><a href="#eentegeneen">1 tegen 1</a></li>
-        <li><a href="#vrijetrap">Vrije trap</a></li>
-        <li><a href="#dribbel">Dribbelen</a></li>
+        <li class="sub">
+          <button class="sub-knop" id="spellenKnop" aria-expanded="false" aria-controls="spellenMenu">Spellen <span aria-hidden="true">▾</span></button>
+          <ul class="submenu" id="spellenMenu">
+            <li><a href="#spel" data-naar-vorm="penalty">⚽ Penalty's</a></li>
+            <li><a href="#spel" data-naar-vorm="panenka">🥄 Panenka</a></li>
+            <li><a href="#vrijetrap">🧱 Vrije trap</a></li>
+            <li><a href="#omhaal">🦶 Omhaal</a></li>
+            <li><a href="#schietwand">🎯 Schietwand</a></li>
+            <li><a href="#redden">🧤 Keeper</a></li>
+            <li><a href="#hooghouden">🤹 Hooghouden</a></li>
+            <li><a href="#koppen">🏐 Overkoppen</a></li>
+            <li><a href="#eentegeneen">⚔️ 1 tegen 1</a></li>
+            <li><a href="#dribbel">🏁 Dribbelen</a></li>
+          </ul>
+        </li>
+        <li><a href="#foto">Foto</a></li>
       </ul>
     </nav>
   </header>
@@ -675,8 +707,8 @@
 
     <div class="lichtkrant twee" aria-hidden="true">
       <div class="lichtkrant-rij">
-        <span>Penalty's ⚽ Panenka ⚽ Hooghouden ⚽ Overkoppen ⚽ Omhaal ⚽ Keeper ⚽ 1 tegen 1 ⚽ Vrije trap ⚽ Dribbelen ⚽</span>
-        <span>Penalty's ⚽ Panenka ⚽ Hooghouden ⚽ Overkoppen ⚽ Omhaal ⚽ Keeper ⚽ 1 tegen 1 ⚽ Vrije trap ⚽ Dribbelen ⚽</span>
+        <span>Penalty's ⚽ Panenka ⚽ Hooghouden ⚽ Overkoppen ⚽ Omhaal ⚽ Keeper ⚽ 1 tegen 1 ⚽ Vrije trap ⚽ Dribbelen ⚽ Schietwand ⚽</span>
+        <span>Penalty's ⚽ Panenka ⚽ Hooghouden ⚽ Overkoppen ⚽ Omhaal ⚽ Keeper ⚽ 1 tegen 1 ⚽ Vrije trap ⚽ Dribbelen ⚽ Schietwand ⚽</span>
       </div>
     </div>
 
@@ -697,7 +729,7 @@
           <div class="teller"><b data-tel="2">0</b><span>vrienden</span></div>
           <div class="teller"><b data-tel="1">0</b><span>passie: voetbal</span></div>
           <div class="teller"><b data-tel="100">0</b><span>procent inzet</span></div>
-          <div class="teller"><b data-tel="9">0</b><span>spellen om te spelen</span></div>
+          <div class="teller"><b data-tel="10">0</b><span>spellen om te spelen</span></div>
         </div>
 
         <div class="kaarten" style="margin-top:56px">
@@ -1115,6 +1147,31 @@
       </div>
     </section>
 
+    <!-- Minigame: schietwand -->
+    <section id="schietwand" style="background:var(--paneel)">
+      <div class="wrap">
+        <div class="sectie-kop verschijn">
+          <p class="label">Minigame</p>
+          <h2 class="kop">Schietwand</h2>
+          <p>Hoe scherp schiet jij? Tik zo snel mogelijk op de schijven die opspringen. Groen is 10 punten, goud 30, en rood kost je 15 punten. Raak je er meerdere achter elkaar, dan loopt je combo op. Pas op voor de kartonnen keeper!</p>
+        </div>
+        <div class="kop-spel verschijn">
+          <div class="kop-doek-houder">
+            <canvas id="swDoek" width="800" height="450" aria-label="Schietwand: schiet op de schijven in het doel"></canvas>
+            <div class="kop-scherm" id="swScherm">
+              <h3 class="kop" id="swTitel">Schietwand</h3>
+              <p id="swTekst">30 seconden. Scoor zo veel mogelijk punten!</p>
+              <div class="kop-modi"><button class="knop vol" id="swStartKnop">Start</button></div>
+              <p class="kop-uitleg">Klik met de <b>muis</b> op een schijf om erop te schieten.</p>
+            </div>
+          </div>
+          <div class="kop-bediening">
+            <p class="spel-info">Tijd: <b id="swTijd">30</b> s · Punten: <b id="swPunten">0</b> · Record: <b id="swRecord">0</b></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- Foto -->
     <section id="foto">
       <div class="wrap">
@@ -1271,8 +1328,17 @@
 
     // Actieve menu-link volgt de sectie in beeld
     const links = [...menu.querySelectorAll('a')];
+    // Uitklapmenu "Spellen": open met een klik (of door erboven te hangen), dicht bij een klik ernaast of op een spel
+    const spellenKnop = $('#spellenKnop'), spellenSub = spellenKnop.parentElement;
+    const zetSpellen = open => { spellenSub.classList.toggle('open', open); spellenKnop.setAttribute('aria-expanded', open); };
+    spellenKnop.addEventListener('click', () => zetSpellen(!spellenSub.classList.contains('open')));
+    addEventListener('click', e => { if (!spellenSub.contains(e.target)) zetSpellen(false); });
+    addEventListener('keydown', e => { if (e.key === 'Escape') zetSpellen(false); });
+    spellenSub.querySelectorAll('a').forEach(a => a.addEventListener('click', () => { zetSpellen(false); a.blur(); }));
     const sectieObserver = new IntersectionObserver(items => items.forEach(item => {
-      if (item.isIntersecting) links.forEach(a => a.classList.toggle('actief', a.hash === '#' + item.target.id && (!a.dataset.naarVorm || a.dataset.naarVorm === vorm)));
+      if (!item.isIntersecting) return;
+      links.forEach(a => a.classList.toggle('actief', a.hash === '#' + item.target.id && (!a.dataset.naarVorm || a.dataset.naarVorm === vorm)));
+      spellenKnop.classList.toggle('actief', !!menu.querySelector('.submenu a.actief'));
     }), { rootMargin: '-45% 0px -50% 0px' });
     document.querySelectorAll('main > section[id]').forEach(s => sectieObserver.observe(s));
 
@@ -4282,6 +4348,235 @@
     dpMaakParcours();
     dpZetNiveau(dpNiveau);
     dpMaat();
+
+    /* ================= Minigame: schietwand ================= */
+    const swDoek = $('#swDoek'), wc = swDoek.getContext('2d');
+    const WB = 800, WH = 450, WDOEL = { x1: 95, x2: 705, y1: 62, y2: 352 }, SW_BAL = { x: 400, y: 418 }, SW_DUUR = 30, SW_VLUCHT = .3;
+    const swScherm = $('#swScherm'), swTitel = $('#swTitel'), swTekst = $('#swTekst');
+    const swPuntenEl = $('#swPunten'), swTijdEl = $('#swTijd'), swRecordEl = $('#swRecord');
+    let swRecord = bewaar.lees('schietwand-record', 0);
+    swRecordEl.textContent = swRecord;
+    let sw = null, swLoop = false, swInBeeld = false, swVorige = 0, swRust = 0;
+
+    function swStart() {
+      sw = { bezig: true, tijd: SW_DUUR, punten: 0, combo: 1, raak: 0, schoten: 0, schijven: [], ballen: [], popups: [], deeltjes: [], merken: [],
+             volgende: .4, wachtSchot: 0, keeperFase: 0, schud: 0, juich: 0, wacht: 1.8 };
+      swScherm.hidden = true;
+      swPuntenEl.textContent = 0; swTijdEl.textContent = SW_DUUR;
+      fluit();
+      swStartLoop();
+    }
+    $('#swStartKnop').addEventListener('click', swStart);
+
+    const swKeeperX = () => 400 + Math.sin(sw.keeperFase) * 215;
+    function swNieuweSchijf() {
+      const kans = Math.random(), soort = kans < .12 ? 'fout' : kans < .34 ? 'goud' : 'goed';
+      const r = soort === 'goud' ? 19 : 27, voortgang = 1 - sw.tijd / SW_DUUR;
+      for (let poging = 0; poging < 12; poging++) {
+        const x = willekeurig(WDOEL.x1 + 45, WDOEL.x2 - 45), y = willekeurig(WDOEL.y1 + 40, WDOEL.y2 - 45);
+        if (sw.schijven.some(s => Math.hypot(s.x - x, s.y - y) < s.r + r + 14)) continue;
+        const max = (soort === 'goud' ? 1.5 : 2.3) - voortgang * .7;
+        sw.schijven.push({ x, y, r, soort, punten: soort === 'goud' ? 30 : soort === 'fout' ? -15 : 10, leven: max, max, t: 0 });
+        return;
+      }
+    }
+    const swPopup = (tekst, x, y, kleur) => sw.popups.push({ tekst, x: grens(x, 80, WB - 80), y: Math.max(36, y), kleur, t: 0 });
+    function swVonken(x, y, aantal, kleuren) {
+      if (rustig) return;
+      for (let i = 0; i < aantal; i++) {
+        const hoek = willekeurig(0, Math.PI * 2), v = willekeurig(60, 280);
+        sw.deeltjes.push({ x, y, vx: Math.cos(hoek) * v, vy: Math.sin(hoek) * v, leven: willekeurig(.25, .55), max: .55, grootte: willekeurig(1.5, 3.6), kleur: kleuren[i % kleuren.length] });
+      }
+    }
+    function swSchiet(x, y) {
+      if (!sw?.bezig || sw.wacht > 0 || sw.wachtSchot > 0) return;
+      sw.wachtSchot = .22; sw.schoten++;
+      sw.ballen.push({ x: grens(x, 20, WB - 20), y: grens(y, 20, WH - 60), t: 0, krul: willekeurig(-14, 14) });
+      trapGeluid({ pan: (x / WB) * 2 - 1, licht: true });
+    }
+    swDoek.addEventListener('pointerdown', e => {
+      if (!sw?.bezig) return;
+      e.preventDefault();
+      const r = swDoek.getBoundingClientRect();
+      swSchiet((e.clientX - r.left) / r.width * WB, (e.clientY - r.top) / r.height * WH);
+    });
+
+    function swAankomst(b) {
+      const inDoel = b.x > WDOEL.x1 && b.x < WDOEL.x2 && b.y > WDOEL.y1 && b.y < WDOEL.y2;
+      const kx = swKeeperX();
+      if (inDoel && Math.abs(b.x - kx) < 36 && b.y > WDOEL.y2 - 150) {            // de kartonnen keeper blokt
+        sw.combo = 1; speel('handschoen'); swPopup('GEBLOKT!', b.x, b.y - 24, '#ff5a5a'); swVonken(b.x, b.y, 10, ['#fff', '#9be15d']); sw.schud = .3;
+        return;
+      }
+      const i = sw.schijven.findIndex(s => Math.hypot(s.x - b.x, s.y - b.y) < s.r + 9);
+      if (i >= 0) {
+        const s = sw.schijven[i]; sw.schijven.splice(i, 1);
+        if (s.soort === 'fout') {
+          sw.punten = Math.max(0, sw.punten + s.punten); sw.combo = 1; sw.schud = .5;
+          oohGeluid(); swPopup('−15', s.x, s.y - 26, '#ff5a5a'); swVonken(s.x, s.y, 14, ['#ff5a5a', '#fff']);
+        } else {
+          const verdiend = s.punten * sw.combo;
+          sw.punten += verdiend; sw.raak++;
+          swPopup('+' + verdiend + (sw.combo > 1 ? '  ×' + sw.combo : ''), s.x, s.y - 26, s.soort === 'goud' ? '#f5c542' : '#1db954');
+          swVonken(s.x, s.y, s.soort === 'goud' ? 22 : 14, s.soort === 'goud' ? ['#f5c542', '#fff3b0', '#fff'] : ['#1db954', '#fff']);
+          speel(s.soort === 'goud' ? 'paal' : 'net');
+          if (sw.combo === 4) { swPopup('COMBO ×5!', 400, 40, '#ff9f1c'); sw.juich = 1.2; }
+          sw.combo = Math.min(5, sw.combo + 1);
+        }
+        swPuntenEl.textContent = sw.punten;
+        return;
+      }
+      sw.combo = 1;                                                                // mis
+      if (!inDoel) swPopup(b.y < WDOEL.y1 ? 'OVER!' : 'NAAST!', b.x, b.y - 20, 'rgba(255,255,255,.8)');
+      else sw.merken.push({ x: b.x, y: b.y, t: 0 });
+    }
+
+    function swStap(dt) {
+      sw.schud = Math.max(0, sw.schud - dt * 2.4); sw.juich = Math.max(0, sw.juich - dt);
+      for (let i = sw.deeltjes.length - 1; i >= 0; i--) { const d = sw.deeltjes[i]; d.leven -= dt; d.x += d.vx * dt; d.y += d.vy * dt; d.vy += 420 * dt; if (d.leven <= 0) sw.deeltjes.splice(i, 1); }
+      for (let i = sw.popups.length - 1; i >= 0; i--) { sw.popups[i].t += dt; if (sw.popups[i].t > 1.1) sw.popups.splice(i, 1); }
+      for (let i = sw.merken.length - 1; i >= 0; i--) { sw.merken[i].t += dt; if (sw.merken[i].t > 1.2) sw.merken.splice(i, 1); }
+      if (!sw.bezig) return;
+      if (sw.wacht > 0) { sw.wacht -= dt; return; }
+      sw.tijd -= dt; sw.wachtSchot = Math.max(0, sw.wachtSchot - dt);
+      const voortgang = 1 - Math.max(0, sw.tijd) / SW_DUUR;
+      sw.keeperFase += dt * (1.1 + voortgang * 1.1);
+      sw.volgende -= dt;
+      if (sw.volgende <= 0 && sw.schijven.length < 5) { swNieuweSchijf(); sw.volgende = willekeurig(.5, .85) - voortgang * .28; }
+      for (let i = sw.schijven.length - 1; i >= 0; i--) { const s = sw.schijven[i]; s.t += dt; s.leven -= dt; if (s.leven <= 0) sw.schijven.splice(i, 1); }
+      for (let i = sw.ballen.length - 1; i >= 0; i--) { const b = sw.ballen[i]; b.t += dt / SW_VLUCHT; if (b.t >= 1) { sw.ballen.splice(i, 1); swAankomst(b); } }
+      swTijdEl.textContent = Math.max(0, Math.ceil(sw.tijd));
+      if (sw.tijd <= 0) swEinde();
+    }
+    function swEinde() {
+      sw.bezig = false; sw.schijven = []; sw.ballen = [];
+      const nieuw = sw.punten > swRecord;
+      if (nieuw) { swRecord = sw.punten; bewaar.schrijf('schietwand-record', swRecord); swRecordEl.textContent = swRecord; }
+      const raakPct = sw.schoten ? Math.round(sw.raak / sw.schoten * 100) : 0;
+      swTitel.textContent = nieuw ? 'Nieuw record!' : sw.punten >= 400 ? 'Scherpschutter!' : 'Tijd is om!';
+      swTekst.textContent = `${sw.punten} punten · ${sw.raak} raak van ${sw.schoten} schoten (${raakPct}%)`;
+      $('#swStartKnop').textContent = 'Nog een keer';
+      swScherm.hidden = false;
+      fluit();
+      if (nieuw) { juichGeluid(); const r = swDoek.getBoundingClientRect(); confetti(swDoek.parentElement, r.width / 2, r.height / 3, 110); }
+    }
+
+    /* ---------- Tekenen ---------- */
+    function swTeken() {
+      const schaal = swDoek.width / WB, nu = performance.now() / 1000;
+      wc.setTransform(schaal, 0, 0, schaal, 0, 0);
+      wc.fillStyle = '#050817'; wc.fillRect(0, 0, WB, WH);
+      if (sw?.schud && !rustig) wc.translate((Math.random() - .5) * sw.schud * 12, (Math.random() - .5) * sw.schud * 9);
+      // tribune achter het doel, gras ervoor
+      const lucht = wc.createLinearGradient(0, 0, 0, WDOEL.y2); lucht.addColorStop(0, '#060a1c'); lucht.addColorStop(1, '#14274f');
+      wc.fillStyle = lucht; wc.fillRect(0, 0, WB, WDOEL.y2);
+      for (const p of KOP_PUBLIEK) {
+        const hop = sw?.juich > 0 ? Math.abs(Math.sin(nu * p.snel * 1.6 + p.fase)) * 5 : 0, py = (p.y - 172) * 2.6 + 40;
+        wc.fillStyle = p.shirt; wc.globalAlpha = .55; wc.beginPath(); wc.roundRect(p.x - 5, py - 9 - hop, 10, 10, 3); wc.fill();
+        wc.fillStyle = p.huid; wc.beginPath(); wc.arc(p.x, py - 12 - hop, 3.6, 0, Math.PI * 2); wc.fill();
+      }
+      wc.globalAlpha = 1;
+      const gras = wc.createLinearGradient(0, WDOEL.y2, 0, WH); gras.addColorStop(0, '#176e33'); gras.addColorStop(1, '#23994a');
+      wc.fillStyle = gras; wc.fillRect(0, WDOEL.y2, WB, WH - WDOEL.y2);
+      grasTextuur(wc, 0, WDOEL.y2, WB, WH - WDOEL.y2, .45);
+      wc.fillStyle = 'rgba(255,255,255,.75)'; wc.fillRect(0, WDOEL.y2, WB, 3);
+      // doel met net
+      wc.fillStyle = 'rgba(0,0,0,.35)'; wc.fillRect(WDOEL.x1, WDOEL.y1, WDOEL.x2 - WDOEL.x1, WDOEL.y2 - WDOEL.y1);
+      wc.strokeStyle = 'rgba(255,255,255,.22)'; wc.lineWidth = 1;
+      for (let x = WDOEL.x1 + 14; x < WDOEL.x2; x += 14) { wc.beginPath(); wc.moveTo(x, WDOEL.y1); wc.lineTo(x, WDOEL.y2); wc.stroke(); }
+      for (let y = WDOEL.y1 + 14; y < WDOEL.y2; y += 14) { wc.beginPath(); wc.moveTo(WDOEL.x1, y); wc.lineTo(WDOEL.x2, y); wc.stroke(); }
+      const paal = wc.createLinearGradient(0, WDOEL.y1 - 6, 0, WDOEL.y1 + 6); paal.addColorStop(0, '#fff'); paal.addColorStop(1, '#bdbdbd');
+      wc.strokeStyle = paal; wc.lineWidth = 11; wc.lineCap = 'square';
+      wc.beginPath(); wc.moveTo(WDOEL.x1, WDOEL.y2); wc.lineTo(WDOEL.x1, WDOEL.y1); wc.lineTo(WDOEL.x2, WDOEL.y1); wc.lineTo(WDOEL.x2, WDOEL.y2); wc.stroke();
+      if (sw) {
+        // sporen van missers in het net
+        for (const m of sw.merken) { wc.strokeStyle = `rgba(255,255,255,${.6 * (1 - m.t / 1.2)})`; wc.lineWidth = 2; wc.beginPath(); wc.arc(m.x, m.y, 10 + m.t * 16, 0, Math.PI * 2); wc.stroke(); }
+        // schietschijven: springen op, met een ring die aangeeft hoe lang ze nog blijven
+        for (const s of sw.schijven) {
+          const op = Math.min(1, s.t / .14), weg = Math.min(1, s.leven / .2), sc = (.3 + op * .7) * (.4 + weg * .6) * (1 + Math.sin(nu * 9 + s.x) * .03);
+          const kleur = s.soort === 'goud' ? '#f5c542' : s.soort === 'fout' ? '#ff4d4d' : '#1db954';
+          wc.save(); wc.translate(s.x, s.y); wc.scale(sc, sc);
+          wc.fillStyle = 'rgba(0,0,0,.35)'; wc.beginPath(); wc.arc(3, 4, s.r, 0, Math.PI * 2); wc.fill();
+          wc.fillStyle = '#fff'; wc.beginPath(); wc.arc(0, 0, s.r, 0, Math.PI * 2); wc.fill();
+          wc.fillStyle = kleur; wc.beginPath(); wc.arc(0, 0, s.r * .78, 0, Math.PI * 2); wc.fill();
+          wc.fillStyle = '#fff'; wc.beginPath(); wc.arc(0, 0, s.r * .5, 0, Math.PI * 2); wc.fill();
+          wc.fillStyle = kleur; wc.beginPath(); wc.arc(0, 0, s.r * .26, 0, Math.PI * 2); wc.fill();
+          wc.fillStyle = '#111'; wc.font = `bold ${s.r * .55}px Inter, sans-serif`; wc.textAlign = 'center'; wc.textBaseline = 'middle';
+          wc.fillText(s.soort === 'fout' ? '✕' : s.punten, 0, s.r * .02 + (s.soort === 'fout' ? 0 : -s.r * .58 + s.r * .58));
+          wc.strokeStyle = kleur; wc.lineWidth = 3.5;
+          wc.beginPath(); wc.arc(0, 0, s.r + 6, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.max(0, s.leven / s.max)); wc.stroke();
+          wc.restore();
+        }
+        // kartonnen keeper op een standaard
+        if (sw.bezig || sw.keeperFase) {
+          const kx = swKeeperX(), ky = WDOEL.y2;
+          wc.fillStyle = 'rgba(0,0,0,.3)'; wc.beginPath(); wc.ellipse(kx, ky + 4, 34, 6, 0, 0, Math.PI * 2); wc.fill();
+          wc.fillStyle = '#c9a26b'; wc.strokeStyle = '#8c6a3a'; wc.lineWidth = 2;
+          wc.beginPath(); wc.roundRect(kx - 30, ky - 140, 60, 140, 12); wc.fill(); wc.stroke();
+          wc.fillStyle = '#9be15d'; wc.beginPath(); wc.roundRect(kx - 22, ky - 104, 44, 54, 8); wc.fill();
+          wc.fillStyle = '#111'; wc.beginPath(); wc.roundRect(kx - 22, ky - 52, 44, 22, 5); wc.fill();
+          wc.fillStyle = '#e0b48c'; wc.beginPath(); wc.arc(kx, ky - 120, 13, 0, Math.PI * 2); wc.fill();
+          wc.fillStyle = '#23160d'; wc.beginPath(); wc.arc(kx, ky - 123, 13, Math.PI, Math.PI * 2); wc.fill();
+          wc.fillStyle = '#222'; wc.beginPath(); wc.arc(kx - 5, ky - 119, 1.6, 0, Math.PI * 2); wc.arc(kx + 5, ky - 119, 1.6, 0, Math.PI * 2); wc.fill();
+          wc.fillStyle = 'rgba(0,0,0,.55)'; wc.font = 'bold 20px "Bebas Neue", sans-serif'; wc.textAlign = 'center'; wc.textBaseline = 'middle'; wc.fillText('1', kx, ky - 78);
+        }
+        // ballen in de lucht
+        for (const b of sw.ballen) {
+          const e = 1 - Math.pow(1 - b.t, 1.6), x = SW_BAL.x + (b.x - SW_BAL.x) * e + Math.sin(Math.PI * e) * b.krul, y = SW_BAL.y + (b.y - SW_BAL.y) * e - Math.sin(Math.PI * e) * 26, r = 17 - e * 8;
+          if (!rustig) for (let k = 4; k >= 1; k--) { const e2 = Math.max(0, e - k * .07); wc.globalAlpha = (5 - k) / 5 * .22; wc.fillStyle = '#fff'; wc.beginPath(); wc.arc(SW_BAL.x + (b.x - SW_BAL.x) * e2, SW_BAL.y + (b.y - SW_BAL.y) * e2 - Math.sin(Math.PI * e2) * 26, 17 - e2 * 8, 0, Math.PI * 2); wc.fill(); }
+          wc.globalAlpha = 1;
+          echteBal(wc, x, y, r, nu * 16);
+        }
+        // de bal die klaarligt
+        if (sw.bezig) { wc.fillStyle = 'rgba(0,0,0,.3)'; wc.beginPath(); wc.ellipse(SW_BAL.x, SW_BAL.y + 16, 17, 5, 0, 0, Math.PI * 2); wc.fill(); echteBal(wc, SW_BAL.x, SW_BAL.y, 17, 0); }
+        for (const d of sw.deeltjes) { wc.globalAlpha = Math.max(0, d.leven / d.max); wc.fillStyle = d.kleur; wc.beginPath(); wc.arc(d.x, d.y, d.grootte, 0, Math.PI * 2); wc.fill(); }
+        wc.globalAlpha = 1;
+        for (const p of sw.popups) {
+          const sc = p.t < .12 ? .5 + p.t / .12 * .7 : 1;
+          wc.save(); wc.translate(p.x, p.y - p.t * 36); wc.scale(sc, sc); wc.globalAlpha = p.t > .8 ? Math.max(0, 1 - (p.t - .8) / .3) : 1;
+          wc.font = '28px "Bebas Neue", sans-serif'; wc.textAlign = 'center'; wc.textBaseline = 'middle';
+          wc.lineWidth = 5; wc.strokeStyle = 'rgba(0,0,0,.7)'; wc.strokeText(p.tekst, 0, 0); wc.fillStyle = p.kleur; wc.fillText(p.tekst, 0, 0); wc.restore();
+        }
+      }
+      vignet(wc, WB, WH, .38);
+      if (sw?.bezig) {
+        if (sw.wacht > 0) {
+          const cijfer = Math.min(3, Math.ceil(sw.wacht / .6)), deel = (sw.wacht / .6) % 1, sc = 1 + deel * .8;
+          wc.save(); wc.translate(WB / 2, WH / 2 - 20); wc.scale(sc, sc); wc.globalAlpha = Math.min(1, 1.3 - deel);
+          wc.font = '96px "Bebas Neue", sans-serif'; wc.textAlign = 'center'; wc.textBaseline = 'middle';
+          wc.lineWidth = 8; wc.strokeStyle = 'rgba(0,0,0,.6)'; wc.strokeText(cijfer, 0, 0); wc.fillStyle = '#f5c542'; wc.fillText(cijfer, 0, 0); wc.restore();
+        } else {
+          // tijdbalk bovenaan en combo linksonder
+          const deel = Math.max(0, sw.tijd / SW_DUUR);
+          wc.fillStyle = 'rgba(0,0,0,.5)'; wc.beginPath(); wc.roundRect(WDOEL.x1, 22, WDOEL.x2 - WDOEL.x1, 12, 6); wc.fill();
+          wc.fillStyle = deel < .25 ? '#ff5a5a' : '#f5c542'; wc.beginPath(); wc.roundRect(WDOEL.x1, 22, (WDOEL.x2 - WDOEL.x1) * deel, 12, 6); wc.fill();
+          if (sw.combo > 1) {
+            const puls = 1 + Math.sin(nu * 10) * .06;
+            wc.save(); wc.translate(120, WH - 34); wc.scale(puls, puls);
+            wc.font = '34px "Bebas Neue", sans-serif'; wc.textAlign = 'center'; wc.textBaseline = 'middle';
+            wc.lineWidth = 6; wc.strokeStyle = 'rgba(0,0,0,.6)'; wc.strokeText('COMBO ×' + sw.combo, 0, 0);
+            wc.fillStyle = sw.combo >= 5 ? '#ff4d4d' : '#ff9f1c'; wc.fillText('COMBO ×' + sw.combo, 0, 0); wc.restore();
+          }
+        }
+      }
+    }
+    function swMaat() {
+      const w = swDoek.clientWidth * Math.min(devicePixelRatio || 1, 2);
+      if (w && swDoek.width !== Math.round(w)) { swDoek.width = Math.round(w); swDoek.height = Math.round(w * WH / WB); }
+      swTeken();
+    }
+    function swFrame(nu) {
+      if (!sw?.bezig && swInBeeld && (swRust = (swRust + 1) % 3)) return requestAnimationFrame(swFrame);
+      const dt = Math.min((nu - swVorige) / 1000, .05);
+      swVorige = nu;
+      if (sw) swStap(dt);
+      swTeken();
+      if (swInBeeld) requestAnimationFrame(swFrame); else swLoop = false;
+    }
+    function swStartLoop() { if (!swLoop && swInBeeld) { swLoop = true; swVorige = performance.now(); requestAnimationFrame(swFrame); } }
+    new IntersectionObserver(([item]) => { swInBeeld = item.isIntersecting; if (swInBeeld) { swMaat(); swStartLoop(); } }).observe(swDoek);
+    addEventListener('resize', swMaat);
+    swMaat();
 
     /* ================= App (PWA) ================= */
     if ('serviceWorker' in navigator && location.protocol !== 'file:')
