@@ -612,6 +612,24 @@
     .foto-groot.zichtbaar { transition: transform .25s ease-out, opacity .8s; }
     .foto-groot img { width: 100%; height: auto; transition: transform 1.2s; }
     .foto-groot:hover img { transform: scale(1.04); }
+    /* De Blockers: tekst over Sill-vyan en Naoufal */
+    .blockers { margin: 56px auto 0; max-width: 760px; text-align: center; padding: clamp(24px, 5vw, 44px); border-radius: 26px;
+                background: linear-gradient(160deg, #141414, #080808); border: 1px solid #3a3320; position: relative; overflow: hidden; }
+    .blockers::before { content: ""; position: absolute; inset: 0 0 auto; height: 5px; background: linear-gradient(90deg, var(--goud) 50%, #35c6ff 50%); }
+    .blockers h3 { font-size: clamp(2.6rem, 9vw, 5rem); color: var(--goud); margin: 8px 0 18px; }
+    .blockers h3 span { display: inline-block; animation: schildje 2.6s ease-in-out infinite; }
+    @keyframes schildje { 50% { transform: rotate(-12deg) scale(1.15); } }
+    .blockers p:not(.label) { color: #dcdcdc; font-size: clamp(1.02rem, 2.4vw, 1.2rem); margin: 0 0 14px; }
+    .blockers p:last-child { margin-bottom: 0; }
+    .blockers strong { color: var(--wit); }
+    .blockers-nummers { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 12px; margin-bottom: 22px;
+                        font-family: "Bebas Neue", sans-serif; font-size: clamp(1.4rem, 4.5vw, 2rem); }
+    .blockers-nummers span { display: grid; place-items: center; width: 2.4em; height: 2.4em; border-radius: 14px; background: var(--goud); color: #000;
+                             font-size: 1.3em; box-shadow: 0 8px 20px rgba(245,197,66,.25); animation: blok 2.4s ease-in-out infinite; }
+    .blockers-nummers span.blauw { background: #35c6ff; box-shadow: 0 8px 20px rgba(53,198,255,.25); animation-delay: -1.2s; }
+    @keyframes blok { 50% { translate: 0 -8px; } }
+    .blockers-nummers i { font-style: normal; color: var(--grijs); }
+    .blockers-nummers b { font-weight: 400; color: var(--wit); letter-spacing: .04em; }
     .citaat { font-family: "Bebas Neue", sans-serif; font-size: clamp(2.2rem, 6vw, 4rem); text-align: center; margin: 48px auto 0; max-width: 18ch; line-height: 1; }
     .citaat span { color: var(--goud); display: inline-block; animation: wiebel 2.5s ease-in-out infinite; }
     @keyframes wiebel { 50% { transform: rotate(-4deg) scale(1.08); } }
@@ -1312,6 +1330,13 @@
           <img src="img/sill-vyan-en-naoufal.jpg" width="1402" height="1122" loading="lazy"
                alt="Sill-vyan en Naoufal in zwarte trainingspakken op het voetbalveld, met een gouden beker en een bal">
         </figure>
+        <div class="blockers verschijn">
+          <p class="label">Onze bijnaam</p>
+          <h3 class="kop">De Blockers <span aria-hidden="true">🛡️</span></h3>
+          <div class="blockers-nummers" aria-hidden="true"><span>39</span><i>+</i><span class="blauw">20</span><i>=</i><b>één muur</b></div>
+          <p>Wij zijn <strong>Sill-vyan</strong> en <strong>Naoufal</strong>: twee verdedigers, één muur. Komt er een spits aan? Dan staan wij er al. De één blokt links, de ander blokt rechts, en samen gooien we de deur op slot. Dribbelen, schieten, koppen: het maakt niet uit. Bij ons komt niemand erdoor.</p>
+          <p>Nummer <strong>39</strong> en nummer <strong>20</strong>, schouder aan schouder. Je kunt het proberen, maar de Blockers staan klaar. En als de bal van ons is, dan gaan we zelf naar voren. Want…</p>
+        </div>
         <p class="citaat verschijn">Samen winnen we <span>alles</span>.</p>
       </div>
     </section>
