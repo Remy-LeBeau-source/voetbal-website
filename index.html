@@ -928,6 +928,11 @@
             <div class="kop-scherm" id="eeScherm">
               <h3 class="kop" id="eeTitel">Eén tegen één</h3>
               <p id="eeTekst">Kies hoe je wilt spelen</p>
+              <div class="niveau-keuze" id="eeNiveaus" role="group" aria-label="Moeilijkheid van de computer">
+                <button data-ee-niveau="makkelijk" aria-pressed="false">Makkelijk</button>
+                <button data-ee-niveau="normaal" aria-pressed="true">Normaal</button>
+                <button data-ee-niveau="moeilijk" aria-pressed="false">Moeilijk</button>
+              </div>
               <div class="kop-modi">
                 <button class="knop vol" data-modus="computer">Tegen de computer</button>
                 <button class="knop leeg" data-modus="samen">Met z'n tweeën</button>
@@ -937,7 +942,7 @@
           </div>
           <div class="kop-bediening">
             <button class="knop vol ee-schiet" data-speler="0">⚽ Schiet</button>
-            <p class="spel-info">Sleep op het veld om te lopen</p>
+            <p class="spel-info">Sleep om te lopen · pak <b>⚡</b> voor snelheid en <b>💥</b> voor een superschot</p>
             <button class="knop vol ee-schiet" data-speler="1" hidden>Schiet ⚽</button>
           </div>
         </div>
@@ -2924,13 +2929,54 @@
     ];
     const eeBal = { x: MID.x, y: MID.y, vx: 0, vy: 0, hoek: 0 };
     let eeModus = null, eeBezig = false, eeWacht = 0, eeLoop = false, eeInBeeld = false, eeVorige = 0, eeMelding = null;
+    // Dynamiek: vonken, balspoor, kreten, power-ups, trillen en flitsen
+    const eeDeeltjes = [], eeSpoor = [], eePopups = [];
+    let eeSchud = 0, eeFlits = 0, eeJuich = 0, eePower = null, eePowerTijd = 4, eeSpoorTijd = 0;
+    const EE_NIVEAUS = {
+      makkelijk: { naam: 'Makkelijk', snel: .6, schot: 520, pakBereik: 0 },
+      normaal:   { naam: 'Normaal',   snel: .76, schot: 640, pakBereik: 130 },
+      moeilijk:  { naam: 'Moeilijk',  snel: .93, schot: 740, pakBereik: 280 },
+    };
+    let eeNiveau = bewaar.lees('ee-niveau', 'normaal');
+    if (!EE_NIVEAUS[eeNiveau]) eeNiveau = 'normaal';
+    function eeZetNiveau(naam) {
+      eeNiveau = naam; bewaar.schrijf('ee-niveau', naam);
+      document.querySelectorAll('#eeNiveaus button').forEach(b => b.setAttribute('aria-pressed', b.dataset.eeNiveau === naam));
+    }
+    document.querySelectorAll('#eeNiveaus button').forEach(b => b.addEventListener('click', () => eeZetNiveau(b.dataset.eeNiveau)));
+    eeZetNiveau(eeNiveau);
+    function eeVonken(x, y, aantal, kleuren, kracht = 240, stof = false) {
+      if (rustig) return;
+      for (let i = 0; i < aantal; i++) {
+        const hoek = willekeurig(0, Math.PI * 2), v = willekeurig(kracht * .25, kracht);
+        eeDeeltjes.push({ x, y, vx: Math.cos(hoek) * v, vy: Math.sin(hoek) * v, leven: stof ? .45 : willekeurig(.25, .5), max: .5, stof,
+                          grootte: stof ? willekeurig(2.5, 5) : willekeurig(1.5, 3.2), kleur: kleuren[Math.floor(Math.random() * kleuren.length)] });
+      }
+    }
+    const eePopup = (tekst, x, y, kleur) => eePopups.push({ tekst, x: grens(x, 90, EB - 90), y: Math.max(40, y), kleur, t: 0 });
+    function eeEffecten(dt) {
+      eeSchud = Math.max(0, eeSchud - dt * 2.4); eeFlits = Math.max(0, eeFlits - dt * 2.2); eeJuich = Math.max(0, eeJuich - dt);
+      for (let i = eeDeeltjes.length - 1; i >= 0; i--) {
+        const d = eeDeeltjes[i];
+        d.leven -= dt; d.x += d.vx * dt; d.y += d.vy * dt; d.vx *= 1 - dt * 3; d.vy *= 1 - dt * 3;
+        if (d.leven <= 0) eeDeeltjes.splice(i, 1);
+      }
+      for (let i = eePopups.length - 1; i >= 0; i--) { eePopups[i].t += dt; if (eePopups[i].t > 1.2) eePopups.splice(i, 1); }
+    }
+    // Publiek langs de zijlijnen
+    const EE_PUBLIEK = [];
+    for (const y of [9, EH - 5]) for (let x = 8; x < EB; x += willekeurig(11, 15))
+      EE_PUBLIEK.push({ x, y, shirt: ['#f5c542', '#35c6ff', '#ffffff', '#1db954', '#ff6fc8', '#ff4d4d'][Math.floor(Math.random() * 6)],
+                        huid: ['#f1c9a5', '#d9a77e', '#b07a50', '#6b4226'][Math.floor(Math.random() * 4)], fase: willekeurig(0, 6), snel: willekeurig(9, 14) });
     const eeToetsen = new Set(), eeDoelen = [null, null], eeWijzers = new Map(), eeSchietKnop = [false, false];
 
     function eeAftrap() {
       eeSpelers.forEach(s => Object.assign(s, { x: s.startX, y: MID.y, vx: 0, vy: 0, kijk: s.doelX > MID.x ? 0 : Math.PI, wachtSchot: 0, schietAnim: 0 }));
       Object.assign(eeBal, { x: MID.x, y: MID.y, vx: 0, vy: 0 });
+      eeSpelers.forEach(s => { s.boost = 0; s.super = false; });
       eeDoelen[0] = eeDoelen[1] = null;
-      eeWacht = 1;
+      eeSpoor.length = 0; eeBal.vuur = 0;
+      eeWacht = 1.8;                    // 3 - 2 - 1 aftellen
     }
     function eeNieuw(modus) {
       eeModus = modus;
@@ -2945,6 +2991,7 @@
       eeScoreEl.textContent = '0 – 0';
       eeScherm.hidden = true;
       eeBezig = true; eeMelding = null;
+      eePower = null; eePowerTijd = 4; eePopups.length = 0;
       eeAftrap();
       fluit();
       eeStartLoop();
@@ -3001,7 +3048,14 @@
         const zij = ((s.x - b.x) * -dy + (s.y - b.y) * dx) >= 0 ? 1 : -1;
         doel = { x: b.x - dx * 22 - dy * zij * 44, y: b.y - dy * 22 + dx * zij * 44 };
       } else doel = Math.hypot(achter.x - s.x, achter.y - s.y) > 16 ? achter : { x: b.x + dx * 10, y: b.y + dy * 10 };
+      if (eePower && dBal > 90 && Math.hypot(eePower.x - s.x, eePower.y - s.y) < EE_NIVEAUS[eeNiveau].pakBereik) doel = { x: eePower.x, y: eePower.y };
       const inLijn = ((b.x - s.x) * dx + (b.y - s.y) * dy) / (dBal || 1) > .9;
+      // Ligt de bal al een tijdje stil bij een rand of in een hoek? Dan loopt hij erheen en trapt hem naar het midden
+      const mx = MID.x - b.x, my = MID.y - b.y, ml = Math.hypot(mx, my);
+      const stil = Math.hypot(b.vx, b.vy) < 30 && ml > 60;
+      if (!stil) s.vastSinds = 0; else if (!s.vastSinds) s.vastSinds = performance.now();
+      if (stil && performance.now() - s.vastSinds > 900)
+        return { doel: { x: b.x, y: b.y }, schiet: dBal < SP_R + B_R + 13, richting: [mx / ml, my / ml] };
       // Alleen schieten als hij dichtbij genoeg is en goed achter de bal staat; anders dribbelt hij verder
       const dichtbij = L < 330;
       return { doel, schiet: goedeKant && inLijn && !geblokt && dichtbij && dBal < SP_R + B_R + 12, richting: [dx, dy] };
@@ -3024,18 +3078,25 @@
           if (!rx && !ry && d) { rx = d.x - s.x; ry = d.y - s.y; if (Math.hypot(rx, ry) < 8) rx = ry = 0; }
           schiet = eeIn(s, 'schiet') || eeSchietKnop[nr];
         }
-        const L = Math.hypot(rx, ry), snel = SNEL * (s.ai ? .76 : 1);
+        s.boost = Math.max(0, s.boost - dt);
+        const L = Math.hypot(rx, ry), snel = SNEL * (s.ai ? EE_NIVEAUS[eeNiveau].snel : 1) * (s.boost > 0 ? 1.5 : 1);
         const wx = L ? rx / L * snel : 0, wy = L ? ry / L * snel : 0;
         s.vx += (wx - s.vx) * Math.min(1, dt * 11); s.vy += (wy - s.vy) * Math.min(1, dt * 11);
         s.x = grens(s.x + s.vx * dt, VELD.x1 + SP_R, VELD.x2 - SP_R);
         s.y = grens(s.y + s.vy * dt, VELD.y1 + SP_R, VELD.y2 - SP_R);
         if (L) s.kijk = Math.atan2(s.vy, s.vx);
+        const vaart = Math.hypot(s.vx, s.vy);
+        if (vaart > 225 && Math.random() < dt * (s.boost > 0 ? 40 : 10))
+          eeVonken(s.x - Math.cos(s.kijk) * 14, s.y - Math.sin(s.kijk) * 14, 1, [s.boost > 0 ? 'rgba(53,198,255,.7)' : 'rgba(225,245,215,.55)'], 50, true);
         s.wachtSchot = Math.max(0, s.wachtSchot - dt); s.schietAnim = Math.max(0, s.schietAnim - dt * 4);
         // Bal raken: dribbelen, of schieten als de schietknop is ingedrukt
         const dx = b.x - s.x, dy = b.y - s.y, d = Math.hypot(dx, dy) || 1, ux = dx / d, uy = dy / d;
         if (schiet && s.wachtSchot <= 0 && d < SP_R + B_R + 14) {
           const [kx, ky] = mik || [ux, uy];                 // de computer mikt op het doel, jij schiet in je looprichting
-          b.vx = kx * 640 + s.vx * .3; b.vy = ky * 640 + s.vy * .3;
+          const kracht = s.super ? 1080 : s.ai ? EE_NIVEAUS[eeNiveau].schot : 640;
+          b.vx = kx * kracht + s.vx * .3; b.vy = ky * kracht + s.vy * .3;
+          eeVonken(b.x, b.y, s.super ? 24 : 8, s.super ? ['#ff9f1c', '#f5c542', '#ff4d4d'] : ['#fff', s.kleur]);
+          if (s.super) { s.super = false; b.vuur = 1.5; eeSchud = .45; eePopup('SUPERSCHOT!', s.x, s.y - 36, '#ff9f1c'); }
           s.wachtSchot = .35; s.schietAnim = 1;
           trapGeluid({ pan: (s.x / EB) * 2 - 1 });
         } else if (d < SP_R + B_R) {
@@ -3044,6 +3105,21 @@
           if (vn < 0) { b.vx -= 1.35 * vn * ux; b.vy -= 1.35 * vn * uy; }
         }
       });
+      // Power-ups: verschijnen af en toe op het veld; wie eroverheen loopt, pakt hem
+      eePowerTijd -= dt;
+      if (!eePower && eePowerTijd <= 0)
+        eePower = { x: willekeurig(VELD.x1 + 120, VELD.x2 - 120), y: willekeurig(VELD.y1 + 55, VELD.y2 - 55), soort: Math.random() < .5 ? 'snel' : 'super', t: 0 };
+      if (eePower) {
+        eePower.t += dt;
+        const pakker = eeSpelers.find(s => Math.hypot(s.x - eePower.x, s.y - eePower.y) < SP_R + 16);
+        if (pakker) {
+          if (eePower.soort === 'snel') { pakker.boost = 5; eePopup('⚡ SUPERSNEL!', pakker.x, pakker.y - 36, '#35c6ff'); }
+          else { pakker.super = true; eePopup('💥 SUPERSCHOT KLAAR!', pakker.x, pakker.y - 36, '#ff9f1c'); }
+          eeVonken(eePower.x, eePower.y, 18, ['#f5c542', '#fff']);
+          trapGeluid({ pan: (pakker.x / EB) * 2 - 1, licht: true });
+          eePower = null; eePowerTijd = willekeurig(6, 10);
+        } else if (eePower.t > 9) { eePower = null; eePowerTijd = willekeurig(3, 6); }
+      }
       // Spelers botsen tegen elkaar
       const [p, q] = eeSpelers, sx = q.x - p.x, sy = q.y - p.y, sd = Math.hypot(sx, sy) || 1;
       if (sd < SP_R * 2) { const o = (SP_R * 2 - sd) / 2, ux = sx / sd, uy = sy / sd; p.x -= ux * o; p.y -= uy * o; q.x += ux * o; q.y += uy * o; }
@@ -3053,6 +3129,14 @@
       b.vx *= rem; b.vy *= rem;
       b.x += b.vx * dt; b.y += b.vy * dt;
       b.hoek += Math.hypot(b.vx, b.vy) * dt / B_R * Math.sign(b.vx || 1);
+      b.vuur = Math.max(0, b.vuur - dt);
+      eeSpoorTijd += dt;
+      if (eeSpoorTijd >= 1 / 60) {                       // spoor achter een snelle bal
+        eeSpoorTijd = 0;
+        if (Math.hypot(b.vx, b.vy) > 300) { eeSpoor.push([b.x, b.y]); if (eeSpoor.length > 12) eeSpoor.shift(); }
+        else if (eeSpoor.length) eeSpoor.shift();
+        if (b.vuur > 0) eeVonken(b.x, b.y, 1, ['#ff9f1c', '#f5c542', '#ff4d4d'], 70);
+      }
       if (b.y < VELD.y1 + B_R) { b.y = VELD.y1 + B_R; b.vy = Math.abs(b.vy) * .8; }
       if (b.y > VELD.y2 - B_R) { b.y = VELD.y2 - B_R; b.vy = -Math.abs(b.vy) * .8; }
       for (const px of [VELD.x1, VELD.x2]) for (const py of [MOND.y1, MOND.y2]) {       // de vier palen
@@ -3060,7 +3144,7 @@
         if (d && d < B_R + 5) {
           const ux = dx / d, uy = dy / d, vn = b.vx * ux + b.vy * uy;
           b.x = px + ux * (B_R + 5); b.y = py + uy * (B_R + 5);
-          if (vn < 0) { b.vx -= 1.8 * vn * ux; b.vy -= 1.8 * vn * uy; if (vn < -120) paalGeluid(); }
+          if (vn < 0) { b.vx -= 1.8 * vn * ux; b.vy -= 1.8 * vn * uy; if (vn < -120) { paalGeluid(); eePopup('PAAL!', px, py - 20, '#fff'); eeVonken(b.x, b.y, 10, ['#fff', '#ddd']); eeSchud = .35; } }
         }
       }
       const inMond = b.y > MOND.y1 && b.y < MOND.y2;
@@ -3076,6 +3160,8 @@
       const s = eeSpelers[nr];
       s.score++;
       eeScoreEl.textContent = `${eeSpelers[0].score} – ${eeSpelers[1].score}`;
+      eeSchud = 1; eeFlits = 1; eeJuich = 2.2;
+      eeVonken(nr === 0 ? VELD.x2 + 14 : VELD.x1 - 14, eeBal.y, 26, ['#fff', s.kleur, '#f5c542'], 320);
       speel('net');
       const r = eeDoek.getBoundingClientRect();
       confetti(eeDoek.parentElement, (nr === 0 ? VELD.x2 : VELD.x1) / EB * r.width, r.height / 2, 60);
@@ -3090,14 +3176,22 @@
       }
       (eeModus === 'computer' && nr === 1) ? oohGeluid() : juichGeluid();
       eeMelding = { tekst: 'GOAL!', kleur: s.kleur, t: 0 };
-      eeAftrap(); eeWacht = 1.5;
+      eeAftrap(); eeWacht = 2.5;
     }
 
     /* ---------- Tekenen ---------- */
     function eeTeken() {
       const schaal = eeDoek.width / EB;
+      const nu = performance.now() / 1000;
       ec.setTransform(schaal, 0, 0, schaal, 0, 0);
       ec.fillStyle = '#0c3d1c'; ec.fillRect(0, 0, EB, EH);
+      if (eeSchud && !rustig) ec.translate((Math.random() - .5) * eeSchud * 12, (Math.random() - .5) * eeSchud * 9);
+      // publiek langs de lijn (springt bij een goal)
+      for (const p of EE_PUBLIEK) {
+        const hop = eeJuich > 0 ? Math.abs(Math.sin(nu * p.snel + p.fase)) * 4 : Math.sin(nu * 2 + p.fase) * .6;
+        ec.fillStyle = p.shirt; ec.beginPath(); ec.roundRect(p.x - 4.5, p.y - 2 - hop, 9, 8, 3); ec.fill();
+        ec.fillStyle = p.huid; ec.beginPath(); ec.arc(p.x, p.y - 5 - hop, 3.2, 0, Math.PI * 2); ec.fill();
+      }
       // veld met maaistroken
       for (let i = 0; i < 12; i++) { ec.fillStyle = i % 2 ? '#1f8a41' : '#1c7a3a'; ec.fillRect(VELD.x1 + i * (VELD.x2 - VELD.x1) / 12, VELD.y1, (VELD.x2 - VELD.x1) / 12 + 1, VELD.y2 - VELD.y1); }
       ec.strokeStyle = 'rgba(255,255,255,.8)'; ec.lineWidth = 2.5;
@@ -3120,8 +3214,27 @@
       }
       // sleepdoel (vinger/muis)
       eeDoelen.forEach((d, nr) => { if (d && eeBezig) { ec.strokeStyle = eeSpelers[nr].kleur; ec.globalAlpha = .6; ec.lineWidth = 2; ec.beginPath(); ec.arc(d.x, d.y, 14, 0, Math.PI * 2); ec.stroke(); ec.globalAlpha = 1; } });
+      // power-up: pulserende cirkel met ⚡ of 💥
+      if (eePower && eeBezig) {
+        const p = eePower, puls = 1 + Math.sin(nu * 7) * .12, kleur = p.soort === 'snel' ? '#35c6ff' : '#ff9f1c';
+        ec.globalAlpha = p.t > 7 ? .4 + Math.abs(Math.sin(nu * 12)) * .6 : Math.min(1, p.t * 3);
+        const gloed = ec.createRadialGradient(p.x, p.y, 4, p.x, p.y, 34 * puls);
+        gloed.addColorStop(0, kleur); gloed.addColorStop(1, 'rgba(0,0,0,0)');
+        ec.fillStyle = gloed; ec.beginPath(); ec.arc(p.x, p.y, 34 * puls, 0, Math.PI * 2); ec.fill();
+        ec.fillStyle = '#111'; ec.strokeStyle = kleur; ec.lineWidth = 3;
+        ec.beginPath(); ec.arc(p.x, p.y, 15 * puls, 0, Math.PI * 2); ec.fill(); ec.stroke();
+        ec.font = '17px sans-serif'; ec.textAlign = 'center'; ec.textBaseline = 'middle';
+        ec.fillStyle = '#fff'; ec.fillText(p.soort === 'snel' ? '⚡' : '💥', p.x, p.y + 1);
+        ec.globalAlpha = 1;
+      }
       // bal
       const b = eeBal;
+      eeSpoor.forEach(([x, y], i) => {                    // spoor (vuur bij een superschot)
+        ec.globalAlpha = i / eeSpoor.length * (b.vuur > 0 ? .65 : .3);
+        ec.fillStyle = b.vuur > 0 ? (i % 2 ? '#ff9f1c' : '#f5c542') : '#fff';
+        ec.beginPath(); ec.arc(x, y, B_R * (.4 + i / eeSpoor.length * .6) * (b.vuur > 0 ? 1.4 : 1), 0, Math.PI * 2); ec.fill();
+      });
+      ec.globalAlpha = 1;
       ec.fillStyle = 'rgba(0,0,0,.3)'; ec.beginPath(); ec.ellipse(b.x + 3, b.y + 5, B_R, B_R * .7, 0, 0, Math.PI * 2); ec.fill();
       ec.save(); ec.translate(b.x, b.y); ec.rotate(b.hoek);
       ec.fillStyle = '#fff'; ec.strokeStyle = '#111'; ec.lineWidth = 1.3;
@@ -3133,6 +3246,13 @@
       for (const s of eeSpelers) {
         if (s.x === undefined) continue;
         ec.fillStyle = 'rgba(0,0,0,.3)'; ec.beginPath(); ec.ellipse(s.x + 3, s.y + 6, SP_R, SP_R * .8, 0, 0, Math.PI * 2); ec.fill();
+        // aura: blauw bij supersnel, oranje als het superschot klaarstaat
+        if (s.boost > 0 || s.super) {
+          ec.strokeStyle = s.super ? '#ff9f1c' : '#35c6ff'; ec.lineWidth = 3; ec.globalAlpha = .5 + Math.sin(nu * 12) * .3;
+          ec.beginPath(); ec.arc(s.x, s.y, SP_R + 7 + Math.sin(nu * 9) * 2, 0, Math.PI * 2); ec.stroke();
+          if (s.boost > 0 && s.super) { ec.strokeStyle = '#35c6ff'; ec.beginPath(); ec.arc(s.x, s.y, SP_R + 12, 0, Math.PI * 2); ec.stroke(); }
+          ec.globalAlpha = 1;
+        }
         ec.save(); ec.translate(s.x, s.y); ec.rotate(s.kijk);
         const loop = Math.sin(performance.now() / 60) * Math.min(1, Math.hypot(s.vx, s.vy) / 120) * 6;
         ec.fillStyle = '#111';
@@ -3148,6 +3268,20 @@
         const label = s.ai ? 'Computer' : s.naam;
         ec.strokeText(label, s.x, s.y - SP_R - 5); ec.fillText(label, s.x, s.y - SP_R - 5);
       }
+      // vonken, stof en kreten
+      for (const d of eeDeeltjes) {
+        ec.globalAlpha = Math.max(0, d.leven / d.max); ec.fillStyle = d.kleur;
+        ec.beginPath(); ec.arc(d.x, d.y, d.grootte * (d.stof ? 1.6 - d.leven / d.max * .6 : 1), 0, Math.PI * 2); ec.fill();
+      }
+      ec.globalAlpha = 1;
+      for (const p of eePopups) {
+        const sc = p.t < .12 ? .5 + p.t / .12 * .7 : 1;
+        ec.save(); ec.translate(p.x, p.y - p.t * 34); ec.scale(sc, sc); ec.globalAlpha = p.t > .85 ? Math.max(0, 1 - (p.t - .85) / .35) : 1;
+        ec.font = '24px "Bebas Neue", sans-serif'; ec.textAlign = 'center'; ec.textBaseline = 'middle';
+        ec.lineWidth = 5; ec.strokeStyle = 'rgba(0,0,0,.7)'; ec.strokeText(p.tekst, 0, 0);
+        ec.fillStyle = p.kleur; ec.fillText(p.tekst, 0, 0); ec.restore();
+      }
+      if (eeFlits) { ec.fillStyle = `rgba(255,255,255,${eeFlits * .32})`; ec.fillRect(-20, -20, EB + 40, EH + 40); }
       // meldingen
       if (eeBezig && eeMelding && eeMelding.t < 1.4) {
         const t = eeMelding.t, sc = t < .15 ? .4 + t / .15 * .8 : t < .3 ? 1.2 - (t - .15) / .15 * .2 : 1;
@@ -3156,8 +3290,12 @@
         ec.lineWidth = 8; ec.strokeStyle = 'rgba(0,0,0,.6)'; ec.strokeText(eeMelding.tekst, 0, 0);
         ec.fillStyle = eeMelding.kleur; ec.fillText(eeMelding.tekst, 0, 0); ec.restore();
       } else if (eeBezig && eeWacht > 0) {
-        ec.fillStyle = 'rgba(255,255,255,.9)'; ec.font = '30px "Bebas Neue", sans-serif'; ec.textAlign = 'center'; ec.textBaseline = 'middle';
-        ec.fillText('Klaar…', MID.x, MID.y - 86);
+        // aftellen: 3 - 2 - 1, elk cijfer springt in beeld
+        const cijfer = Math.min(3, Math.ceil(eeWacht / .6)), deel = (eeWacht / .6) % 1, sc = 1 + deel * .8;
+        ec.save(); ec.translate(MID.x, MID.y - 96); ec.scale(sc, sc); ec.globalAlpha = Math.min(1, 1.3 - deel);
+        ec.font = '84px "Bebas Neue", sans-serif'; ec.textAlign = 'center'; ec.textBaseline = 'middle';
+        ec.lineWidth = 8; ec.strokeStyle = 'rgba(0,0,0,.6)'; ec.strokeText(cijfer, 0, 0);
+        ec.fillStyle = '#f5c542'; ec.fillText(cijfer, 0, 0); ec.restore();
       }
     }
     function eeMaat() {
@@ -3170,6 +3308,7 @@
       eeVorige = nu;
       const stappen = Math.ceil(dt / (1 / 180));
       for (let i = 0; i < stappen && eeBezig; i++) eeStap(dt / stappen);
+      eeEffecten(dt);
       eeTeken();
       if (eeBezig && eeInBeeld) requestAnimationFrame(eeFrame); else eeLoop = false;
     }
