@@ -112,7 +112,16 @@
     .sectie-kop p:not(.label) { color: var(--grijs); margin: 10px 0 0; max-width: 55ch; }
 
     /* Tellers */
-    .tellers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    /* Typende regel en verhaal dat oplicht bij het scrollen */
+    .typ { font-family: "Bebas Neue", sans-serif; font-size: clamp(2rem, 6.5vw, 3.8rem); line-height: 1.05; margin: 0 0 26px; min-height: 2.2em; }
+    #typWoord { color: var(--goud); }
+    .typ-cursor { display: inline-block; width: .06em; height: .85em; margin-left: .06em; background: var(--goud); vertical-align: -.05em; animation: knipper 1s steps(2) infinite; }
+    @keyframes knipper { 50% { opacity: 0; } }
+    .verhaal { font-size: clamp(1.35rem, 3.6vw, 2.3rem); font-weight: 800; line-height: 1.4; margin: 0 0 56px; max-width: 30em; }
+    .verhaal span { color: #3d3d3d; transition: color .35s, text-shadow .35s; }
+    .verhaal span.aan { color: var(--wit); }
+    .verhaal span.naam.aan { color: var(--goud); text-shadow: 0 0 18px rgba(245,197,66,.45); }
+    .tellers { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
     .teller { background: var(--paneel); border: 1px solid var(--rand); border-radius: 20px; padding: 28px 20px; text-align: center;
               transition: transform .3s, border-color .3s; }
     .teller:hover { transform: translateY(-6px) rotate(-1deg); border-color: var(--goud); }
@@ -481,7 +490,9 @@
       .hero-foto::after { content: ""; position: absolute; inset: 55% 0 0; background: linear-gradient(transparent, #000); }
       .hero-tekst { margin-top: -48px; padding-bottom: 56px; }
       .scroll-hint { display: none; }
-      .tellers { grid-template-columns: 1fr; }
+      .tellers { grid-template-columns: repeat(2, 1fr); }
+      .teller { padding: 20px 12px; }
+      .typ { min-height: 2.2em; }
       .kaarten { grid-template-columns: minmax(0, 320px); }
       .spel-onder { grid-template-columns: 1fr; }
       .richtknoppen { grid-template-columns: repeat(3, 1fr); }
@@ -572,10 +583,16 @@
           <h2 class="kop">Wie zijn wij?</h2>
         </div>
 
+        <p class="typ verschijn" aria-label="Wij zijn beste vrienden, voetballers, teamgenoten en de makers van deze website">
+          Wij zijn <span id="typWoord" aria-hidden="true"></span><span class="typ-cursor" aria-hidden="true"></span>
+        </p>
+        <p class="verhaal" id="verhaal">Wij zijn Sill-vyan en Naoufal. Twee vrienden met één grote passie: voetbal. Deze website hebben we zelf bedacht, met onze eigen spellen. Schiet een penalty, probeer een panenka, maak een omhaal, hou de bal hoog of sta zelf in het doel. En durf je het aan? Daag ons uit: één tegen één!</p>
+
         <div class="tellers verschijn">
           <div class="teller"><b data-tel="2">0</b><span>vrienden</span></div>
           <div class="teller"><b data-tel="1">0</b><span>passie: voetbal</span></div>
           <div class="teller"><b data-tel="100">0</b><span>procent inzet</span></div>
+          <div class="teller"><b data-tel="7">0</b><span>spellen om te spelen</span></div>
         </div>
 
         <div class="kaarten" style="margin-top:56px">
@@ -1046,6 +1063,40 @@
       verschijnObserver.unobserve(item.target);
     }), { threshold: 0.15 });
     document.querySelectorAll('.verschijn').forEach(el => verschijnObserver.observe(el));
+
+    /* ================= Tekst over ons: typen en oplichten ================= */
+    const typWoord = $('#typWoord');
+    const TYP_WOORDEN = ['beste vrienden', 'voetballers', 'teamgenoten', 'spelletjesmakers', 'Sill-vyan & Naoufal'];
+    if (rustig) {
+      let i = 0; typWoord.textContent = TYP_WOORDEN[0];
+      setInterval(() => typWoord.textContent = TYP_WOORDEN[++i % TYP_WOORDEN.length], 3000);
+    } else {
+      let woord = 0, letter = 0, wissen = false;
+      const typ = () => {
+        const w = TYP_WOORDEN[woord];
+        letter += wissen ? -1 : 1;
+        typWoord.textContent = w.slice(0, letter);
+        let wacht = wissen ? 35 : 75 + Math.random() * 50;
+        if (!wissen && letter === w.length) { wissen = true; wacht = 1500; }
+        else if (wissen && letter === 0) { wissen = false; woord = (woord + 1) % TYP_WOORDEN.length; wacht = 350; }
+        setTimeout(typ, wacht);
+      };
+      typ();
+    }
+    // Verhaal: elk woord een eigen span; hoe verder je scrolt, hoe meer woorden oplichten
+    const verhaal = $('#verhaal');
+    const NAAM_WOORDEN = /^(Sill-vyan|Naoufal|voetbal|penalty|panenka|omhaal)[.,:!?]*$/i;
+    verhaal.innerHTML = verhaal.textContent.trim().split(/\s+/).map(w => `<span class="${NAAM_WOORDEN.test(w) ? 'naam' : ''}">${w}</span>`).join(' ');
+    const verhaalWoorden = [...verhaal.children];
+    function verhaalLicht() {
+      const rect = verhaal.getBoundingClientRect();
+      const voortgang = rustig ? 1 : grens((innerHeight * .88 - rect.top) / (rect.height + innerHeight * .38), 0, 1);
+      const aantal = Math.ceil(voortgang * verhaalWoorden.length);
+      verhaalWoorden.forEach((w, i) => w.classList.toggle('aan', i < aantal));
+    }
+    addEventListener('scroll', verhaalLicht, { passive: true });
+    addEventListener('resize', verhaalLicht);
+    verhaalLicht();
 
     /* ================= Spelerskaarten: kantelen en omdraaien ================= */
     document.querySelectorAll('.kaart').forEach(kaart => {
