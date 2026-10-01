@@ -585,6 +585,10 @@
     @keyframes memPop { 40% { scale: 1.12; } }
     @media (max-width: 760px) { .mem-bord[style*="--kol: 6"] { --kol: 4 !important; } .mem-bord { max-width: none; } }
 
+    /* ---------- Minigame: dribbelrun ---------- */
+    #rnDoek { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; touch-action: none; cursor: pointer; }
+    #rnKnop { touch-action: none; user-select: none; -webkit-user-select: none; }
+
     /* ---------- Foto ---------- */
     .foto-groot { border-radius: 26px; overflow: hidden; border: 1px solid var(--rand); margin: 0; }
     .foto-groot.zichtbaar { transition: transform .25s ease-out, opacity .8s; }
@@ -693,6 +697,7 @@
             <li><a href="#eentegeneen">⚔️ 1 tegen 1</a></li>
             <li><a href="#dribbel">🏁 Dribbelen</a></li>
             <li><a href="#memory">🃏 Memory</a></li>
+            <li><a href="#dribbelrun">🏃 Dribbelrun</a></li>
           </ul>
         </li>
         <li><a href="#foto">Foto</a></li>
@@ -730,8 +735,8 @@
 
     <div class="lichtkrant twee" aria-hidden="true">
       <div class="lichtkrant-rij">
-        <span>Penalty's ⚽ Panenka ⚽ Hooghouden ⚽ Overkoppen ⚽ Omhaal ⚽ Keeper ⚽ 1 tegen 1 ⚽ Vrije trap ⚽ Dribbelen ⚽ Schietwand ⚽ Memory ⚽</span>
-        <span>Penalty's ⚽ Panenka ⚽ Hooghouden ⚽ Overkoppen ⚽ Omhaal ⚽ Keeper ⚽ 1 tegen 1 ⚽ Vrije trap ⚽ Dribbelen ⚽ Schietwand ⚽ Memory ⚽</span>
+        <span>Penalty's ⚽ Panenka ⚽ Hooghouden ⚽ Overkoppen ⚽ Omhaal ⚽ Keeper ⚽ 1 tegen 1 ⚽ Vrije trap ⚽ Dribbelen ⚽ Schietwand ⚽ Memory ⚽ Dribbelrun ⚽</span>
+        <span>Penalty's ⚽ Panenka ⚽ Hooghouden ⚽ Overkoppen ⚽ Omhaal ⚽ Keeper ⚽ 1 tegen 1 ⚽ Vrije trap ⚽ Dribbelen ⚽ Schietwand ⚽ Memory ⚽ Dribbelrun ⚽</span>
       </div>
     </div>
 
@@ -752,7 +757,7 @@
           <div class="teller"><b data-tel="2">0</b><span>vrienden</span></div>
           <div class="teller"><b data-tel="1">0</b><span>passie: voetbal</span></div>
           <div class="teller"><b data-tel="100">0</b><span>procent inzet</span></div>
-          <div class="teller"><b data-tel="11">0</b><span>spellen om te spelen</span></div>
+          <div class="teller"><b data-tel="12">0</b><span>spellen om te spelen</span></div>
         </div>
 
         <div class="kaarten" style="margin-top:56px">
@@ -1220,6 +1225,32 @@
           </div>
           <p class="mem-stand" id="memStand" aria-live="polite"></p>
           <div class="mem-bord" id="memBord"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Minigame: dribbelrun -->
+    <section id="dribbelrun" style="background:var(--paneel)">
+      <div class="wrap">
+        <div class="sectie-kop verschijn">
+          <p class="label">Minigame</p>
+          <h2 class="kop">Dribbelrun</h2>
+          <p>Ren met de bal over het veld en spring over pionnen, slidings en muurtjes. In de lucht kun je nog één keer springen. Pak de gouden ballen voor extra punten. Het gaat steeds sneller: hoe ver kom jij?</p>
+        </div>
+        <div class="kop-spel verschijn">
+          <div class="kop-doek-houder">
+            <canvas id="rnDoek" width="800" height="450" aria-label="Dribbelrun: spring over de obstakels"></canvas>
+            <div class="kop-scherm" id="rnScherm">
+              <h3 class="kop" id="rnTitel">Dribbelrun</h3>
+              <p id="rnTekst">Spring over alles heen. Je hebt 3 levens.</p>
+              <div class="kop-modi"><button class="knop vol" id="rnStartKnop">Start</button></div>
+              <p class="kop-uitleg">Springen met <b>spatie</b>, <b>pijltje omhoog</b> of een <b>klik</b>. Nog een keer drukken in de lucht = dubbele sprong.</p>
+            </div>
+          </div>
+          <div class="kop-bediening">
+            <p class="spel-info">Afstand: <b id="rnAfstand">0</b> m · Punten: <b id="rnPunten">0</b> · Levens: <b id="rnLevens">❤❤❤</b> · Record: <b id="rnRecord">0</b></p>
+            <button class="knop vol om-knop" id="rnKnop">⤒ Spring!</button>
+          </div>
         </div>
       </div>
     </section>
@@ -4725,6 +4756,262 @@
     $('#memNieuw').addEventListener('click', memNieuw);
     document.querySelectorAll('#memNiveaus button').forEach(x => x.setAttribute('aria-pressed', x.dataset.memNiveau === memNiveau));
     memNieuw();
+
+    /* ================= Minigame: dribbelrun ================= */
+    const rnDoek = $('#rnDoek'), nc = rnDoek.getContext('2d');
+    const NB = 800, NH = 450, NG = 372, RN_X = 170, RN_ZW = 2100;
+    const rnScherm = $('#rnScherm'), rnTitel = $('#rnTitel'), rnTekst = $('#rnTekst');
+    const rnAfstandEl = $('#rnAfstand'), rnPuntenEl = $('#rnPunten'), rnLevensEl = $('#rnLevens'), rnRecordEl = $('#rnRecord');
+    let rnRecord = bewaar.lees('dribbelrun-record', 0);
+    rnRecordEl.textContent = rnRecord;
+    let rn = null, rnLoop = false, rnInBeeld = false, rnVorige = 0, rnRust = 0, rnScroll = 0;
+
+    function rnStart() {
+      rn = { bezig: true, snelheid: 300, afstand: 0, bonus: 0, levens: 3, y: NG, vy: 0, sprongen: 0, fase: 0, onkwetsbaar: 0,
+             obstakels: [], munten: [], volgende: 500, volgendeMunt: 300, deeltjes: [], popups: [], schud: 0, wacht: 1.5, tijd: 0 };
+      rnScherm.hidden = true;
+      rnAfstandEl.textContent = 0; rnPuntenEl.textContent = 0; rnLevensEl.textContent = '❤❤❤';
+      fluit();
+      rnStartLoop();
+    }
+    $('#rnStartKnop').addEventListener('click', rnStart);
+
+    function rnSpring() {
+      if (!rn?.bezig || rn.wacht > 0 || rn.sprongen >= 2) return;
+      rn.vy = rn.sprongen === 0 ? -740 : -640;
+      rn.sprongen++;
+      trapGeluid({ licht: true, pan: -.5 });
+      rnVonken(RN_X, rn.y, 6, ['rgba(225,245,215,.6)'], 90);
+    }
+    rnDoek.addEventListener('pointerdown', e => { if (rn?.bezig) { e.preventDefault(); rnSpring(); } });
+    $('#rnKnop').addEventListener('pointerdown', e => { e.preventDefault(); rnSpring(); });
+    addEventListener('keydown', e => {
+      if (!rn?.bezig || !rnInBeeld || e.repeat || (e.code !== 'Space' && e.code !== 'ArrowUp' && e.code !== 'KeyW')) return;
+      if (document.activeElement?.closest('button, a, input') && document.activeElement.id !== 'rnKnop') return;
+      e.preventDefault(); rnSpring();
+    });
+    function rnVonken(x, y, aantal, kleuren, kracht = 220) {
+      if (rustig) return;
+      for (let i = 0; i < aantal; i++) {
+        const hoek = willekeurig(0, Math.PI * 2), v = willekeurig(kracht * .25, kracht);
+        rn.deeltjes.push({ x, y, vx: Math.cos(hoek) * v, vy: Math.sin(hoek) * v - 40, leven: willekeurig(.25, .5), max: .5, grootte: willekeurig(1.5, 3.4), kleur: kleuren[i % kleuren.length] });
+      }
+    }
+    const rnPopup = (tekst, x, y, kleur) => rn.popups.push({ tekst, x, y, kleur, t: 0 });
+
+    function rnStap(dt) {
+      rn.schud = Math.max(0, rn.schud - dt * 2.4);
+      for (let i = rn.deeltjes.length - 1; i >= 0; i--) { const d = rn.deeltjes[i]; d.leven -= dt; d.x += d.vx * dt - (rn.bezig ? rn.snelheid * dt * .5 : 0); d.y += d.vy * dt; d.vy += 500 * dt; if (d.leven <= 0) rn.deeltjes.splice(i, 1); }
+      for (let i = rn.popups.length - 1; i >= 0; i--) { rn.popups[i].t += dt; if (rn.popups[i].t > 1) rn.popups.splice(i, 1); }
+      if (!rn.bezig) return;
+      if (rn.wacht > 0) { rn.wacht -= dt; rn.fase += dt * 9; return; }
+      rn.tijd += dt;
+      rn.snelheid = Math.min(640, 300 + rn.tijd * 6.5);                     // steeds sneller
+      const weg = rn.snelheid * dt;
+      rn.afstand += weg; rnScroll += weg; rn.fase += dt * (8 + rn.snelheid / 60);
+      rn.onkwetsbaar = Math.max(0, rn.onkwetsbaar - dt);
+      // springen en landen
+      rn.vy += RN_ZW * dt; rn.y += rn.vy * dt;
+      if (rn.y >= NG) { if (rn.vy > 400) rnVonken(RN_X, NG, 5, ['rgba(225,245,215,.6)'], 80); rn.y = NG; rn.vy = 0; rn.sprongen = 0; }
+      // nieuwe obstakels: pion, sliding of muurtje, met genoeg ruimte om te landen
+      rn.volgende -= weg;
+      if (rn.volgende <= 0) {
+        const kans = Math.random(), soort = kans < .45 ? 'pion' : kans < .78 ? 'sliding' : 'muur';
+        const o = soort === 'pion' ? { w: 26, h: 36 } : soort === 'sliding' ? { w: 74, h: 28 } : { w: 46, h: 76 };
+        rn.obstakels.push({ soort, x: NB + 40, ...o, geraakt: false });
+        if (soort === 'pion' && Math.random() < .3) rn.obstakels.push({ soort: 'pion', x: NB + 40 + 34, w: 26, h: 36, geraakt: false });
+        rn.volgende = willekeurig(.95, 1.55) * rn.snelheid;
+      }
+      rn.volgendeMunt -= weg;
+      if (rn.volgendeMunt <= 0) {
+        const hoog = Math.random() < .55, aantal = 1 + Math.floor(Math.random() * 3);
+        for (let i = 0; i < aantal; i++) rn.munten.push({ x: NB + 30 + i * 38, y: hoog ? NG - willekeurig(110, 150) : NG - 34, pak: false });
+        rn.volgendeMunt = willekeurig(520, 1050);
+      }
+      for (let i = rn.obstakels.length - 1; i >= 0; i--) {
+        const o = rn.obstakels[i];
+        o.x -= weg;
+        if (o.x + o.w < -60) { rn.obstakels.splice(i, 1); continue; }
+        // geraakt? (rechthoek van de speler tegen rechthoek van het obstakel)
+        if (!o.geraakt && rn.onkwetsbaar <= 0 && RN_X + 13 > o.x + 4 && RN_X - 13 < o.x + o.w - 4 && rn.y > NG - o.h + 6) {
+          o.geraakt = true; rn.levens--; rn.onkwetsbaar = 1.3; rn.schud = .8;
+          rnLevensEl.textContent = '❤'.repeat(rn.levens) + '🖤'.repeat(3 - rn.levens);
+          speel('handschoen'); oohGeluid();
+          rnVonken(o.x + o.w / 2, NG - o.h / 2, 16, ['#ff5a5a', '#fff', '#ff9f1c'], 280);
+          rnPopup(o.soort === 'pion' ? 'PION!' : o.soort === 'sliding' ? 'SLIDING!' : 'MUUR!', RN_X + 30, rn.y - 110, '#ff5a5a');
+          if (rn.levens <= 0) return rnEinde();
+        }
+      }
+      for (let i = rn.munten.length - 1; i >= 0; i--) {
+        const m = rn.munten[i];
+        m.x -= weg;
+        if (m.x < -30) { rn.munten.splice(i, 1); continue; }
+        if (Math.abs(m.x - RN_X) < 28 && m.y > rn.y - 96 && m.y < rn.y + 8) {
+          rn.munten.splice(i, 1); rn.bonus += 10;
+          speel('net'); rnVonken(m.x, m.y, 10, ['#f5c542', '#fff3b0', '#fff']); rnPopup('+10', m.x, m.y - 20, '#f5c542');
+        }
+      }
+      const meters = Math.floor(rn.afstand / 40);
+      rnAfstandEl.textContent = meters; rnPuntenEl.textContent = meters + rn.bonus;
+    }
+    function rnEinde() {
+      rn.bezig = false;
+      const meters = Math.floor(rn.afstand / 40), punten = meters + rn.bonus, nieuw = punten > rnRecord;
+      if (nieuw) { rnRecord = punten; bewaar.schrijf('dribbelrun-record', rnRecord); rnRecordEl.textContent = rnRecord; }
+      rnTitel.textContent = nieuw ? 'Nieuw record!' : meters >= 300 ? 'Wat een sprint!' : 'Onderuit!';
+      rnTekst.textContent = `${meters} meter gerend · ${rn.bonus / 10} gouden ballen · ${punten} punten`;
+      $('#rnStartKnop').textContent = 'Nog een keer';
+      setTimeout(() => { rnScherm.hidden = false; }, 700);
+      fluit();
+      if (nieuw) { juichGeluid(); const r = rnDoek.getBoundingClientRect(); confetti(rnDoek.parentElement, r.width / 2, r.height / 3, 110); }
+    }
+
+    /* ---------- Tekenen ---------- */
+    function rnPoppetje(x, y, fase, lucht, opgaand) {
+      const heup = [x - 2, y - 44], schouder = [x + 5, y - 73], hoofd = [x + 8, y - 87];
+      nc.lineCap = 'round'; nc.lineJoin = 'round';
+      const lijn = (a, b, breed, kleur) => { nc.strokeStyle = kleur; nc.lineWidth = breed; nc.beginPath(); nc.moveTo(a[0], a[1]); nc.lineTo(b[0], b[1]); nc.stroke(); };
+      const been = (voor, donker) => {
+        const p = fase + (voor ? 0 : Math.PI);
+        const voet = lucht > 1 ? (opgaand ? [x + (voor ? 8 : -12), y - (voor ? 2 : -2)] : [x + (voor ? 14 : -6), y - (voor ? 16 : 6)]) : [x + Math.sin(p) * 17, y - Math.max(0, Math.cos(p)) * 11];
+        const dx = voet[0] - heup[0], dy = voet[1] - heup[1], d = Math.min(43.5, Math.hypot(dx, dy)) || 1, buig = Math.sqrt(Math.max(0, 484 - (d / 2) ** 2));
+        const knie = [heup[0] + dx / 2 + (dy / d) * buig, heup[1] + dy / 2 - (dx / d) * buig];
+        lijn(heup, knie, 10, donker ? '#b98a63' : '#d9a77e'); lijn(knie, voet, 8, donker ? '#d5d5d5' : '#fff');
+        nc.fillStyle = '#111'; nc.beginPath(); nc.ellipse(voet[0] + 4, voet[1] - 2, 9, 4.5, 0, 0, Math.PI * 2); nc.fill();
+      };
+      const arm = (voor, donker) => {
+        const zw = lucht > 1 ? (voor ? -1 : 1) : Math.sin(fase + (voor ? Math.PI : 0));
+        const hand = lucht > 1 ? [schouder[0] + (voor ? 16 : -14), schouder[1] - 4] : [schouder[0] + 4 + zw * 13, schouder[1] + 24 - Math.abs(zw) * 6];
+        const elleboog = [(schouder[0] + hand[0]) / 2 - 5, (schouder[1] + hand[1]) / 2 + 3];
+        lijn(schouder, elleboog, 8, donker ? '#9a7412' : '#f5c542'); lijn(elleboog, hand, 6, donker ? '#b98a63' : '#d9a77e');
+      };
+      arm(false, true); been(false, true);
+      nc.fillStyle = '#141414'; nc.beginPath(); nc.roundRect(heup[0] - 11, heup[1] - 9, 22, 19, 6); nc.fill();
+      lijn([heup[0], heup[1] - 8], schouder, 23, '#f5c542');
+      nc.fillStyle = 'rgba(0,0,0,.5)'; nc.font = 'bold 12px "Bebas Neue", sans-serif'; nc.textAlign = 'center'; nc.textBaseline = 'middle'; nc.fillText('10', (heup[0] + schouder[0]) / 2, (heup[1] + schouder[1]) / 2 - 4);
+      been(true, false); arm(true, false);
+      lijn(schouder, [hoofd[0] - 2, hoofd[1] + 8], 8, '#c9976f');
+      nc.fillStyle = '#d9a77e'; nc.beginPath(); nc.arc(hoofd[0], hoofd[1], 14, 0, Math.PI * 2); nc.fill();
+      nc.fillStyle = '#c9976f'; nc.beginPath(); nc.moveTo(hoofd[0] + 12, hoofd[1] - 1); nc.lineTo(hoofd[0] + 18, hoofd[1] + 4); nc.lineTo(hoofd[0] + 12, hoofd[1] + 6); nc.fill();
+      nc.fillStyle = '#23160d'; nc.beginPath(); nc.arc(hoofd[0], hoofd[1], 14.6, Math.PI - .75, Math.PI * 2 - .25); nc.fill();
+      nc.fillStyle = '#fff'; nc.beginPath(); nc.ellipse(hoofd[0] + 7, hoofd[1] - 2, 3.6, 3, 0, 0, Math.PI * 2); nc.fill();
+      nc.fillStyle = '#111'; nc.beginPath(); nc.arc(hoofd[0] + 8.4, hoofd[1] - 2, 1.7, 0, Math.PI * 2); nc.fill();
+    }
+    function rnTeken() {
+      const schaal = rnDoek.width / NB, nu = performance.now() / 1000;
+      nc.setTransform(schaal, 0, 0, schaal, 0, 0);
+      nc.fillStyle = '#050817'; nc.fillRect(0, 0, NB, NH);
+      if (rn?.schud && !rustig) nc.translate((Math.random() - .5) * rn.schud * 12, (Math.random() - .5) * rn.schud * 9);
+      // lucht en sterren (staan stil), lichtmasten en tribune (schuiven langzaam), reclame (sneller), gras (snelst)
+      const lucht = nc.createLinearGradient(0, 0, 0, NG); lucht.addColorStop(0, '#050817'); lucht.addColorStop(.55, '#12234a'); lucht.addColorStop(1, '#1b3566');
+      nc.fillStyle = lucht; nc.fillRect(0, 0, NB, NH);
+      for (const [sx, sy, sg, fase] of KOP_STERREN) { nc.globalAlpha = .35 + Math.sin(nu * 2 + fase) * .25; nc.fillStyle = '#fff'; nc.fillRect(sx, sy, sg, sg); }
+      nc.globalAlpha = 1;
+      const mast = -((rnScroll * .12) % 420);
+      for (let lx = mast + 120; lx < NB + 200; lx += 420) {
+        nc.fillStyle = '#1a2240'; nc.fillRect(lx - 3, 40, 6, 125); nc.fillStyle = '#2a3560'; nc.fillRect(lx - 24, 26, 48, 18);
+        for (let i = 0; i < 4; i++) { nc.fillStyle = '#fffbe0'; nc.fillRect(lx - 20 + i * 11, 30, 8, 10); }
+        const g = nc.createRadialGradient(lx, 35, 4, lx, 35, 200); g.addColorStop(0, 'rgba(255,255,230,.45)'); g.addColorStop(1, 'rgba(255,255,230,0)');
+        nc.fillStyle = g; nc.fillRect(lx - 200, 0, 400, 240);
+      }
+      nc.fillStyle = '#0d1430'; nc.fillRect(0, 150, NB, 100);
+      for (let r = 0; r < 5; r++) { nc.fillStyle = r % 2 ? '#111a38' : '#0e1631'; nc.fillRect(0, 155 + r * 19, NB, 19); }
+      const publiekSchuif = (rnScroll * .2) % NB;
+      for (const p of KOP_PUBLIEK) {
+        const px = ((p.x - publiekSchuif) % NB + NB) % NB, hop = rn?.bezig ? Math.max(0, Math.sin(nu * p.snel + p.fase)) * p.hop : 0;
+        nc.fillStyle = p.shirt; nc.beginPath(); nc.roundRect(px - 5, p.y - 9 - hop, 10, 10, 3); nc.fill();
+        nc.fillStyle = p.huid; nc.beginPath(); nc.arc(px, p.y - 12 - hop, 3.6, 0, Math.PI * 2); nc.fill();
+      }
+      nc.fillStyle = '#050505'; nc.fillRect(0, 248, NB, 16);
+      nc.save(); nc.beginPath(); nc.rect(0, 248, NB, 16); nc.clip();
+      nc.font = '13px "Bebas Neue", sans-serif'; nc.textBaseline = 'middle'; nc.textAlign = 'left'; nc.fillStyle = '#f5c542';
+      const reclame = 'DRIBBELRUN   ·   SILL-VYAN & NAOUFAL   ·   SPRING!   ·   ', tw = nc.measureText(reclame).width, schuif = (rnScroll * .45 + nu * 20) % tw;
+      for (let x = -schuif; x < NB; x += tw) nc.fillText(reclame, x, 256.5);
+      nc.restore();
+      const strook = 160, grasSchuif = rnScroll % (strook * 2);
+      for (let x = -grasSchuif - strook; x < NB + strook; x += strook) { nc.fillStyle = Math.round((x + grasSchuif) / strook) % 2 ? '#1f8a41' : '#1c7a3a'; nc.fillRect(x, 264, strook + 1, NH - 264); }
+      const glans = nc.createLinearGradient(0, 264, 0, NH); glans.addColorStop(0, 'rgba(0,0,0,.25)'); glans.addColorStop(.5, 'rgba(0,0,0,0)'); glans.addColorStop(1, 'rgba(0,0,0,.2)');
+      nc.fillStyle = glans; nc.fillRect(0, 264, NB, NH - 264);
+      nc.fillStyle = 'rgba(255,255,255,.7)'; nc.fillRect(0, NG, NB, 3);
+      for (let x = -(rnScroll % 90); x < NB; x += 90) { nc.fillStyle = 'rgba(255,255,255,.18)'; nc.fillRect(x, NG + 22, 40, 3); }       // snelheidsstreepjes
+      if (!rn) { rnPoppetje(RN_X, NG, nu * 6, 0, false); echteBal(nc, RN_X + 34, NG - 12, 12, nu * 3); vignet(nc, NB, NH, .4); return; }
+      // gouden ballen
+      for (const m of rn.munten) {
+        const dobber = Math.sin(nu * 5 + m.x * .05) * 4;
+        const g = nc.createRadialGradient(m.x - 4, m.y - 4 + dobber, 2, m.x, m.y + dobber, 14); g.addColorStop(0, '#fff7c9'); g.addColorStop(.6, '#f5c542'); g.addColorStop(1, '#b8860b');
+        nc.fillStyle = g; nc.beginPath(); nc.arc(m.x, m.y + dobber, 13, 0, Math.PI * 2); nc.fill();
+        nc.strokeStyle = 'rgba(0,0,0,.35)'; nc.lineWidth = 1.5; nc.stroke();
+        nc.fillStyle = 'rgba(0,0,0,.55)'; nc.font = '14px sans-serif'; nc.textAlign = 'center'; nc.textBaseline = 'middle'; nc.fillText('★', m.x, m.y + dobber + 1);
+      }
+      // obstakels
+      for (const o of rn.obstakels) {
+        nc.globalAlpha = o.geraakt ? .45 : 1;
+        nc.fillStyle = 'rgba(0,0,0,.3)'; nc.beginPath(); nc.ellipse(o.x + o.w / 2, NG + 4, o.w / 2 + 6, 5, 0, 0, Math.PI * 2); nc.fill();
+        if (o.soort === 'pion') {
+          nc.fillStyle = '#ff8a1c'; nc.beginPath(); nc.moveTo(o.x + 13, NG - o.h); nc.lineTo(o.x + 25, NG); nc.lineTo(o.x + 1, NG); nc.closePath(); nc.fill();
+          nc.fillStyle = '#fff'; nc.beginPath(); nc.moveTo(o.x + 8.5, NG - 22); nc.lineTo(o.x + 17.5, NG - 22); nc.lineTo(o.x + 19.5, NG - 15); nc.lineTo(o.x + 6.5, NG - 15); nc.closePath(); nc.fill();
+          nc.fillStyle = '#c95a00'; nc.fillRect(o.x - 2, NG - 4, 30, 5);
+        } else if (o.soort === 'sliding') {                              // verdediger die komt aanglijden
+          nc.lineCap = 'round';
+          nc.strokeStyle = '#d9a77e'; nc.lineWidth = 9; nc.beginPath(); nc.moveTo(o.x + 30, NG - 10); nc.lineTo(o.x + 4, NG - 6); nc.stroke();
+          nc.fillStyle = '#111'; nc.beginPath(); nc.ellipse(o.x + 2, NG - 7, 8, 5, 0, 0, Math.PI * 2); nc.fill();
+          nc.strokeStyle = '#35c6ff'; nc.lineWidth = 20; nc.beginPath(); nc.moveTo(o.x + 34, NG - 12); nc.lineTo(o.x + 56, NG - 16); nc.stroke();
+          nc.fillStyle = '#d9a77e'; nc.beginPath(); nc.arc(o.x + 66, NG - 22, 11, 0, Math.PI * 2); nc.fill();
+          nc.fillStyle = '#23160d'; nc.beginPath(); nc.arc(o.x + 67, NG - 24, 11, -.4, Math.PI - .2, true); nc.fill();
+          for (let i = 0; i < 3; i++) { nc.fillStyle = `rgba(225,245,215,${.35 - i * .1})`; nc.beginPath(); nc.arc(o.x + 80 + i * 13, NG - 5 - i * 2, 6 + i * 2, 0, Math.PI * 2); nc.fill(); }
+        } else {                                                          // muurtje van twee verdedigers
+          for (const dx of [0, 22]) {
+            const mx = o.x + 12 + dx;
+            nc.strokeStyle = '#d9a77e'; nc.lineWidth = 8; nc.lineCap = 'round'; nc.beginPath(); nc.moveTo(mx - 4, NG - 30); nc.lineTo(mx - 5, NG - 4); nc.moveTo(mx + 4, NG - 30); nc.lineTo(mx + 5, NG - 4); nc.stroke();
+            nc.fillStyle = '#141414'; nc.beginPath(); nc.roundRect(mx - 10, NG - 40, 20, 14, 4); nc.fill();
+            nc.fillStyle = '#35c6ff'; nc.beginPath(); nc.roundRect(mx - 11, NG - 64, 22, 27, 6); nc.fill();
+            nc.fillStyle = '#d9a77e'; nc.beginPath(); nc.arc(mx, NG - 71, 8, 0, Math.PI * 2); nc.fill();
+            nc.fillStyle = '#23160d'; nc.beginPath(); nc.arc(mx, NG - 73, 8, Math.PI, Math.PI * 2); nc.fill();
+          }
+        }
+        nc.globalAlpha = 1;
+      }
+      // speler met de bal aan de voet (knippert even na een botsing)
+      const lucht2 = NG - rn.y, zichtbaar = rn.onkwetsbaar <= 0 || Math.floor(nu * 14) % 2;
+      nc.fillStyle = `rgba(0,0,0,${Math.max(.08, .3 - lucht2 / 600)})`; nc.beginPath(); nc.ellipse(RN_X, NG + 4, Math.max(10, 24 - lucht2 / 10), 5, 0, 0, Math.PI * 2); nc.fill();
+      if (zichtbaar) {
+        rnPoppetje(RN_X, rn.y, rn.fase, lucht2, rn.vy < 0);
+        echteBal(nc, RN_X + 34 + Math.sin(rn.fase) * 5, rn.y - 12 - (lucht2 > 1 ? 6 : Math.abs(Math.sin(rn.fase * .5)) * 3), 12, rnScroll / 12);
+      }
+      for (const d of rn.deeltjes) { nc.globalAlpha = Math.max(0, d.leven / d.max); nc.fillStyle = d.kleur; nc.beginPath(); nc.arc(d.x, d.y, d.grootte, 0, Math.PI * 2); nc.fill(); }
+      nc.globalAlpha = 1;
+      for (const p of rn.popups) {
+        nc.save(); nc.translate(p.x, p.y - p.t * 40); nc.globalAlpha = p.t > .7 ? Math.max(0, 1 - (p.t - .7) / .3) : 1;
+        nc.font = '26px "Bebas Neue", sans-serif'; nc.textAlign = 'center'; nc.textBaseline = 'middle';
+        nc.lineWidth = 5; nc.strokeStyle = 'rgba(0,0,0,.7)'; nc.strokeText(p.tekst, 0, 0); nc.fillStyle = p.kleur; nc.fillText(p.tekst, 0, 0); nc.restore();
+      }
+      vignet(nc, NB, NH, .4);
+      if (rn.bezig && rn.wacht > 0) {
+        nc.fillStyle = 'rgba(255,255,255,.92)'; nc.font = '40px "Bebas Neue", sans-serif'; nc.textAlign = 'center'; nc.textBaseline = 'middle';
+        nc.fillText('Klaar… spring met spatie of een tik!', NB / 2, 110);
+      } else if (rn.bezig) {
+        nc.font = '30px "Bebas Neue", sans-serif'; nc.textAlign = 'right'; nc.textBaseline = 'middle';
+        nc.lineWidth = 5; nc.strokeStyle = 'rgba(0,0,0,.6)'; const t = Math.floor(rn.afstand / 40) + ' m';
+        nc.strokeText(t, NB - 24, 36); nc.fillStyle = '#fff'; nc.fillText(t, NB - 24, 36);
+      }
+    }
+    function rnMaat() {
+      const w = rnDoek.clientWidth * Math.min(devicePixelRatio || 1, 2);
+      if (w && rnDoek.width !== Math.round(w)) { rnDoek.width = Math.round(w); rnDoek.height = Math.round(w * NH / NB); }
+      rnTeken();
+    }
+    function rnFrame(nu) {
+      if (!rn?.bezig && rnInBeeld && (rnRust = (rnRust + 1) % 3)) return requestAnimationFrame(rnFrame);
+      const dt = Math.min((nu - rnVorige) / 1000, .05);
+      rnVorige = nu;
+      if (rn) { const stappen = Math.ceil(dt / (1 / 120)); for (let i = 0; i < stappen; i++) rnStap(dt / stappen); }
+      rnTeken();
+      if (rnInBeeld) requestAnimationFrame(rnFrame); else rnLoop = false;
+    }
+    function rnStartLoop() { if (!rnLoop && rnInBeeld) { rnLoop = true; rnVorige = performance.now(); requestAnimationFrame(rnFrame); } }
+    new IntersectionObserver(([item]) => { rnInBeeld = item.isIntersecting; if (rnInBeeld) { rnMaat(); rnStartLoop(); } }).observe(rnDoek);
+    addEventListener('resize', rnMaat);
+    rnMaat();
 
     /* ================= App (PWA) ================= */
     if ('serviceWorker' in navigator && location.protocol !== 'file:')
