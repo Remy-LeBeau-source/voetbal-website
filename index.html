@@ -535,6 +535,11 @@
     @keyframes wave { 0%, 35% { transform: translateX(-110%); } 100% { transform: translateX(470%); } }
     .stadion.juich .wave, .stadion.balen .wave { opacity: 0; }
 
+    /* ---------- Minigame: vrije trap ---------- */
+    #vtDoek { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; touch-action: none; cursor: crosshair; }
+    #vtKnop { touch-action: none; user-select: none; -webkit-user-select: none; }
+    #vtKnop.in { transform: scale(.95); filter: brightness(.85); }
+
     /* ---------- Foto ---------- */
     .foto-groot { border-radius: 26px; overflow: hidden; border: 1px solid var(--rand); margin: 0; }
     .foto-groot.zichtbaar { transition: transform .25s ease-out, opacity .8s; }
@@ -628,6 +633,7 @@
         <li><a href="#omhaal">Omhaal</a></li>
         <li><a href="#redden">Keeper</a></li>
         <li><a href="#eentegeneen">1 tegen 1</a></li>
+        <li><a href="#vrijetrap">Vrije trap</a></li>
         <li><a href="#foto">Foto</a></li>
       </ul>
     </nav>
@@ -663,8 +669,8 @@
 
     <div class="lichtkrant twee" aria-hidden="true">
       <div class="lichtkrant-rij">
-        <span>Penalty's ⚽ Panenka ⚽ Hooghouden ⚽ Overkoppen ⚽ Omhaal ⚽ Keeper ⚽ 1 tegen 1 ⚽</span>
-        <span>Penalty's ⚽ Panenka ⚽ Hooghouden ⚽ Overkoppen ⚽ Omhaal ⚽ Keeper ⚽ 1 tegen 1 ⚽</span>
+        <span>Penalty's ⚽ Panenka ⚽ Hooghouden ⚽ Overkoppen ⚽ Omhaal ⚽ Keeper ⚽ 1 tegen 1 ⚽ Vrije trap ⚽</span>
+        <span>Penalty's ⚽ Panenka ⚽ Hooghouden ⚽ Overkoppen ⚽ Omhaal ⚽ Keeper ⚽ 1 tegen 1 ⚽ Vrije trap ⚽</span>
       </div>
     </div>
 
@@ -685,7 +691,7 @@
           <div class="teller"><b data-tel="2">0</b><span>vrienden</span></div>
           <div class="teller"><b data-tel="1">0</b><span>passie: voetbal</span></div>
           <div class="teller"><b data-tel="100">0</b><span>procent inzet</span></div>
-          <div class="teller"><b data-tel="7">0</b><span>spellen om te spelen</span></div>
+          <div class="teller"><b data-tel="8">0</b><span>spellen om te spelen</span></div>
         </div>
 
         <div class="kaarten" style="margin-top:56px">
@@ -1041,6 +1047,32 @@
             <button class="knop vol ee-schiet" data-speler="0">⚽ Schiet</button>
             <p class="spel-info">Sleep om te lopen · pak <b>⚡</b> voor snelheid en <b>💥</b> voor een superschot</p>
             <button class="knop vol ee-schiet" data-speler="1" hidden>Schiet ⚽</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Minigame: vrije trap -->
+    <section id="vrijetrap" style="background:var(--paneel)">
+      <div class="wrap">
+        <div class="sectie-kop verschijn">
+          <p class="label">Minigame</p>
+          <h2 class="kop">Vrije trap</h2>
+          <p>Er staat een muurtje voor het doel. Druk op de plek waar je wilt schieten, houd vast voor de kracht en laat los in het groene vak. Te zacht? Dan knalt hij in de muur. Te hard? Dan gaat hij over.</p>
+        </div>
+        <div class="kop-spel verschijn">
+          <div class="kop-doek-houder">
+            <canvas id="vtDoek" width="800" height="450" aria-label="Vrije trap: schiet de bal over de muur in het doel"></canvas>
+            <div class="kop-scherm" id="vtScherm">
+              <h3 class="kop" id="vtTitel">Vrije trap</h3>
+              <p id="vtTekst">5 vrije trappen, steeds vanaf een andere plek.</p>
+              <div class="kop-modi"><button class="knop vol" id="vtStartKnop">Start</button></div>
+              <p class="kop-uitleg">Mik met de <b>muis</b>, houd de muisknop of <b>spatie</b> ingedrukt voor kracht, en laat los.</p>
+            </div>
+          </div>
+          <div class="kop-bediening">
+            <p class="spel-info">Vrije trap <b id="vtNr">0</b> van 5 · Goals: <b id="vtGoals">0</b> · Record: <b id="vtRecord">0</b></p>
+            <button class="knop vol om-knop" id="vtKnop">⚽ Houd vast en laat los</button>
           </div>
         </div>
       </div>
@@ -3632,6 +3664,306 @@
     addEventListener('resize', eeMaat);
     eeAftrap(); eeWacht = 0;
     eeMaat();
+
+    /* ================= Minigame: vrije trap ================= */
+    const vtDoek = $('#vtDoek'), vc = vtDoek.getContext('2d');
+    const VB = 800, VH = 450, VDOEL = { x1: 255, x2: 545, y1: 118, y2: 228 }, VBAL_Y = 412, MUUR_T = .42, VT_RONDE = 5, VLUCHT = .95;
+    const vtScherm = $('#vtScherm'), vtTitel = $('#vtTitel'), vtTekstEl = $('#vtTekst');
+    const vtNrEl = $('#vtNr'), vtGoalsEl = $('#vtGoals'), vtRecordEl = $('#vtRecord'), vtKnop = $('#vtKnop');
+    let vtRecord = bewaar.lees('vrijetrap-record', 0);
+    vtRecordEl.textContent = vtRecord;
+    let vt = null, vtLoop = false, vtInBeeld = false, vtVorige = 0, vtRust = 0;
+
+    function vtStart() {
+      vt = { bezig: true, nr: 0, goals: 0, fase: 'pauze', t: 0, mik: { x: 400, y: 170 }, kracht: 0, sit: null, schot: null, tekst: null,
+             schud: 0, netTril: 0, juich: 0, deeltjes: [], keeper: { x: 400, duik: 0 }, aanloop: 0 };
+      vtScherm.hidden = true; vtKnop.disabled = false;
+      vtNrEl.textContent = 0; vtGoalsEl.textContent = 0;
+      fluit();
+      vtStartLoop();
+    }
+    $('#vtStartKnop').addEventListener('click', vtStart);
+
+    // Elke vrije trap: andere plek, andere afstand; de muur dekt de korte hoek, de keeper de lange
+    function vtNieuw() {
+      if (vt.nr >= VT_RONDE) return vtEinde();
+      vt.nr++; vtNrEl.textContent = vt.nr;
+      const bx = [400, 265, 535, 320, 480][(vt.nr - 1 + Math.floor(Math.random() * 5)) % 5] + willekeurig(-15, 15);
+      const ver = willekeurig(0, 1);                                   // 0 = dichtbij, 1 = ver
+      const kort = bx < 395 ? VDOEL.x1 : bx > 405 ? VDOEL.x2 : (Math.random() < .5 ? VDOEL.x1 : VDOEL.x2);
+      const lijnX = bx + (((kort + 400) / 2) - bx) * MUUR_T;           // de muur staat op de lijn naar de korte hoek
+      vt.sit = { bx, ver, p0: .52 + ver * .22, muurX: lijnX, kort, meter: Math.round(18 + ver * 9) };
+      vt.keeper = { x: 400 + (400 - kort) * .18, duik: 0, doelX: null };
+      Object.assign(vt, { fase: 'mik', t: 0, kracht: 0, schot: null, tekst: null, aanloop: 0 });
+      vt.mik = { x: 400, y: 170 };
+    }
+
+    // Plek van de bal tijdens de vlucht (e loopt van 0 bij de trap tot 1 bij het doel)
+    function vtPlek(s, e) {
+      const schaal = 1 - e * .5;
+      const grondY = VBAL_Y + (VDOEL.y2 - VBAL_Y) * e;
+      const hoogte = 4 * s.top * e * (1 - e) + s.eindHoogte * e;
+      return { x: s.bx + (s.fx - s.bx) * e + Math.sin(Math.PI * e) * s.krul, y: grondY - hoogte * schaal, grondY, schaal, hoogte };
+    }
+    function vtSchiet() {
+      const { sit, mik } = vt, p = vt.kracht;
+      const fx = mik.x + willekeurig(-6, 6), fy = mik.y + (sit.p0 - p) * 300;       // te zacht: lager, te hard: hoger
+      const s = { bx: sit.bx, fx, fy, top: 20 + p * 70, eindHoogte: Math.max(0, (VDOEL.y2 - fy) / .5), krul: (sit.bx - fx) * .22, t: 0 };
+      // Muur: staat de bal op dat moment achter de muur en is hij te laag?
+      const bijMuur = vtPlek(s, MUUR_T), achterMuur = Math.abs(bijMuur.x - sit.muurX) < 60;
+      let uitkomst;
+      if (achterMuur && bijMuur.hoogte < 96) uitkomst = 'muur';
+      else if (fy > VDOEL.y2 - 2) uitkomst = 'zacht';
+      else if (fy < VDOEL.y1 - 7) uitkomst = 'over';
+      else if (fx < VDOEL.x1 - 7 || fx > VDOEL.x2 + 7) uitkomst = 'naast';
+      else if (fy < VDOEL.y1 + 5) uitkomst = 'lat';
+      else if (fx < VDOEL.x1 + 5 || fx > VDOEL.x2 - 5) uitkomst = 'paal';
+      else {
+        // Keeper: ziet hij de bal laat (over de muur), dan reageert hij trager; hoge ballen zijn lastiger
+        const reactie = achterMuur ? .5 : .28, bereik = (VLUCHT - reactie) * 115 + 30;
+        const hoogte = grens((VDOEL.y2 - 40 - fy) / 70, 0, 1);              // 0 = laag, 1 = bovenin: daar komt hij minder ver
+        uitkomst = Math.abs(fx - vt.keeper.x) <= bereik * (1 - .45 * hoogte) ? 'gered' : 'goal';
+        vt.keeper.reactie = reactie; vt.keeper.bereik = bereik;
+      }
+      s.uitkomst = uitkomst;
+      vt.keeper.doelX = uitkomst === 'gered' ? fx : fx + (fx > vt.keeper.x ? -1 : 1) * 40;
+      vt.keeper.startX = vt.keeper.x;
+      vt.schot = s; vt.fase = 'vlucht'; vt.t = 0;
+      trapGeluid({ pan: (sit.bx / VB) * 2 - 1 });
+      vtKnop.classList.remove('in');
+    }
+    const vtTekst = (tekst, kleur) => vt.tekst = { tekst, kleur, t: 0 };
+    function vtVonken(x, y, aantal, kleuren) {
+      if (rustig) return;
+      for (let i = 0; i < aantal; i++) {
+        const hoek = willekeurig(0, Math.PI * 2), v = willekeurig(60, 260);
+        vt.deeltjes.push({ x, y, vx: Math.cos(hoek) * v, vy: Math.sin(hoek) * v, leven: willekeurig(.3, .6), max: .6, grootte: willekeurig(1.5, 3.5), kleur: kleuren[i % kleuren.length] });
+      }
+    }
+
+    function vtStap(dt) {
+      vt.t += dt;
+      vt.schud = Math.max(0, vt.schud - dt * 2.4); vt.netTril = Math.max(0, vt.netTril - dt * 2.2); vt.juich = Math.max(0, vt.juich - dt);
+      if (vt.tekst) vt.tekst.t += dt;
+      for (let i = vt.deeltjes.length - 1; i >= 0; i--) { const d = vt.deeltjes[i]; d.leven -= dt; d.x += d.vx * dt; d.y += d.vy * dt; d.vy += 420 * dt; if (d.leven <= 0) vt.deeltjes.splice(i, 1); }
+      if (vt.fase === 'pauze') { if (vt.t > (vt.nr === 0 ? .7 : 1.9)) vtNieuw(); return; }
+      if (vt.fase === 'laden') {
+        vt.kracht = (1 - Math.cos(vt.t * 3.3)) / 2;                    // de meter loopt op en weer af
+        vt.aanloop = Math.min(1, vt.t * 2);
+        return;
+      }
+      if (vt.fase !== 'vlucht') return;
+      const s = vt.schot, k = vt.keeper;
+      s.t = Math.min(1, vt.t / VLUCHT);
+      // keeper beweegt (na zijn reactietijd) naar de bal
+      const kt = grens((vt.t - (k.reactie || .3)) / Math.max(.2, VLUCHT - (k.reactie || .3)), 0, 1);
+      if (s.uitkomst !== 'muur' && s.uitkomst !== 'zacht') {
+        const maxWeg = (k.bereik || 120) - 30, weg = grens(k.doelX - k.startX, -maxWeg, maxWeg);
+        k.x = k.startX + weg * (1 - Math.pow(1 - kt, 2)); k.duik = kt * Math.sign(weg) * Math.min(1, Math.abs(weg) / 60);
+      }
+      if (s.uitkomst === 'muur' && s.t >= MUUR_T && !s.klaar) {
+        s.klaar = true; const p = vtPlek(s, MUUR_T);
+        speel('handschoen'); oohGeluid(); vt.schud = .5; vtVonken(p.x, p.y, 12, ['#fff', '#35c6ff']);
+        vtTekst('IN DE MUUR!', '#ff5a5a'); vtKlaar(false, p);
+      } else if (s.t >= 1 && !s.klaar) {
+        s.klaar = true; const p = vtPlek(s, 1), u = s.uitkomst;
+        if (u === 'goal') {
+          const kruising = s.fy < VDOEL.y1 + 32 && (s.fx < VDOEL.x1 + 45 || s.fx > VDOEL.x2 - 45);
+          vt.goals++; vtGoalsEl.textContent = vt.goals;
+          vtTekst(kruising ? 'KRUISING!' : 'GOAL!', '#f5c542');
+          speel('net'); juichGeluid(); vt.netTril = 1; vt.schud = .9; vt.juich = 2.2;
+          vtVonken(p.x, p.y, 20, ['#fff', '#f5c542']);
+          const r = vtDoek.getBoundingClientRect(); confetti(vtDoek.parentElement, p.x / VB * r.width, p.y / VH * r.height, 70);
+        } else if (u === 'gered') { redGeluid(); vtTekst('GERED!', '#ff5a5a'); vtVonken(p.x, p.y, 10, ['#fff', '#9be15d']); }
+        else if (u === 'lat' || u === 'paal') { paalGeluid(); oohGeluid(); vt.schud = .7; vtTekst(u === 'lat' ? 'LAT!' : 'PAAL!', '#ff5a5a'); vtVonken(p.x, p.y, 12, ['#fff']); }
+        else { oohGeluid(); vtTekst(u === 'over' ? 'OVER!' : u === 'naast' ? 'NAAST!' : 'TE ZACHT!', '#ff5a5a'); }
+        vtKlaar(u === 'goal', p);
+      }
+    }
+    function vtKlaar(goal, plek) { vt.fase = 'na'; vt.t = 0; vt.eind = plek; vt.goal = goal; setTimeout(() => { if (vt && vt.fase === 'na') { vt.fase = 'pauze'; vt.t = 0; } }, 1500); }
+    function vtEinde() {
+      vt.bezig = false; vtKnop.disabled = true;
+      const nieuw = vt.goals > vtRecord;
+      if (nieuw) { vtRecord = vt.goals; bewaar.schrijf('vrijetrap-record', vtRecord); vtRecordEl.textContent = vtRecord; }
+      vtTitel.textContent = nieuw ? 'Nieuw record!' : vt.goals >= 4 ? 'Vrijetrappenkoning!' : 'Ronde klaar!';
+      vtTekstEl.textContent = `Je scoorde ${vt.goals} van de ${VT_RONDE} vrije trappen. Nog een keer?`;
+      $('#vtStartKnop').textContent = 'Nog een keer';
+      vtScherm.hidden = false;
+      if (nieuw) { juichGeluid(); const r = vtDoek.getBoundingClientRect(); confetti(vtDoek.parentElement, r.width / 2, r.height / 3, 110); }
+    }
+
+    // Besturing: druk op de plek waar je wilt schieten, houd vast voor kracht en laat los
+    const vtPunt = e => { const r = vtDoek.getBoundingClientRect(); return { x: grens((e.clientX - r.left) / r.width * VB, 150, 650), y: grens((e.clientY - r.top) / r.height * VH, 70, 240) }; };
+    function vtLaad() { if (vt?.bezig && vt.fase === 'mik') { vt.fase = 'laden'; vt.t = 0; vt.kracht = 0; } }
+    function vtLos() { if (vt?.bezig && vt.fase === 'laden') vtSchiet(); }
+    vtDoek.addEventListener('pointermove', e => { if (vt?.bezig && (vt.fase === 'mik' || vt.fase === 'laden')) vt.mik = vtPunt(e); });
+    vtDoek.addEventListener('pointerdown', e => { if (!vt?.bezig) return; e.preventDefault(); vtDoek.setPointerCapture(e.pointerId); if (vt.fase === 'mik') vt.mik = vtPunt(e); vtLaad(); });
+    vtDoek.addEventListener('pointerup', vtLos); vtDoek.addEventListener('pointercancel', vtLos);
+    vtKnop.addEventListener('pointerdown', e => { e.preventDefault(); vtKnop.classList.add('in'); vtLaad(); });
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(t => vtKnop.addEventListener(t, vtLos));
+    addEventListener('keydown', e => {
+      if (!vt?.bezig || !vtInBeeld || e.repeat || e.code !== 'Space') return;
+      if (document.activeElement?.closest('button, a, input') && document.activeElement !== vtKnop) return;
+      e.preventDefault(); vtLaad();
+    });
+    addEventListener('keyup', e => { if (e.code === 'Space') vtLos(); });
+
+    /* ---------- Tekenen ---------- */
+    // Poppetje van voren (of van achteren): gebruikt voor de muur, de keeper en de schutter
+    function vtPop(x, voetY, schaal, shirt, { armen = 'voor', draai = 0, rug = false, nummer = '' } = {}) {
+      vc.save(); vc.translate(x, voetY); vc.rotate(draai); vc.scale(schaal, schaal);
+      vc.lineCap = 'round';
+      vc.strokeStyle = '#d9a77e'; vc.lineWidth = 9; vc.beginPath(); vc.moveTo(-7, -34); vc.lineTo(-8, -6); vc.moveTo(7, -34); vc.lineTo(8, -6); vc.stroke();
+      vc.strokeStyle = '#fff'; vc.lineWidth = 9; vc.beginPath(); vc.moveTo(-8, -18); vc.lineTo(-8, -6); vc.moveTo(8, -18); vc.lineTo(8, -6); vc.stroke();
+      vc.fillStyle = '#111'; vc.beginPath(); vc.ellipse(-9, -2, 8, 4, 0, 0, Math.PI * 2); vc.ellipse(9, -2, 8, 4, 0, 0, Math.PI * 2); vc.fill();
+      vc.fillStyle = '#141414'; vc.beginPath(); vc.roundRect(-15, -48, 30, 20, 6); vc.fill();
+      const stof = vc.createLinearGradient(-16, 0, 16, 0); stof.addColorStop(0, shirt); stof.addColorStop(1, 'rgba(0,0,0,.25)');
+      vc.fillStyle = shirt; vc.beginPath(); vc.roundRect(-17, -82, 34, 38, 9); vc.fill();
+      vc.fillStyle = stof; vc.globalAlpha = .5; vc.beginPath(); vc.roundRect(-17, -82, 34, 38, 9); vc.fill(); vc.globalAlpha = 1;
+      vc.strokeStyle = shirt; vc.lineWidth = 8;
+      vc.beginPath();
+      if (armen === 'wijd') { vc.moveTo(-15, -76); vc.lineTo(-38, -66); vc.moveTo(15, -76); vc.lineTo(38, -66); }
+      else if (armen === 'omhoog') { vc.moveTo(-15, -76); vc.lineTo(-30, -104); vc.moveTo(15, -76); vc.lineTo(30, -104); }
+      else { vc.moveTo(-15, -76); vc.lineTo(-11, -50); vc.moveTo(15, -76); vc.lineTo(11, -50); }     // handen voor het lijf (muur)
+      vc.stroke();
+      if (nummer) { vc.fillStyle = 'rgba(0,0,0,.6)'; vc.font = 'bold 15px "Bebas Neue", sans-serif'; vc.textAlign = 'center'; vc.textBaseline = 'middle'; vc.fillText(nummer, 0, -62); }
+      const huid = vc.createRadialGradient(-3, -97, 2, 0, -94, 13); huid.addColorStop(0, '#edc19a'); huid.addColorStop(1, '#c08f66');
+      vc.fillStyle = huid; vc.beginPath(); vc.arc(0, -94, 11.5, 0, Math.PI * 2); vc.fill();
+      vc.fillStyle = '#23160d'; vc.beginPath();
+      if (rug) vc.arc(0, -94, 12, 0, Math.PI * 2); else vc.arc(0, -96, 12, Math.PI * 1.02, Math.PI * 1.98);
+      vc.fill();
+      if (!rug) { vc.fillStyle = '#222'; vc.beginPath(); vc.arc(-4, -93, 1.4, 0, Math.PI * 2); vc.arc(4, -93, 1.4, 0, Math.PI * 2); vc.fill(); }
+      vc.restore();
+    }
+    function vtTeken() {
+      const schaal = vtDoek.width / VB, nu = performance.now() / 1000;
+      vc.setTransform(schaal, 0, 0, schaal, 0, 0);
+      vc.fillStyle = '#050817'; vc.fillRect(0, 0, VB, VH);
+      if (vt?.schud && !rustig) vc.translate((Math.random() - .5) * vt.schud * 12, (Math.random() - .5) * vt.schud * 9);
+      // lucht, sterren, tribune
+      const lucht = vc.createLinearGradient(0, 0, 0, 230); lucht.addColorStop(0, '#050817'); lucht.addColorStop(1, '#1b3566');
+      vc.fillStyle = lucht; vc.fillRect(0, 0, VB, 232);
+      for (const [sx, sy, sg, fase] of KOP_STERREN) { vc.globalAlpha = .35 + Math.sin(nu * 2 + fase) * .25; vc.fillStyle = '#fff'; vc.fillRect(sx, sy * .5, sg, sg); }
+      vc.globalAlpha = 1;
+      for (const lx of [70, 730]) {
+        const g = vc.createRadialGradient(lx, 30, 4, lx, 30, 200); g.addColorStop(0, 'rgba(255,255,230,.5)'); g.addColorStop(1, 'rgba(255,255,230,0)');
+        vc.fillStyle = g; vc.fillRect(0, 0, VB, 260); vc.fillStyle = '#fffbe0'; vc.fillRect(lx - 18, 24, 36, 9);
+      }
+      vc.fillStyle = '#0d1430'; vc.fillRect(0, 92, VB, 124);
+      for (const p of KOP_PUBLIEK) {
+        const hop = vt?.juich > 0 ? Math.abs(Math.sin(nu * p.snel * 1.6 + p.fase)) * 5 : 0, py = p.y - 62;
+        vc.fillStyle = p.shirt; vc.beginPath(); vc.roundRect(p.x - 5, py - 9 - hop, 10, 10, 3); vc.fill();
+        vc.fillStyle = p.huid; vc.beginPath(); vc.arc(p.x, py - 12 - hop, 3.6, 0, Math.PI * 2); vc.fill();
+      }
+      vc.fillStyle = '#050505'; vc.fillRect(0, 204, VB, 14);
+      vc.save(); vc.beginPath(); vc.rect(0, 204, VB, 14); vc.clip();
+      vc.font = '12px "Bebas Neue", sans-serif'; vc.textBaseline = 'middle'; vc.textAlign = 'left'; vc.fillStyle = '#f5c542';
+      const reclame = 'VRIJE TRAP   ·   SILL-VYAN & NAOUFAL   ·   OVER DE MUUR   ·   ', tw = vc.measureText(reclame).width, schuif = (nu * 36) % tw;
+      for (let x = -schuif; x < VB; x += tw) vc.fillText(reclame, x, 211.5);
+      vc.restore();
+      // veld in perspectief
+      const gras = vc.createLinearGradient(0, 218, 0, VH); gras.addColorStop(0, '#176e33'); gras.addColorStop(1, '#23994a');
+      vc.fillStyle = gras; vc.fillRect(0, 218, VB, VH - 218);
+      for (let i = 0; i < 6; i++) { const y1 = 218 + Math.pow(i / 6, 1.7) * (VH - 218), y2 = 218 + Math.pow((i + .5) / 6, 1.7) * (VH - 218); vc.fillStyle = 'rgba(255,255,255,.05)'; vc.fillRect(0, y1, VB, y2 - y1); }
+      grasTextuur(vc, 0, 218, VB, VH - 218, .45);
+      vc.strokeStyle = 'rgba(255,255,255,.75)'; vc.lineWidth = 2;
+      vc.beginPath(); vc.moveTo(0, VDOEL.y2); vc.lineTo(VB, VDOEL.y2); vc.stroke();
+      vc.beginPath(); vc.moveTo(205, VDOEL.y2); vc.lineTo(180, 262); vc.lineTo(620, 262); vc.lineTo(595, VDOEL.y2); vc.stroke();
+      vc.beginPath(); vc.moveTo(120, VDOEL.y2); vc.lineTo(30, 340); vc.lineTo(770, 340); vc.lineTo(680, VDOEL.y2); vc.stroke();
+      // doel met net
+      const tril = Math.sin(nu * 40) * (vt?.netTril || 0) * 3;
+      vc.fillStyle = 'rgba(0,0,0,.28)'; vc.fillRect(VDOEL.x1, VDOEL.y1, VDOEL.x2 - VDOEL.x1, VDOEL.y2 - VDOEL.y1);
+      vc.strokeStyle = 'rgba(255,255,255,.3)'; vc.lineWidth = 1;
+      for (let x = VDOEL.x1 + 9; x < VDOEL.x2; x += 9) { vc.beginPath(); vc.moveTo(x, VDOEL.y1); vc.lineTo(x + tril, VDOEL.y2); vc.stroke(); }
+      for (let y = VDOEL.y1 + 9; y < VDOEL.y2; y += 9) { vc.beginPath(); vc.moveTo(VDOEL.x1, y + tril); vc.lineTo(VDOEL.x2, y + tril); vc.stroke(); }
+      vc.strokeStyle = '#f4f4f4'; vc.lineWidth = 6; vc.lineCap = 'square';
+      vc.beginPath(); vc.moveTo(VDOEL.x1, VDOEL.y2); vc.lineTo(VDOEL.x1, VDOEL.y1); vc.lineTo(VDOEL.x2, VDOEL.y1); vc.lineTo(VDOEL.x2, VDOEL.y2); vc.stroke();
+      const sit = vt?.sit, s = vt?.schot;
+      // keeper
+      const k = vt?.keeper || { x: 400, duik: 0 };
+      vc.fillStyle = 'rgba(0,0,0,.3)'; vc.beginPath(); vc.ellipse(k.x, VDOEL.y2 + 3, 20, 4, 0, 0, Math.PI * 2); vc.fill();
+      vtPop(k.x, VDOEL.y2 - Math.abs(k.duik) * 26, .62, '#9be15d', { armen: Math.abs(k.duik) > .2 ? 'omhoog' : 'wijd', draai: k.duik * 1.15, nummer: '1' });
+      // richtpunt en stippellijn (zolang je mikt)
+      if (vt?.bezig && sit && (vt.fase === 'mik' || vt.fase === 'laden')) {
+        const m = vt.mik;
+        vc.setLineDash([6, 8]); vc.strokeStyle = 'rgba(255,255,255,.55)'; vc.lineWidth = 2;
+        vc.beginPath(); vc.moveTo(sit.bx, VBAL_Y); vc.quadraticCurveTo((sit.bx + m.x) / 2 + (sit.bx - m.x) * .3, (VBAL_Y + m.y) / 2 - 90, m.x, m.y); vc.stroke();
+        vc.setLineDash([]);
+        vc.strokeStyle = '#f5c542'; vc.lineWidth = 3; vc.beginPath(); vc.arc(m.x, m.y, 12 + Math.sin(nu * 6) * 2, 0, Math.PI * 2); vc.stroke();
+        vc.beginPath(); vc.moveTo(m.x - 18, m.y); vc.lineTo(m.x + 18, m.y); vc.moveTo(m.x, m.y - 18); vc.lineTo(m.x, m.y + 18); vc.stroke();
+      }
+      // bal achter de muur (ver weg) wordt eerst getekend, daarna de muur, daarna de bal als hij nog dichtbij is
+      const balT = s ? s.t : 0, plek = s ? (vt.fase === 'na' && vt.eind ? vt.eind : vtPlek(s, balT)) : null;
+      const tekenBalVT = () => {
+        if (!sit) return;
+        if (!s) { vc.fillStyle = 'rgba(0,0,0,.3)'; vc.beginPath(); vc.ellipse(sit.bx, VBAL_Y + 12, 13, 4, 0, 0, Math.PI * 2); vc.fill(); echteBal(vc, sit.bx, VBAL_Y, 13, 0); return; }
+        vc.fillStyle = 'rgba(0,0,0,.28)'; vc.beginPath(); vc.ellipse(plek.x, plek.grondY + 12 * plek.schaal, 13 * plek.schaal, 4 * plek.schaal, 0, 0, Math.PI * 2); vc.fill();
+        if (vt.fase === 'vlucht' && !rustig) for (let i = 5; i >= 1; i--) { const sp = vtPlek(s, Math.max(0, balT - i * .03)); vc.globalAlpha = (6 - i) / 6 * .25; vc.fillStyle = '#fff'; vc.beginPath(); vc.arc(sp.x, sp.y, 12 * sp.schaal, 0, Math.PI * 2); vc.fill(); }
+        vc.globalAlpha = vt.fase === 'na' && !vt.goal && s.uitkomst !== 'muur' ? Math.max(.25, 1 - vt.t) : 1;
+        echteBal(vc, plek.x, plek.y, 13 * plek.schaal, nu * 12 * (vt.fase === 'vlucht' ? 1 : 0));
+        vc.globalAlpha = 1;
+      };
+      const balVoorbijMuur = s && balT > MUUR_T && s.uitkomst !== 'muur';
+      if (balVoorbijMuur) tekenBalVT();
+      // muur: vier verdedigers die opspringen als je schiet
+      if (sit) {
+        const sprong = vt.fase === 'vlucht' ? Math.max(0, Math.sin(Math.min(1, vt.t / .5) * Math.PI)) * 14 : 0;
+        const muurY = VBAL_Y + (VDOEL.y2 - VBAL_Y) * MUUR_T;
+        for (let i = 0; i < 4; i++) {
+          const mx = sit.muurX + (i - 1.5) * 29;
+          vc.fillStyle = 'rgba(0,0,0,.28)'; vc.beginPath(); vc.ellipse(mx, muurY + 3, 16, 4, 0, 0, Math.PI * 2); vc.fill();
+          vtPop(mx, muurY - sprong, .8, '#35c6ff', { armen: 'voor', nummer: String([4, 5, 6, 8][i]) });
+        }
+      }
+      if (!balVoorbijMuur) tekenBalVT();
+      // schutter (van achteren): aanloop en trap
+      if (sit) {
+        const a = vt.fase === 'laden' ? vt.aanloop : vt.fase === 'mik' ? 0 : 1;
+        vtPop(sit.bx - 46 + a * 22, VBAL_Y + 26, 1.05, '#f5c542', { rug: true, armen: vt.goal && vt.fase === 'na' ? 'omhoog' : 'wijd', nummer: '10', draai: (vt.fase === 'vlucht' ? .12 : 0) });
+      }
+      // krachtmeter: het groene vak is de goede kracht voor deze afstand
+      if (vt?.bezig && sit && vt.fase !== 'pauze') {
+        const bx = VB - 46, by = 250, bh = 170;
+        vc.fillStyle = 'rgba(0,0,0,.55)'; vc.beginPath(); vc.roundRect(bx - 6, by - 6, 30, bh + 12, 9); vc.fill();
+        vc.fillStyle = '#ff5a5a'; vc.fillRect(bx, by, 18, bh);
+        const zone = (m, kleur) => { vc.fillStyle = kleur; vc.fillRect(bx, by + bh * (1 - Math.min(1, sit.p0 + m)), 18, bh * (Math.min(1, sit.p0 + m) - Math.max(0, sit.p0 - m))); };
+        zone(.17, '#f5c542'); zone(.07, '#1db954');
+        vc.fillStyle = '#fff'; vc.fillRect(bx - 5, by + bh * (1 - vt.kracht) - 2, 28, 4);
+        vc.fillStyle = '#fff'; vc.font = '13px "Bebas Neue", sans-serif'; vc.textAlign = 'center'; vc.textBaseline = 'middle';
+        vc.fillText('KRACHT', bx + 9, by - 16); vc.fillText(sit.meter + ' M', bx + 9, by + bh + 18);
+      }
+      vignet(vc, VB, VH, .4);
+      for (const d of vt?.deeltjes || []) { vc.globalAlpha = Math.max(0, d.leven / d.max); vc.fillStyle = d.kleur; vc.beginPath(); vc.arc(d.x, d.y, d.grootte, 0, Math.PI * 2); vc.fill(); }
+      vc.globalAlpha = 1;
+      // tekst
+      if (vt?.tekst) {
+        const { tekst, kleur, t } = vt.tekst, sc = t < .15 ? .4 + t / .15 * .8 : t < .3 ? 1.2 - (t - .15) / .15 * .2 : 1;
+        vc.save(); vc.globalAlpha = t > 1.2 ? Math.max(0, 1 - (t - 1.2) / .3) : 1; vc.translate(VB / 2, 62); vc.scale(sc, sc);
+        vc.font = '62px "Bebas Neue", sans-serif'; vc.textAlign = 'center'; vc.textBaseline = 'middle';
+        vc.lineWidth = 8; vc.strokeStyle = 'rgba(0,0,0,.6)'; vc.strokeText(tekst, 0, 0); vc.fillStyle = kleur; vc.fillText(tekst, 0, 0); vc.restore();
+      } else if (vt?.bezig && vt.fase === 'mik') {
+        vc.fillStyle = 'rgba(255,255,255,.9)'; vc.font = '20px "Bebas Neue", sans-serif'; vc.textAlign = 'center'; vc.textBaseline = 'middle';
+        vc.fillText('Druk op je doelwit, houd vast en laat los in het groen', VB / 2, 30);
+      }
+    }
+    function vtMaat() {
+      const w = vtDoek.clientWidth * Math.min(devicePixelRatio || 1, 2);
+      if (w && vtDoek.width !== Math.round(w)) { vtDoek.width = Math.round(w); vtDoek.height = Math.round(w * VH / VB); }
+      vtTeken();
+    }
+    function vtFrame(nu) {
+      if (!vt?.bezig && vtInBeeld && (vtRust = (vtRust + 1) % 3)) return requestAnimationFrame(vtFrame);
+      const dt = Math.min((nu - vtVorige) / 1000, .05);
+      vtVorige = nu;
+      if (vt?.bezig) vtStap(dt);
+      vtTeken();
+      if (vtInBeeld) requestAnimationFrame(vtFrame); else vtLoop = false;
+    }
+    function vtStartLoop() { if (!vtLoop && vtInBeeld) { vtLoop = true; vtVorige = performance.now(); requestAnimationFrame(vtFrame); } }
+    new IntersectionObserver(([item]) => { vtInBeeld = item.isIntersecting; if (vtInBeeld) { vtMaat(); vtStartLoop(); } }).observe(vtDoek);
+    addEventListener('resize', vtMaat);
+    vtKnop.disabled = true;
+    vtMaat();
 
     /* ================= App (PWA) ================= */
     if ('serviceWorker' in navigator && location.protocol !== 'file:')
