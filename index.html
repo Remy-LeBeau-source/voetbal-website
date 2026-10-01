@@ -564,6 +564,27 @@
     /* ---------- Minigame: schietwand ---------- */
     #swDoek { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; touch-action: none; cursor: crosshair; }
 
+    /* ---------- Minigame: voetbal-memory ---------- */
+    .mem-spel { position: relative; }
+    .mem-balk { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 14px; }
+    .mem-stand { font-family: "Bebas Neue", sans-serif; font-size: clamp(1.3rem, 4vw, 1.9rem); letter-spacing: .03em; margin: 0 0 16px; min-height: 1.4em; }
+    .mem-stand b { color: var(--goud); font-weight: 400; }
+    .mem-stand .aan-beurt { background: var(--goud); color: #000; padding: 0 .4em; border-radius: 8px; }
+    .mem-bord { display: grid; grid-template-columns: repeat(var(--kol, 4), minmax(0, 1fr)); gap: clamp(8px, 1.6vw, 14px); max-width: calc(var(--kol, 4) * 150px); }
+    .mem-kaart { aspect-ratio: 3 / 4; border: 0; padding: 0; background: none; cursor: pointer; perspective: 700px; border-radius: 14px; }
+    .mem-binnen { position: relative; display: block; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform .45s cubic-bezier(.2,.8,.2,1); }
+    .mem-kaart.open .mem-binnen, .mem-kaart.gevonden .mem-binnen { transform: rotateY(180deg); }
+    .mem-voor, .mem-achter { position: absolute; inset: 0; display: grid; place-items: center; border-radius: 14px; backface-visibility: hidden; }
+    .mem-voor { background: linear-gradient(155deg, #fff3b0, var(--goud) 35%, var(--goud-donker)); color: #1a1300; font-family: "Bebas Neue", sans-serif;
+                font-size: clamp(1rem, 3.4vw, 1.7rem); box-shadow: inset 0 0 0 3px rgba(0,0,0,.15); }
+    .mem-achter { background: #151515; border: 2px solid var(--rand); transform: rotateY(180deg); font-size: clamp(1.7rem, 7vw, 3.4rem); }
+    .mem-kaart:hover:not(.open):not(.gevonden) .mem-binnen { transform: translateY(-4px) rotate(-2deg); }
+    .mem-kaart.gevonden .mem-achter { border-color: var(--gras); box-shadow: 0 0 18px rgba(29,185,84,.45); }
+    .mem-kaart.gevonden { cursor: default; animation: memPop .5s ease-out; }
+    .mem-kaart.mis .mem-achter { border-color: var(--rood); }
+    @keyframes memPop { 40% { scale: 1.12; } }
+    @media (max-width: 760px) { .mem-bord[style*="--kol: 6"] { --kol: 4 !important; } .mem-bord { max-width: none; } }
+
     /* ---------- Foto ---------- */
     .foto-groot { border-radius: 26px; overflow: hidden; border: 1px solid var(--rand); margin: 0; }
     .foto-groot.zichtbaar { transition: transform .25s ease-out, opacity .8s; }
@@ -671,6 +692,7 @@
             <li><a href="#koppen">🏐 Overkoppen</a></li>
             <li><a href="#eentegeneen">⚔️ 1 tegen 1</a></li>
             <li><a href="#dribbel">🏁 Dribbelen</a></li>
+            <li><a href="#memory">🃏 Memory</a></li>
           </ul>
         </li>
         <li><a href="#foto">Foto</a></li>
@@ -708,8 +730,8 @@
 
     <div class="lichtkrant twee" aria-hidden="true">
       <div class="lichtkrant-rij">
-        <span>Penalty's ⚽ Panenka ⚽ Hooghouden ⚽ Overkoppen ⚽ Omhaal ⚽ Keeper ⚽ 1 tegen 1 ⚽ Vrije trap ⚽ Dribbelen ⚽ Schietwand ⚽</span>
-        <span>Penalty's ⚽ Panenka ⚽ Hooghouden ⚽ Overkoppen ⚽ Omhaal ⚽ Keeper ⚽ 1 tegen 1 ⚽ Vrije trap ⚽ Dribbelen ⚽ Schietwand ⚽</span>
+        <span>Penalty's ⚽ Panenka ⚽ Hooghouden ⚽ Overkoppen ⚽ Omhaal ⚽ Keeper ⚽ 1 tegen 1 ⚽ Vrije trap ⚽ Dribbelen ⚽ Schietwand ⚽ Memory ⚽</span>
+        <span>Penalty's ⚽ Panenka ⚽ Hooghouden ⚽ Overkoppen ⚽ Omhaal ⚽ Keeper ⚽ 1 tegen 1 ⚽ Vrije trap ⚽ Dribbelen ⚽ Schietwand ⚽ Memory ⚽</span>
       </div>
     </div>
 
@@ -730,7 +752,7 @@
           <div class="teller"><b data-tel="2">0</b><span>vrienden</span></div>
           <div class="teller"><b data-tel="1">0</b><span>passie: voetbal</span></div>
           <div class="teller"><b data-tel="100">0</b><span>procent inzet</span></div>
-          <div class="teller"><b data-tel="10">0</b><span>spellen om te spelen</span></div>
+          <div class="teller"><b data-tel="11">0</b><span>spellen om te spelen</span></div>
         </div>
 
         <div class="kaarten" style="margin-top:56px">
@@ -1171,6 +1193,33 @@
           <div class="kop-bediening">
             <p class="spel-info">Tijd: <b id="swTijd">30</b> s · Punten: <b id="swPunten">0</b> · Record: <b id="swRecord">0</b></p>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Minigame: voetbal-memory -->
+    <section id="memory">
+      <div class="wrap">
+        <div class="sectie-kop verschijn">
+          <p class="label">Minigame</p>
+          <h2 class="kop">Voetbal-memory</h2>
+          <p>Draai twee kaartjes om en zoek de paren. Speel alleen in zo min mogelijk beurten, of met z'n tweeën: wie een paar vindt, krijgt een punt en mag nog een keer.</p>
+        </div>
+        <div class="mem-spel verschijn">
+          <div class="mem-balk">
+            <div class="niveau-keuze" id="memModus" role="group" aria-label="Aantal spelers">
+              <button data-mem-modus="alleen" aria-pressed="true">Alleen</button>
+              <button data-mem-modus="samen" aria-pressed="false">Met z'n tweeën</button>
+            </div>
+            <div class="niveau-keuze" id="memNiveaus" role="group" aria-label="Aantal kaartjes">
+              <button data-mem-niveau="makkelijk" aria-pressed="false">12 kaartjes</button>
+              <button data-mem-niveau="normaal" aria-pressed="true">16 kaartjes</button>
+              <button data-mem-niveau="moeilijk" aria-pressed="false">24 kaartjes</button>
+            </div>
+            <button class="klein" id="memNieuw">↺ Nieuw spel</button>
+          </div>
+          <p class="mem-stand" id="memStand" aria-live="polite"></p>
+          <div class="mem-bord" id="memBord"></div>
         </div>
       </div>
     </section>
@@ -4580,6 +4629,102 @@
     new IntersectionObserver(([item]) => { swInBeeld = item.isIntersecting; if (swInBeeld) { swMaat(); swStartLoop(); } }).observe(swDoek);
     addEventListener('resize', swMaat);
     swMaat();
+
+    /* ================= Minigame: voetbal-memory ================= */
+    const MEM_PLAATJES = [['⚽', 'bal'], ['🥅', 'doel'], ['🧤', 'keepershandschoenen'], ['👟', 'voetbalschoen'], ['🏆', 'beker'], ['🟨', 'gele kaart'],
+                          ['🟥', 'rode kaart'], ['🚩', 'hoekvlag'], ['📣', 'toeter'], ['🥇', 'medaille'], ['⏱️', 'stopwatch'], ['🎽', 'shirt']];
+    const MEM_NIVEAUS = { makkelijk: { paren: 6, kol: 4 }, normaal: { paren: 8, kol: 4 }, moeilijk: { paren: 12, kol: 6 } };
+    const MEM_NAMEN = ['Sill-vyan', 'Naoufal'];
+    const memBord = $('#memBord'), memStand = $('#memStand');
+    let memNiveau = bewaar.lees('memory-niveau', 'normaal'), memModus = 'alleen', mem = null;
+    if (!MEM_NIVEAUS[memNiveau]) memNiveau = 'normaal';
+
+    function memNieuw() {
+      const niv = MEM_NIVEAUS[memNiveau];
+      // Kies plaatjes, maak van elk een paar en schud de kaartjes
+      const plaatjes = [...MEM_PLAATJES].sort(() => Math.random() - .5).slice(0, niv.paren);
+      const stapel = [...plaatjes, ...plaatjes].map(p => ({ p }));
+      for (let i = stapel.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [stapel[i], stapel[j]] = [stapel[j], stapel[i]]; }
+      mem = { niv, kaarten: stapel, open: [], slot: false, beurten: 0, gevonden: 0, beurt: 0, scores: [0, 0], klaar: false };
+      memBord.style.setProperty('--kol', niv.kol);
+      memBord.innerHTML = '';
+      stapel.forEach((k, i) => {
+        const knop = document.createElement('button');
+        knop.className = 'mem-kaart';
+        knop.setAttribute('aria-label', `Kaartje ${i + 1}, omgekeerd`);
+        knop.innerHTML = `<span class="mem-binnen"><span class="mem-voor" aria-hidden="true">S&amp;N</span><span class="mem-achter" aria-hidden="true">${k.p[0]}</span></span>`;
+        knop.addEventListener('click', () => memKlik(i));
+        k.el = knop;
+        memBord.appendChild(knop);
+      });
+      memToon();
+    }
+    function memToon(extra = '') {
+      const record = bewaar.lees('memory-record-' + memNiveau, null);
+      if (memModus === 'samen') {
+        const naam = n => mem.beurt === n && !mem.klaar ? `<span class="aan-beurt">${MEM_NAMEN[n]}</span>` : MEM_NAMEN[n];
+        memStand.innerHTML = `${naam(0)} <b>${mem.scores[0]}</b> – <b>${mem.scores[1]}</b> ${naam(1)}${extra ? ' · ' + extra : ''}`;
+      } else {
+        memStand.innerHTML = `Beurten: <b>${mem.beurten}</b> · Paren: <b>${mem.gevonden}/${mem.niv.paren}</b> · Record: <b>${record ?? '–'}</b>${extra ? ' · ' + extra : ''}`;
+      }
+    }
+    function memKlik(i) {
+      const k = mem.kaarten[i];
+      if (mem.slot || mem.klaar || k.open || k.gevonden) return;
+      k.open = true; k.el.classList.add('open');
+      k.el.setAttribute('aria-label', `Kaartje ${i + 1}: ${k.p[1]}`);
+      mem.open.push(k);
+      trapGeluid({ licht: true });
+      if (mem.open.length < 2) return;
+      mem.beurten++;
+      const [a, b] = mem.open;
+      if (a.p === b.p) {                                            // paar gevonden
+        a.gevonden = b.gevonden = true; mem.open = []; mem.gevonden++;
+        mem.scores[mem.beurt]++;
+        setTimeout(() => { a.el.classList.add('gevonden'); b.el.classList.add('gevonden'); speel('net'); }, 300);
+        if (mem.gevonden === mem.niv.paren) return setTimeout(memEinde, 700);
+        memToon(memModus === 'samen' ? 'Goed zo, nog een keer!' : '');
+      } else {                                                      // geen paar: even laten zien en dan weer omdraaien
+        mem.slot = true;
+        setTimeout(() => { a.el.classList.add('mis'); b.el.classList.add('mis'); }, 350);
+        setTimeout(() => {
+          [a, b].forEach(x => { x.open = false; x.el.classList.remove('open', 'mis'); x.el.setAttribute('aria-label', `Kaartje ${mem.kaarten.indexOf(x) + 1}, omgekeerd`); });
+          mem.open = []; mem.slot = false;
+          if (memModus === 'samen') mem.beurt = 1 - mem.beurt;
+          memToon();
+        }, 1100);
+        memToon();
+      }
+    }
+    function memEinde() {
+      mem.klaar = true;
+      let tekst;
+      if (memModus === 'samen') {
+        const [s, n] = mem.scores;
+        tekst = s === n ? 'Gelijkspel!' : `${MEM_NAMEN[s > n ? 0 : 1]} wint! 🏆`;
+      } else {
+        const sleutel = 'memory-record-' + memNiveau, oud = bewaar.lees(sleutel, null), nieuw = oud === null || mem.beurten < oud;
+        if (nieuw) bewaar.schrijf(sleutel, mem.beurten);
+        tekst = nieuw && oud !== null ? 'Nieuw record! 🏆' : `Klaar in ${mem.beurten} beurten! 🏆`;
+      }
+      memToon(tekst);
+      juichGeluid();
+      const r = memBord.getBoundingClientRect();
+      confetti(memBord.parentElement, r.width / 2, memBord.offsetTop + r.height / 3, 110);
+    }
+    document.querySelectorAll('#memNiveaus button').forEach(b => b.addEventListener('click', () => {
+      memNiveau = b.dataset.memNiveau; bewaar.schrijf('memory-niveau', memNiveau);
+      document.querySelectorAll('#memNiveaus button').forEach(x => x.setAttribute('aria-pressed', x === b));
+      memNieuw();
+    }));
+    document.querySelectorAll('#memModus button').forEach(b => b.addEventListener('click', () => {
+      memModus = b.dataset.memModus;
+      document.querySelectorAll('#memModus button').forEach(x => x.setAttribute('aria-pressed', x === b));
+      memNieuw();
+    }));
+    $('#memNieuw').addEventListener('click', memNieuw);
+    document.querySelectorAll('#memNiveaus button').forEach(x => x.setAttribute('aria-pressed', x.dataset.memNiveau === memNiveau));
+    memNieuw();
 
     /* ================= App (PWA) ================= */
     if ('serviceWorker' in navigator && location.protocol !== 'file:')
