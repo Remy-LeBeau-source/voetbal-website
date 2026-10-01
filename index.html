@@ -55,7 +55,7 @@
     .logo span { color: var(--goud); display: inline-block; transition: transform .4s; }
     .logo:hover span { transform: rotate(360deg) scale(1.3); }
     .menu { display: flex; gap: 26px; list-style: none; margin: 0; padding: 0; }
-    @media (max-width: 1150px) and (min-width: 761px) { .menu { gap: 14px; } .menu a { font-size: .9rem; } }
+    @media (max-width: 1250px) and (min-width: 761px) { .menu { gap: 12px; } .menu a { font-size: .85rem; } }
     .menu a { text-decoration: none; font-weight: 600; color: var(--grijs); transition: color .2s; position: relative; }
     .menu a::after { content: ""; position: absolute; left: 0; right: 0; bottom: -4px; height: 2px; background: var(--goud);
                      transform: scaleX(0); transition: transform .3s; }
@@ -430,6 +430,9 @@
     .om-knop:disabled { opacity: .45; cursor: default; }
     @media (max-width: 760px) { .om-knop { width: 100%; justify-content: center; padding: 20px; font-size: 1.4rem; } }
 
+    /* ---------- Minigame: jij bent de keeper ---------- */
+    #rdDoek { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; touch-action: none; cursor: none; }
+
     /* ---------- Foto ---------- */
     .foto-groot { border-radius: 26px; overflow: hidden; border: 1px solid var(--rand); margin: 0; }
     .foto-groot img { width: 100%; height: auto; transition: transform 1.2s; }
@@ -509,13 +512,13 @@
         <span></span><span></span><span></span>
       </button>
       <ul class="menu" id="menu">
-        <li><a href="#home">Home</a></li>
         <li><a href="#wij">Wie zijn wij</a></li>
         <li><a href="#spel" data-naar-vorm="penalty">Penalty's</a></li>
         <li><a href="#spel" data-naar-vorm="panenka">Panenka</a></li>
         <li><a href="#hooghouden">Hooghouden</a></li>
         <li><a href="#koppen">Overkoppen</a></li>
         <li><a href="#omhaal">Omhaal</a></li>
+        <li><a href="#redden">Keeper</a></li>
         <li><a href="#foto">Foto</a></li>
       </ul>
     </nav>
@@ -842,6 +845,31 @@
           <div class="kop-bediening">
             <p class="spel-info">Voorzet <b id="omNr">0</b> van 10 · Punten: <b id="omPunten">0</b> · Record: <b id="omRecord">0</b></p>
             <button class="knop vol om-knop" id="omKnop">🦶 OMHAAL!</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Minigame: jij bent de keeper -->
+    <section id="redden" style="background:var(--paneel)">
+      <div class="wrap">
+        <div class="sectie-kop verschijn">
+          <p class="label">Minigame</p>
+          <h2 class="kop">Jij bent de keeper</h2>
+          <p>Nu sta jij in het doel! Beweeg je handschoenen naar de bal en houd hem tegen. De schoten gaan steeds sneller, en na drie tegengoals is het voorbij.</p>
+        </div>
+        <div class="kop-spel verschijn">
+          <div class="kop-doek-houder">
+            <canvas id="rdDoek" width="800" height="450" aria-label="Jij bent de keeper: houd de ballen tegen met je handschoenen"></canvas>
+            <div class="kop-scherm" id="rdScherm">
+              <h3 class="kop" id="rdTitel">Jij bent de keeper</h3>
+              <p id="rdTekst">Hoeveel ballen houd jij tegen? Je hebt 3 levens.</p>
+              <div class="kop-modi"><button class="knop vol" id="rdStartKnop">Start</button></div>
+              <p class="kop-uitleg">Beweeg met je <b>muis</b> of je <b>vinger</b>, of gebruik de <b>pijltjestoetsen</b>.</p>
+            </div>
+          </div>
+          <div class="kop-bediening">
+            <p class="spel-info">Reddingen: <b id="rdPunten">0</b> · Levens: <b id="rdLevens">❤❤❤</b> · Record: <b id="rdRecord">0</b></p>
           </div>
         </div>
       </div>
@@ -2463,6 +2491,224 @@
     addEventListener('resize', omMaat);
     omKnop.disabled = true;
     omMaat();
+
+    /* ================= Minigame: jij bent de keeper ================= */
+    const rdDoek = $('#rdDoek'), rc = rdDoek.getContext('2d');
+    const RB = 800, RH = 450, HORIZON = 250, SPITS = { x: 400, y: 268 };
+    const VAK = { x1: 70, x2: 730, y1: 60, y2: 415 };       // het doel waar je in staat (van binnenuit gezien)
+    const HAND_R = 58;
+    const rdScherm = $('#rdScherm'), rdTitel = $('#rdTitel'), rdTekst = $('#rdTekst');
+    const rdPuntenEl = $('#rdPunten'), rdLevensEl = $('#rdLevens'), rdRecordEl = $('#rdRecord');
+    let rdRecord = bewaar.lees('keeper-record', 0);
+    rdRecordEl.textContent = rdRecord;
+    let rd = null, rdLoop = false, rdInBeeld = false, rdVorige = 0;
+    const hand = { x: RB / 2, y: 300, doelX: RB / 2, doelY: 300 };
+    const rdToetsen = new Set();
+
+    function rdStart() {
+      rd = { bezig: true, punten: 0, levens: 3, fase: 'wacht', t: 0, schot: null, tekst: null, flits: 0, spitsTrap: 0 };
+      rdScherm.hidden = true;
+      rdPuntenEl.textContent = 0; rdLevensEl.textContent = '❤❤❤';
+      fluit();
+      rdStartLoop();
+    }
+    $('#rdStartKnop').addEventListener('click', rdStart);
+
+    function rdNieuwSchot() {
+      const n = rd.punten;
+      const duur = Math.max(.5, 1.15 - n * .035);                 // steeds sneller
+      const doel = { x: willekeurig(VAK.x1 + 50, VAK.x2 - 50), y: willekeurig(VAK.y1 + 45, VAK.y2 - 40) };
+      const effect = n >= 3 ? willekeurig(-1, 1) * Math.min(150, 40 + n * 10) : 0;   // later krijgt de bal effect
+      rd.schot = { doel, duur, effect, t: 0, klaar: false };
+      rd.fase = 'schot'; rd.t = 0; rd.spitsTrap = 1;
+      trapGeluid({ pan: 0 });
+    }
+    // Waar is de bal op tijdstip p (0 = bij de spits, 1 = bij het doel)?
+    function rdBalPlek(s, p) {
+      const e = p * p * (3 - 2 * p) * .35 + p * .65;               // komt versneld dichterbij
+      const boog = Math.sin(p * Math.PI) * (-70 - Math.abs(s.doel.y - 240) * .2);
+      return {
+        x: SPITS.x + (s.doel.x - SPITS.x) * e + Math.sin(p * Math.PI) * s.effect,
+        y: SPITS.y + (s.doel.y - SPITS.y) * e + boog * (1 - p * .4),
+        r: 4 + e * e * 34,
+      };
+    }
+    function rdTekstToon(tekst, kleur) { rd.tekst = { tekst, kleur, t: 0 }; }
+
+    function rdStap(dt) {
+      rd.t += dt;
+      rd.flits = Math.max(0, rd.flits - dt * 2.5);
+      rd.spitsTrap = Math.max(0, rd.spitsTrap - dt * 3);
+      if (rd.tekst) rd.tekst.t += dt;
+      // Handschoenen: volgen de aanwijzer soepel, of bewegen met de pijltjes
+      const stap = 620 * dt;
+      if (rdToetsen.has('ArrowLeft')) hand.doelX -= stap;
+      if (rdToetsen.has('ArrowRight')) hand.doelX += stap;
+      if (rdToetsen.has('ArrowUp')) hand.doelY -= stap;
+      if (rdToetsen.has('ArrowDown')) hand.doelY += stap;
+      hand.doelX = grens(hand.doelX, VAK.x1, VAK.x2); hand.doelY = grens(hand.doelY, VAK.y1, VAK.y2);
+      hand.x += (hand.doelX - hand.x) * Math.min(1, dt * 22);
+      hand.y += (hand.doelY - hand.y) * Math.min(1, dt * 22);
+
+      if (rd.fase === 'wacht') { if (rd.t > 1.1) rdNieuwSchot(); return; }
+      const s = rd.schot;
+      if (rd.fase === 'schot') {
+        s.t += dt;
+        if (s.t >= s.duur) {
+          const afstand = Math.hypot(hand.x - s.doel.x, hand.y - s.doel.y);
+          if (afstand < HAND_R + 14) {
+            rd.punten++; rdPuntenEl.textContent = rd.punten;
+            s.gered = true;
+            rdTekstToon(afstand < 22 ? 'KLEMVAST!' : 'GERED!', '#1db954');
+            speel('handschoen'); speel('applaus', { duur: 1.4, dichtheid: 28 });
+            if (rd.punten > rdRecord) { rdRecord = rd.punten; bewaar.schrijf('keeper-record', rdRecord); rdRecordEl.textContent = rdRecord; }
+          } else {
+            rd.levens--; rdLevensEl.textContent = '❤'.repeat(rd.levens) + '🖤'.repeat(3 - rd.levens);
+            rd.flits = 1;
+            rdTekstToon('GOAL TEGEN…', '#ff5a5a');
+            speel('net'); oohGeluid();
+          }
+          rd.fase = 'na'; rd.t = 0;
+        }
+      } else if (rd.fase === 'na' && rd.t > 1.25) {
+        if (rd.levens <= 0) return rdEinde();
+        rd.fase = 'wacht'; rd.t = 0; rd.schot = null;
+      }
+    }
+    function rdEinde() {
+      rd.bezig = false;
+      rdTitel.textContent = rd.punten >= rdRecord && rd.punten > 0 ? 'Nieuw record!' : 'Afgelopen!';
+      rdTekst.textContent = `Je hield ${rd.punten} ${rd.punten === 1 ? 'bal' : 'ballen'} tegen. Nog een keer?`;
+      $('#rdStartKnop').textContent = 'Nog een keer';
+      rdScherm.hidden = false;
+      fluit();
+      if (rd.punten >= rdRecord && rd.punten > 0) { juichGeluid(); const r = rdDoek.getBoundingClientRect(); confetti(rdDoek.parentElement, r.width / 2, r.height / 3, 110); }
+    }
+
+    // Besturing: muis, vinger en pijltjestoetsen
+    function rdWijs(e) {
+      const r = rdDoek.getBoundingClientRect();
+      hand.doelX = (e.clientX - r.left) / r.width * RB;
+      hand.doelY = (e.clientY - r.top) / r.height * RH;
+    }
+    rdDoek.addEventListener('pointermove', rdWijs);
+    rdDoek.addEventListener('pointerdown', e => { if (rd?.bezig) { e.preventDefault(); rdDoek.setPointerCapture(e.pointerId); } rdWijs(e); });
+    addEventListener('keydown', e => {
+      if (!rd?.bezig || !rdInBeeld || !e.code.startsWith('Arrow')) return;
+      e.preventDefault(); rdToetsen.add(e.code);
+    });
+    addEventListener('keyup', e => rdToetsen.delete(e.code));
+
+    /* ---------- Tekenen ---------- */
+    function rdHandschoen(x, y, spiegel) {
+      rc.save(); rc.translate(x, y); rc.scale(spiegel ? -1 : 1, 1);
+      rc.fillStyle = '#fff'; rc.strokeStyle = '#1db954'; rc.lineWidth = 4;
+      rc.beginPath(); rc.roundRect(-20, -8, 40, 44, 14); rc.fill(); rc.stroke();              // handpalm
+      for (let i = 0; i < 4; i++) { rc.beginPath(); rc.roundRect(-20 + i * 10.5, -36 - (i === 1 || i === 2 ? 6 : 0), 9, 34, 5); rc.fill(); rc.stroke(); }
+      rc.beginPath(); rc.roundRect(18, 0, 12, 26, 6); rc.fill(); rc.stroke();                  // duim
+      rc.fillStyle = '#1db954'; rc.fillRect(-20, 30, 40, 9);                                   // polsband
+      rc.restore();
+    }
+    function rdTeken() {
+      const schaal = rdDoek.width / RB, nu = performance.now() / 1000;
+      rc.setTransform(schaal, 0, 0, schaal, 0, 0);
+      // lucht, sterren, tribune aan de overkant
+      const lucht = rc.createLinearGradient(0, 0, 0, HORIZON);
+      lucht.addColorStop(0, '#050817'); lucht.addColorStop(1, '#1b3566');
+      rc.fillStyle = lucht; rc.fillRect(0, 0, RB, RH);
+      for (const [sx, sy, sg, fase] of KOP_STERREN) { rc.globalAlpha = .35 + Math.sin(nu * 2 + fase) * .25; rc.fillStyle = '#fff'; rc.fillRect(sx, sy * .8, sg, sg); }
+      rc.globalAlpha = 1;
+      for (const lx of [120, 680]) {
+        const g = rc.createRadialGradient(lx, 70, 4, lx, 70, 200);
+        g.addColorStop(0, 'rgba(255,255,230,.5)'); g.addColorStop(1, 'rgba(255,255,230,0)');
+        rc.fillStyle = g; rc.fillRect(0, 0, RB, 300);
+        rc.fillStyle = '#fffbe0'; rc.fillRect(lx - 16, 64, 32, 10);
+      }
+      rc.fillStyle = '#0d1430'; rc.fillRect(0, 150, RB, 100);
+      for (const p of KOP_PUBLIEK) {
+        rc.fillStyle = p.shirt; rc.beginPath(); rc.roundRect(p.x - 5, p.y - 9, 10, 10, 3); rc.fill();
+        rc.fillStyle = p.huid; rc.beginPath(); rc.arc(p.x, p.y - 12, 3.6, 0, Math.PI * 2); rc.fill();
+      }
+      // gras in perspectief met strafschopgebied
+      const gras = rc.createLinearGradient(0, HORIZON, 0, RH);
+      gras.addColorStop(0, '#176e33'); gras.addColorStop(1, '#23994a');
+      rc.fillStyle = gras; rc.fillRect(0, HORIZON, RB, RH - HORIZON);
+      for (let i = 0; i < 6; i++) {
+        const y1 = HORIZON + Math.pow(i / 6, 1.8) * (RH - HORIZON), y2 = HORIZON + Math.pow((i + .5) / 6, 1.8) * (RH - HORIZON);
+        rc.fillStyle = 'rgba(255,255,255,.05)'; rc.fillRect(0, y1, RB, y2 - y1);
+      }
+      rc.strokeStyle = 'rgba(255,255,255,.7)'; rc.lineWidth = 2;
+      rc.beginPath(); rc.moveTo(-60, RH); rc.lineTo(250, 300); rc.lineTo(550, 300); rc.lineTo(860, RH); rc.stroke();   // 16-metergebied
+      rc.beginPath(); rc.ellipse(400, 300, 70, 12, 0, Math.PI, Math.PI * 2); rc.stroke();
+      rc.fillStyle = '#fff'; rc.beginPath(); rc.ellipse(400, 330, 5, 2.5, 0, 0, Math.PI * 2); rc.fill();               // stip
+      // spits (klein, ver weg) die aanloopt en trapt
+      const aanloop = rd?.bezig && rd.fase === 'wacht' ? Math.min(1, rd.t / 1.1) : 1;
+      const sx = SPITS.x + 26 - aanloop * 18, sy = SPITS.y + 20;
+      rc.fillStyle = 'rgba(0,0,0,.3)'; rc.beginPath(); rc.ellipse(sx, sy + 26, 12, 3, 0, 0, Math.PI * 2); rc.fill();
+      rc.strokeStyle = '#111'; rc.lineWidth = 4; rc.lineCap = 'round';
+      const trap = (rd?.spitsTrap || 0) * 12, stapje = Math.sin(nu * 14) * 4 * (aanloop < 1 ? 1 : 0);
+      rc.beginPath(); rc.moveTo(sx - 3, sy + 8); rc.lineTo(sx - 5 + stapje, sy + 25); rc.moveTo(sx + 3, sy + 8); rc.lineTo(sx + 5 - trap - stapje, sy + 25 - trap * .4); rc.stroke();
+      rc.fillStyle = '#ff4d4d'; rc.beginPath(); rc.roundRect(sx - 8, sy - 12, 16, 22, 5); rc.fill();
+      rc.fillStyle = '#d9a77e'; rc.beginPath(); rc.arc(sx, sy - 19, 7, 0, Math.PI * 2); rc.fill();
+      rc.fillStyle = '#23160d'; rc.beginPath(); rc.arc(sx, sy - 21, 7, Math.PI, Math.PI * 2); rc.fill();
+      // bal: schaduw op het gras + de bal zelf
+      const s = rd?.schot;
+      if (s) {
+        const p = Math.min(1, s.t / s.duur), b = rdBalPlek(s, p);
+        if (rd.fase === 'schot') {
+          rc.fillStyle = 'rgba(0,0,0,.28)';
+          rc.beginPath(); rc.ellipse(b.x, Math.min(RH - 6, HORIZON + 40 + p * 160), b.r * .9, b.r * .25, 0, 0, Math.PI * 2); rc.fill();
+        }
+        const na = rd.fase === 'na' ? rd.t : 0;
+        const bx = s.gered ? b.x + (b.x - hand.x) * na * 2 : b.x, by = s.gered ? b.y - na * 160 + na * na * 300 : b.y;
+        const br = rd.fase === 'na' ? (s.gered ? b.r * Math.max(.3, 1 - na * .6) : b.r * (1 + na * .5)) : b.r;
+        rc.globalAlpha = rd.fase === 'na' && !s.gered ? Math.max(0, 1 - na * 1.6) : 1;
+        rc.save(); rc.translate(bx, by); rc.rotate(nu * 9);
+        rc.fillStyle = '#fff'; rc.strokeStyle = '#111'; rc.lineWidth = Math.max(1, br * .08);
+        rc.beginPath(); rc.arc(0, 0, br, 0, Math.PI * 2); rc.fill(); rc.stroke();
+        rc.fillStyle = '#111'; rc.beginPath();
+        for (let i = 0; i < 5; i++) { const a = -Math.PI / 2 + i * Math.PI * 2 / 5; rc.lineTo(Math.cos(a) * br * .38, Math.sin(a) * br * .38); }
+        rc.closePath(); rc.fill();
+        for (let i = 0; i < 5; i++) { const a = -Math.PI / 2 + i * Math.PI * 2 / 5; rc.beginPath(); rc.moveTo(Math.cos(a) * br * .38, Math.sin(a) * br * .38); rc.lineTo(Math.cos(a) * br, Math.sin(a) * br); rc.stroke(); }
+        rc.restore(); rc.globalAlpha = 1;
+      }
+      // handschoenen
+      rc.globalAlpha = .95;
+      rdHandschoen(hand.x - 30, hand.y, true); rdHandschoen(hand.x + 30, hand.y, false);
+      rc.globalAlpha = 1;
+      // doelpalen en lat op de voorgrond (je staat in het doel)
+      rc.strokeStyle = '#f4f4f4'; rc.lineWidth = 16; rc.lineCap = 'square';
+      rc.beginPath(); rc.moveTo(VAK.x1 - 30, RH); rc.lineTo(VAK.x1 - 30, VAK.y1 - 30); rc.lineTo(VAK.x2 + 30, VAK.y1 - 30); rc.lineTo(VAK.x2 + 30, RH); rc.stroke();
+      rc.strokeStyle = 'rgba(0,0,0,.18)'; rc.lineWidth = 4;
+      rc.beginPath(); rc.moveTo(VAK.x1 - 22, RH); rc.lineTo(VAK.x1 - 22, VAK.y1 - 22); rc.lineTo(VAK.x2 + 22, VAK.y1 - 22); rc.lineTo(VAK.x2 + 22, RH); rc.stroke();
+      // rode flits bij een tegengoal
+      if (rd?.flits) { rc.fillStyle = `rgba(255,60,60,${rd.flits * .3})`; rc.fillRect(0, 0, RB, RH); }
+      // tekst
+      if (rd?.tekst) {
+        const { tekst, kleur, t } = rd.tekst, sc = t < .15 ? .4 + t / .15 * .8 : t < .3 ? 1.2 - (t - .15) / .15 * .2 : 1;
+        rc.save(); rc.globalAlpha = t > 1 ? Math.max(0, 1 - (t - 1) / .25) : 1;
+        rc.translate(RB / 2, 130); rc.scale(sc, sc);
+        rc.font = '64px "Bebas Neue", sans-serif'; rc.textAlign = 'center'; rc.textBaseline = 'middle';
+        rc.lineWidth = 8; rc.strokeStyle = 'rgba(0,0,0,.6)'; rc.strokeText(tekst, 0, 0);
+        rc.fillStyle = kleur; rc.fillText(tekst, 0, 0); rc.restore();
+      }
+    }
+    function rdMaat() {
+      const w = rdDoek.clientWidth * Math.min(devicePixelRatio || 1, 2);
+      if (w && rdDoek.width !== Math.round(w)) { rdDoek.width = Math.round(w); rdDoek.height = Math.round(w * RH / RB); }
+      rdTeken();
+    }
+    function rdFrame(nu) {
+      const dt = Math.min((nu - rdVorige) / 1000, .05);
+      rdVorige = nu;
+      if (rd?.bezig) rdStap(dt);
+      rdTeken();
+      if (rd?.bezig && rdInBeeld) requestAnimationFrame(rdFrame); else rdLoop = false;
+    }
+    function rdStartLoop() { if (!rdLoop && rdInBeeld) { rdLoop = true; rdVorige = performance.now(); requestAnimationFrame(rdFrame); } }
+    new IntersectionObserver(([item]) => { rdInBeeld = item.isIntersecting; if (rdInBeeld) { rdMaat(); rdStartLoop(); } else rdToetsen.clear(); }).observe(rdDoek);
+    addEventListener('resize', rdMaat);
+    rdMaat();
 
     /* ================= App (PWA) ================= */
     if ('serviceWorker' in navigator && location.protocol !== 'file:')
