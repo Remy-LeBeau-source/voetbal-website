@@ -607,6 +607,9 @@
     @keyframes vierWin { to { box-shadow: 0 0 0 4px #fff, 0 0 22px 6px rgba(255,255,255,.7); scale: 1.06; } }
     .vier-bord.klaar .vier-cel:not(.win) svg { opacity: .45; }
 
+    /* ---------- Minigame: De Blockers ---------- */
+    #bkDoek { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; touch-action: none; }
+
     /* ---------- Foto ---------- */
     .foto-groot { border-radius: 26px; overflow: hidden; border: 1px solid var(--rand); margin: 0; }
     .foto-groot.zichtbaar { transition: transform .25s ease-out, opacity .8s; }
@@ -735,6 +738,7 @@
             <li><a href="#memory">🃏 Memory</a></li>
             <li><a href="#dribbelrun">🏃 Dribbelrun</a></li>
             <li><a href="#vier">🔵 4 op een rij</a></li>
+            <li><a href="#blockers">🛡️ De Blockers</a></li>
           </ul>
         </li>
         <li><a href="#foto">Foto</a></li>
@@ -772,8 +776,8 @@
 
     <div class="lichtkrant twee" aria-hidden="true">
       <div class="lichtkrant-rij">
-        <span>Penalty's ⚽ Panenka ⚽ Hooghouden ⚽ Overkoppen ⚽ Omhaal ⚽ Keeper ⚽ 1 tegen 1 ⚽ Vrije trap ⚽ Dribbelen ⚽ Schietwand ⚽ Memory ⚽ Dribbelrun ⚽ 4 op een rij ⚽</span>
-        <span>Penalty's ⚽ Panenka ⚽ Hooghouden ⚽ Overkoppen ⚽ Omhaal ⚽ Keeper ⚽ 1 tegen 1 ⚽ Vrije trap ⚽ Dribbelen ⚽ Schietwand ⚽ Memory ⚽ Dribbelrun ⚽ 4 op een rij ⚽</span>
+        <span>Penalty's ⚽ Panenka ⚽ Hooghouden ⚽ Overkoppen ⚽ Omhaal ⚽ Keeper ⚽ 1 tegen 1 ⚽ Vrije trap ⚽ Dribbelen ⚽ Schietwand ⚽ Memory ⚽ Dribbelrun ⚽ 4 op een rij ⚽ De Blockers ⚽</span>
+        <span>Penalty's ⚽ Panenka ⚽ Hooghouden ⚽ Overkoppen ⚽ Omhaal ⚽ Keeper ⚽ 1 tegen 1 ⚽ Vrije trap ⚽ Dribbelen ⚽ Schietwand ⚽ Memory ⚽ Dribbelrun ⚽ 4 op een rij ⚽ De Blockers ⚽</span>
       </div>
     </div>
 
@@ -794,7 +798,7 @@
           <div class="teller"><b data-tel="2">0</b><span>vrienden</span></div>
           <div class="teller"><b data-tel="1">0</b><span>passie: voetbal</span></div>
           <div class="teller"><b data-tel="100">0</b><span>procent inzet</span></div>
-          <div class="teller"><b data-tel="13">0</b><span>spellen om te spelen</span></div>
+          <div class="teller"><b data-tel="14">0</b><span>spellen om te spelen</span></div>
         </div>
 
         <div class="kaarten" style="margin-top:56px">
@@ -1315,6 +1319,35 @@
           </div>
           <p class="mem-stand" id="vierStand" aria-live="polite"></p>
           <div class="vier-bord" id="vierBord" role="group" aria-label="Speelbord, zeven kolommen"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Minigame: De Blockers -->
+    <section id="blockers" style="background:var(--paneel)">
+      <div class="wrap">
+        <div class="sectie-kop verschijn">
+          <p class="label">Minigame</p>
+          <h2 class="kop">De Blockers</h2>
+          <p>Hier werken jullie samen! Sill-vyan en Naoufal staan voor het doel en de aanvallers schieten de ene bal na de andere. Ga voor de bal staan om hem te blokken. Drie tegengoals en het is voorbij. Vijftien blokken op rij? Dan worden jullie een muur!</p>
+        </div>
+        <div class="kop-spel verschijn">
+          <div class="kop-doek-houder">
+            <canvas id="bkDoek" width="800" height="450" aria-label="De Blockers: blok samen de ballen voor het doel"></canvas>
+            <div class="kop-scherm" id="bkScherm">
+              <h3 class="kop" id="bkTitel">De Blockers</h3>
+              <p id="bkTekst">Hoeveel ballen houden jullie tegen?</p>
+              <div class="kop-modi">
+                <button class="knop vol" data-modus="samen">Samen</button>
+                <button class="knop leeg" data-modus="alleen">Alleen (Naoufal dekt onder)</button>
+              </div>
+              <p class="kop-uitleg"><b>Sill-vyan:</b> W / S of de muis &nbsp;·&nbsp; <b>Naoufal:</b> pijltje omhoog / omlaag</p>
+            </div>
+          </div>
+          <div class="kop-bediening">
+            <p class="spel-info">Geblokt: <b id="bkBlok">0</b> · Levens: <b id="bkLevens">❤❤❤</b> · Record: <b id="bkRecord">0</b></p>
+            <p class="spel-info">Op een telefoon: sleep omhoog en omlaag, ieder op zijn eigen helft</p>
+          </div>
         </div>
       </div>
     </section>
@@ -5209,6 +5242,250 @@
     }));
     $('#vierNieuw').addEventListener('click', vierNieuw);
     vierNieuw();
+
+    /* ================= Minigame: De Blockers (samen verdedigen) ================= */
+    const bkDoek = $('#bkDoek'), bc = bkDoek.getContext('2d');
+    const BK_B = 800, BK_H = 450, BK_DOEL = { x: 52, y1: 105, y2: 345 }, BK_RAND = { y1: 24, y2: 426 }, BK_HALF = 20;     // half de hoogte van het blokvlak: smal, dus je moet echt bewegen
+    const bkScherm = $('#bkScherm'), bkTitel = $('#bkTitel'), bkTekst = $('#bkTekst');
+    const bkBlokEl = $('#bkBlok'), bkLevensEl = $('#bkLevens'), bkRecordEl = $('#bkRecord');
+    let bkRecord = bewaar.lees('blockers-record', 0);
+    bkRecordEl.textContent = bkRecord;
+    let bk = null, bkLoop = false, bkInBeeld = false, bkVorige = 0, bkRust = 0, bkModus = 'alleen';
+    const bkToetsen = new Set(), bkWijzers = new Map(), bkSleep = [null, null];
+
+    function bkStart(modus) {
+      bkModus = modus;
+      bk = { bezig: true, levens: 3, blokken: 0, reeks: 0, tijd: 0, wacht: 1.8, muur: 0, schud: 0, flits: 0, volgende: .8,
+             spelers: [{ naam: 'Sill-vyan', kleur: '#f5c542', rand: '#9a7412', x: 190, y: 165, ai: false },
+                       { naam: 'Naoufal', kleur: '#35c6ff', rand: '#0b6f94', x: 250, y: 270, ai: modus === 'alleen' }],
+             aanvallers: [100, 225, 350].map(y => ({ x: 690, y, basisY: y, laad: 0, doelY: 0, fase: Math.random() * 6 })),
+             ballen: [], deeltjes: [], popups: [] };
+      bkScherm.hidden = true;
+      bkBlokEl.textContent = 0; bkLevensEl.textContent = '❤❤❤';
+      fluit();
+      bkStartLoop();
+    }
+    document.querySelectorAll('#bkScherm [data-modus]').forEach(b => b.addEventListener('click', () => bkStart(b.dataset.modus)));
+
+    // Invoer: W/S en pijltjes, of slepen (samen: ieder zijn eigen helft van het scherm)
+    const BK_CODES = ['KeyW', 'KeyS', 'ArrowUp', 'ArrowDown'];
+    addEventListener('keydown', e => { if (!bk?.bezig || !bkInBeeld || !BK_CODES.includes(e.code)) return; e.preventDefault(); bkToetsen.add(e.code); });
+    addEventListener('keyup', e => bkToetsen.delete(e.code));
+    addEventListener('blur', () => bkToetsen.clear());
+    const bkPunt = e => { const r = bkDoek.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width * BK_B, y: (e.clientY - r.top) / r.height * BK_H }; };
+    bkDoek.addEventListener('pointerdown', e => {
+      if (!bk?.bezig) return;
+      e.preventDefault(); bkDoek.setPointerCapture(e.pointerId);
+      const p = bkPunt(e), nr = bkModus === 'samen' && p.x > BK_B / 2 ? 1 : 0;
+      bkWijzers.set(e.pointerId, nr); bkSleep[nr] = p.y;
+    });
+    bkDoek.addEventListener('pointermove', e => {
+      if (bkWijzers.has(e.pointerId)) bkSleep[bkWijzers.get(e.pointerId)] = bkPunt(e).y;
+      else if (bk?.bezig && bkModus === 'alleen' && e.pointerType === 'mouse') bkSleep[0] = bkPunt(e).y;       // met de muis hoef je niet te klikken
+    });
+    const bkLos = e => { if (bkWijzers.has(e.pointerId)) { if (e.pointerType !== 'mouse') bkSleep[bkWijzers.get(e.pointerId)] = null; bkWijzers.delete(e.pointerId); } };
+    bkDoek.addEventListener('pointerup', bkLos); bkDoek.addEventListener('pointercancel', bkLos);
+
+    function bkVonken(x, y, aantal, kleuren, kracht = 240) {
+      if (rustig) return;
+      for (let i = 0; i < aantal; i++) {
+        const hoek = willekeurig(0, Math.PI * 2), v = willekeurig(kracht * .25, kracht);
+        bk.deeltjes.push({ x, y, vx: Math.cos(hoek) * v, vy: Math.sin(hoek) * v, leven: willekeurig(.25, .5), max: .5, grootte: willekeurig(1.5, 3.4), kleur: kleuren[i % kleuren.length] });
+      }
+    }
+    const bkPopup = (tekst, x, y, kleur) => bk.popups.push({ tekst, x: grens(x, 90, BK_B - 90), y: Math.max(40, y), kleur, t: 0 });
+
+    function bkStap(dt) {
+      bk.schud = Math.max(0, bk.schud - dt * 2.4); bk.flits = Math.max(0, bk.flits - dt * 2.4);
+      for (let i = bk.deeltjes.length - 1; i >= 0; i--) { const d = bk.deeltjes[i]; d.leven -= dt; d.x += d.vx * dt; d.y += d.vy * dt; d.vx *= 1 - dt * 3; d.vy *= 1 - dt * 3; if (d.leven <= 0) bk.deeltjes.splice(i, 1); }
+      for (let i = bk.popups.length - 1; i >= 0; i--) { bk.popups[i].t += dt; if (bk.popups[i].t > 1.1) bk.popups.splice(i, 1); }
+      if (!bk.bezig) return;
+      if (bk.wacht > 0) { bk.wacht -= dt; return; }
+      bk.tijd += dt; bk.muur = Math.max(0, bk.muur - dt);
+      const moeilijk = Math.min(1, bk.tijd / 75);                               // loopt in 75 seconden op naar het maximum
+      const half = BK_HALF + (bk.muur > 0 ? 24 : 0);
+      // Blockers bewegen
+      bk.spelers.forEach((s, nr) => {
+        let doel = null;
+        if (s.ai) {
+          // Naoufal als computer: hij dekt de onderste helft van het doel; de bovenste helft is voor jou
+          const midden = (BK_DOEL.y1 + BK_DOEL.y2) / 2;
+          const dreiging = bk.ballen.filter(b => !b.geblokt && b.vx < 0 && b.x > s.x && b.x < 470)
+            .map(b => ({ y: b.y + b.vy * ((b.x - s.x) / -b.vx), t: (b.x - s.x) / -b.vx })).filter(d => d.y > midden - 12).sort((a, c) => a.t - c.t);
+          doel = dreiging.length ? dreiging[0].y : midden + 62;
+        } else {
+          const op = nr === 0 ? ['KeyW', ...(bkModus === 'alleen' ? ['ArrowUp'] : [])] : ['ArrowUp'], neer = nr === 0 ? ['KeyS', ...(bkModus === 'alleen' ? ['ArrowDown'] : [])] : ['ArrowDown'];
+          const richting = (neer.some(c => bkToetsen.has(c)) ? 1 : 0) - (op.some(c => bkToetsen.has(c)) ? 1 : 0);
+          if (richting) { s.y += richting * 430 * dt; bkSleep[nr] = null; }
+          else if (bkSleep[nr] !== null) doel = bkSleep[nr];
+        }
+        if (doel !== null) { const stap = (s.ai ? 165 : 560) * dt, verschil = doel - s.y; s.y += grens(verschil, -stap, stap); }
+        s.y = grens(s.y, BK_RAND.y1 + 30, BK_RAND.y2 - 30);
+      });
+      // Aanvallers: nemen een aanloop (je ziet een stippellijn) en schieten
+      bk.volgende -= dt;
+      if (bk.volgende <= 0) {
+        const vrij = bk.aanvallers.filter(a => a.laad <= 0);
+        const aantal = moeilijk > .2 && Math.random() < .2 + moeilijk * .45 ? 2 : 1;      // later: twee ballen tegelijk
+        for (let i = 0; i < aantal && vrij.length; i++) {
+          const a = vrij.splice(Math.floor(Math.random() * vrij.length), 1)[0];
+          a.laad = .75 - moeilijk * .3; a.doelY = willekeurig(BK_DOEL.y1 + 16, BK_DOEL.y2 - 16);
+        }
+        bk.volgende = willekeurig(1.5, 2.1) - moeilijk * .85;
+      }
+      for (const a of bk.aanvallers) {
+        a.fase += dt * 3; a.y = a.basisY + Math.sin(a.fase) * 26;
+        if (a.laad > 0) {
+          a.laad -= dt;
+          if (a.laad <= 0) {
+            const snel = 340 + moeilijk * 250 + willekeurig(-20, 40), dx = BK_DOEL.x - a.x, dy = a.doelY - a.y, L = Math.hypot(dx, dy);
+            bk.ballen.push({ x: a.x - 20, y: a.y, vx: dx / L * snel, vy: dy / L * snel, hoek: 0, geblokt: false, spoor: [] });
+            trapGeluid({ pan: .7, licht: true });
+          }
+        }
+      }
+      // Ballen
+      for (let i = bk.ballen.length - 1; i >= 0; i--) {
+        const b = bk.ballen[i];
+        b.x += b.vx * dt; b.y += b.vy * dt; b.hoek += b.vx * dt / 11;
+        b.spoor.push([b.x, b.y]); if (b.spoor.length > 9) b.spoor.shift();
+        if (b.y < BK_RAND.y1 + 11 || b.y > BK_RAND.y2 - 11) b.vy = -b.vy;
+        if (!b.geblokt) for (const s of bk.spelers) {
+          if (b.x - 11 < s.x + 16 && b.x + 11 > s.x - 16 && Math.abs(b.y - s.y) < half + 6) {
+            b.geblokt = true; b.vx = Math.abs(b.vx) * .85; b.vy = (b.y - s.y) * 4 + willekeurig(-60, 60);
+            bk.blokken++; bk.reeks++; s.blokTijd = .25;
+            bkBlokEl.textContent = bk.blokken;
+            speel('handschoen'); bkVonken(b.x, b.y, 12, ['#fff', s.kleur]); bk.schud = .25;
+            bkPopup(bk.reeks > 1 && bk.reeks % 5 === 0 ? `${bk.reeks} OP RIJ!` : 'GEBLOKT!', s.x + 40, s.y - 44, s.kleur);
+            if (bk.reeks % 15 === 0) { bk.muur = 5; bkPopup('🛡️ MUUR!', 220, 60, '#fff'); speel('applaus', { duur: 1.4, dichtheid: 30 }); }
+            break;
+          }
+        }
+        if (b.x < BK_DOEL.x - 6 && !b.geblokt) {
+          bk.ballen.splice(i, 1);
+          if (b.y > BK_DOEL.y1 && b.y < BK_DOEL.y2) {                          // tegengoal
+            bk.levens--; bk.reeks = 0; bk.schud = .9; bk.flits = 1;
+            bkLevensEl.textContent = '❤'.repeat(Math.max(0, bk.levens)) + '🖤'.repeat(3 - Math.max(0, bk.levens));
+            speel('net'); oohGeluid(); bkPopup('GOAL TEGEN…', 150, b.y, '#ff5a5a'); bkVonken(BK_DOEL.x, b.y, 16, ['#ff5a5a', '#fff']);
+            if (bk.levens <= 0) return bkEinde();
+          }
+        } else if (b.x > BK_B + 30 || b.x < -30) bk.ballen.splice(i, 1);
+      }
+      for (const s of bk.spelers) s.blokTijd = Math.max(0, (s.blokTijd || 0) - dt);
+    }
+    function bkEinde() {
+      bk.bezig = false; bk.ballen = [];
+      const nieuw = bk.blokken > bkRecord;
+      if (nieuw) { bkRecord = bk.blokken; bewaar.schrijf('blockers-record', bkRecord); bkRecordEl.textContent = bkRecord; }
+      bkTitel.textContent = nieuw ? 'Nieuw record!' : bk.blokken >= 30 ? 'Wat een muur!' : 'Erdoorheen!';
+      bkTekst.textContent = `De Blockers hielden ${bk.blokken} ${bk.blokken === 1 ? 'bal' : 'ballen'} tegen. Nog een keer?`;
+      setTimeout(() => { bkScherm.hidden = false; }, 700);
+      fluit();
+      if (nieuw) { juichGeluid(); const r = bkDoek.getBoundingClientRect(); confetti(bkDoek.parentElement, r.width / 2, r.height / 3, 110); }
+    }
+
+    /* ---------- Tekenen ---------- */
+    function bkPop(x, y, kijk, kleur, rand, breed = 1, hoog = 1) {
+      bc.fillStyle = 'rgba(0,0,0,.3)'; bc.beginPath(); bc.ellipse(x + 3, y + 6, 17 * breed, 16 * hoog, 0, 0, Math.PI * 2); bc.fill();
+      bc.save(); bc.translate(x, y); bc.rotate(kijk);
+      bc.fillStyle = '#111'; bc.beginPath(); bc.ellipse(6, -8 * hoog, 7, 4.5, 0, 0, Math.PI * 2); bc.ellipse(6, 8 * hoog, 7, 4.5, 0, 0, Math.PI * 2); bc.fill();
+      bc.fillStyle = kleur; bc.strokeStyle = rand; bc.lineWidth = 2.5;
+      bc.beginPath(); bc.ellipse(0, 0, 14 * breed, 18 * hoog, 0, 0, Math.PI * 2); bc.fill(); bc.stroke();
+      bc.fillStyle = '#23160d'; bc.beginPath(); bc.arc(1, 0, 8.5, 0, Math.PI * 2); bc.fill();
+      bc.fillStyle = '#d9a77e'; bc.beginPath(); bc.arc(5, 0, 5, -Math.PI / 2, Math.PI / 2); bc.fill();
+      bc.restore();
+    }
+    function bkTeken() {
+      const schaal = bkDoek.width / BK_B, nu = performance.now() / 1000;
+      bc.setTransform(schaal, 0, 0, schaal, 0, 0);
+      bc.fillStyle = '#0c3d1c'; bc.fillRect(0, 0, BK_B, BK_H);
+      if (bk?.schud && !rustig) bc.translate((Math.random() - .5) * bk.schud * 12, (Math.random() - .5) * bk.schud * 9);
+      for (const p of EE_PUBLIEK) {
+        const hop = bk?.muur > 0 ? Math.abs(Math.sin(nu * p.snel + p.fase)) * 4 : Math.sin(nu * 2 + p.fase) * .6;
+        bc.fillStyle = p.shirt; bc.beginPath(); bc.roundRect(p.x - 4.5, p.y - 2 - hop, 9, 8, 3); bc.fill();
+        bc.fillStyle = p.huid; bc.beginPath(); bc.arc(p.x, p.y - 5 - hop, 3.2, 0, Math.PI * 2); bc.fill();
+      }
+      for (let i = 0; i < 12; i++) { bc.fillStyle = i % 2 ? '#1f8a41' : '#1c7a3a'; bc.fillRect(BK_DOEL.x + i * 59, BK_RAND.y1, 60, BK_RAND.y2 - BK_RAND.y1); }
+      grasTextuur(bc, BK_DOEL.x, BK_RAND.y1, BK_B - BK_DOEL.x - 40, BK_RAND.y2 - BK_RAND.y1, .5);
+      bc.strokeStyle = 'rgba(255,255,255,.8)'; bc.lineWidth = 2.5;
+      bc.strokeRect(BK_DOEL.x, BK_RAND.y1, BK_B - BK_DOEL.x - 40, BK_RAND.y2 - BK_RAND.y1);
+      bc.strokeRect(BK_DOEL.x, 60, 190, 330); bc.strokeRect(BK_DOEL.x, BK_DOEL.y1 - 24, 70, BK_DOEL.y2 - BK_DOEL.y1 + 48);
+      bc.beginPath(); bc.arc(BK_DOEL.x + 190, 225, 60, -Math.PI / 2 + .35, Math.PI / 2 - .35); bc.stroke();
+      // het doel dat jullie verdedigen
+      bc.fillStyle = 'rgba(255,255,255,.12)'; bc.fillRect(BK_DOEL.x - 36, BK_DOEL.y1, 36, BK_DOEL.y2 - BK_DOEL.y1);
+      bc.strokeStyle = 'rgba(255,255,255,.35)'; bc.lineWidth = 1;
+      for (let x = BK_DOEL.x - 30; x < BK_DOEL.x; x += 7) { bc.beginPath(); bc.moveTo(x, BK_DOEL.y1); bc.lineTo(x, BK_DOEL.y2); bc.stroke(); }
+      for (let y = BK_DOEL.y1 + 8; y < BK_DOEL.y2; y += 8) { bc.beginPath(); bc.moveTo(BK_DOEL.x - 36, y); bc.lineTo(BK_DOEL.x, y); bc.stroke(); }
+      bc.strokeStyle = '#fff'; bc.lineWidth = 4; bc.strokeRect(BK_DOEL.x - 36, BK_DOEL.y1, 36, BK_DOEL.y2 - BK_DOEL.y1);
+      bc.fillStyle = '#fff'; for (const py of [BK_DOEL.y1, BK_DOEL.y2]) { bc.beginPath(); bc.arc(BK_DOEL.x, py, 5, 0, Math.PI * 2); bc.fill(); }
+      const spelers = bk?.spelers || [{ naam: 'Sill-vyan', kleur: '#f5c542', rand: '#9a7412', x: 190, y: 180 }, { naam: 'Naoufal', kleur: '#35c6ff', rand: '#0b6f94', x: 250, y: 270 }];
+      const aanvallers = bk?.aanvallers || [100, 225, 350].map(y => ({ x: 690, y, laad: 0 }));
+      // aanvallers met stippellijn naar waar ze gaan schieten
+      for (const a of aanvallers) {
+        if (a.laad > 0 && bk.bezig) {
+          bc.setLineDash([7, 9]); bc.strokeStyle = `rgba(255,90,90,${.35 + Math.sin(nu * 20) * .2})`; bc.lineWidth = 3;
+          bc.beginPath(); bc.moveTo(a.x - 20, a.y); bc.lineTo(BK_DOEL.x, a.doelY); bc.stroke(); bc.setLineDash([]);
+        }
+        bkPop(a.x + (a.laad > 0 ? 8 : 0), a.y, Math.PI, '#ff4d4d', '#a11d1d');
+        echteBal(bc, a.x - 24, a.y + 6, 9, nu * 2);
+      }
+      // ballen met spoor
+      for (const b of bk?.ballen || []) {
+        b.spoor.forEach(([x, y], i) => { bc.globalAlpha = i / b.spoor.length * .28; bc.fillStyle = '#fff'; bc.beginPath(); bc.arc(x, y, 11 * (.4 + i / b.spoor.length * .6), 0, Math.PI * 2); bc.fill(); });
+        bc.globalAlpha = 1;
+        bc.fillStyle = 'rgba(0,0,0,.3)'; bc.beginPath(); bc.ellipse(b.x + 3, b.y + 5, 11, 8, 0, 0, Math.PI * 2); bc.fill();
+        echteBal(bc, b.x, b.y, 11, b.hoek);
+      }
+      // de Blockers: breder als ze blokken, extra breed als MUUR
+      const muur = bk?.muur > 0;
+      for (const s of spelers) {
+        if (muur) { bc.fillStyle = 'rgba(255,255,255,.18)'; bc.strokeStyle = s.kleur; bc.lineWidth = 3; bc.beginPath(); bc.roundRect(s.x - 22, s.y - BK_HALF - 24, 44, (BK_HALF + 24) * 2, 14); bc.fill(); bc.stroke(); }
+        else { bc.strokeStyle = s.kleur; bc.globalAlpha = .35; bc.lineWidth = 2; bc.setLineDash([4, 6]); bc.beginPath(); bc.moveTo(s.x, s.y - BK_HALF); bc.lineTo(s.x, s.y + BK_HALF); bc.stroke(); bc.setLineDash([]); bc.globalAlpha = 1; }
+        const blok = s.blokTijd > 0 ? 1 + s.blokTijd * 1.6 : 1;
+        bkPop(s.x, s.y, 0, s.kleur, s.rand, 1, blok * (muur ? 1.5 : 1.25));
+        bc.fillStyle = '#fff'; bc.font = 'bold 12px Inter, sans-serif'; bc.textAlign = 'center'; bc.textBaseline = 'bottom';
+        bc.strokeStyle = 'rgba(0,0,0,.6)'; bc.lineWidth = 3;
+        const label = s.ai ? s.naam + ' (helpt)' : s.naam, ly = s.y - (muur ? BK_HALF + 30 : 30);
+        bc.strokeText(label, s.x, ly); bc.fillText(label, s.x, ly);
+      }
+      for (const d of bk?.deeltjes || []) { bc.globalAlpha = Math.max(0, d.leven / d.max); bc.fillStyle = d.kleur; bc.beginPath(); bc.arc(d.x, d.y, d.grootte, 0, Math.PI * 2); bc.fill(); }
+      bc.globalAlpha = 1;
+      for (const p of bk?.popups || []) {
+        const sc = p.t < .12 ? .5 + p.t / .12 * .7 : 1;
+        bc.save(); bc.translate(p.x, p.y - p.t * 34); bc.scale(sc, sc); bc.globalAlpha = p.t > .8 ? Math.max(0, 1 - (p.t - .8) / .3) : 1;
+        bc.font = '26px "Bebas Neue", sans-serif'; bc.textAlign = 'center'; bc.textBaseline = 'middle';
+        bc.lineWidth = 5; bc.strokeStyle = 'rgba(0,0,0,.7)'; bc.strokeText(p.tekst, 0, 0); bc.fillStyle = p.kleur; bc.fillText(p.tekst, 0, 0); bc.restore();
+      }
+      vignet(bc, BK_B, BK_H, .32);
+      if (bk?.flits) { bc.fillStyle = `rgba(255,60,60,${bk.flits * .28})`; bc.fillRect(-20, -20, BK_B + 40, BK_H + 40); }
+      if (bk?.bezig && bk.wacht > 0) {
+        const cijfer = Math.min(3, Math.ceil(bk.wacht / .6)), deel = (bk.wacht / .6) % 1, sc = 1 + deel * .8;
+        bc.save(); bc.translate(BK_B / 2, BK_H / 2); bc.scale(sc, sc); bc.globalAlpha = Math.min(1, 1.3 - deel);
+        bc.font = '96px "Bebas Neue", sans-serif'; bc.textAlign = 'center'; bc.textBaseline = 'middle';
+        bc.lineWidth = 8; bc.strokeStyle = 'rgba(0,0,0,.6)'; bc.strokeText(cijfer, 0, 0); bc.fillStyle = '#f5c542'; bc.fillText(cijfer, 0, 0); bc.restore();
+      } else if (bk?.bezig && bk.reeks >= 3) {
+        bc.font = '30px "Bebas Neue", sans-serif'; bc.textAlign = 'right'; bc.textBaseline = 'middle';
+        bc.lineWidth = 5; bc.strokeStyle = 'rgba(0,0,0,.6)'; const t = `${bk.reeks} op rij` + (muur ? ' · MUUR!' : '');
+        bc.strokeText(t, BK_B - 60, 50); bc.fillStyle = muur ? '#fff' : '#ff9f1c'; bc.fillText(t, BK_B - 60, 50);
+      }
+    }
+    function bkMaat() {
+      const w = bkDoek.clientWidth * Math.min(devicePixelRatio || 1, 2);
+      if (w && bkDoek.width !== Math.round(w)) { bkDoek.width = Math.round(w); bkDoek.height = Math.round(w * BK_H / BK_B); }
+      bkTeken();
+    }
+    function bkFrame(nu) {
+      if (!bk?.bezig && bkInBeeld && (bkRust = (bkRust + 1) % 3)) return requestAnimationFrame(bkFrame);
+      const dt = Math.min((nu - bkVorige) / 1000, .05);
+      bkVorige = nu;
+      if (bk) { const stappen = Math.ceil(dt / (1 / 120)); for (let i = 0; i < stappen; i++) bkStap(dt / stappen); }
+      bkTeken();
+      if (bkInBeeld) requestAnimationFrame(bkFrame); else bkLoop = false;
+    }
+    function bkStartLoop() { if (!bkLoop && bkInBeeld) { bkLoop = true; bkVorige = performance.now(); requestAnimationFrame(bkFrame); } }
+    new IntersectionObserver(([item]) => { bkInBeeld = item.isIntersecting; if (bkInBeeld) { bkMaat(); bkStartLoop(); } else bkToetsen.clear(); }).observe(bkDoek);
+    addEventListener('resize', bkMaat);
+    bkMaat();
 
     /* ================= App (PWA) ================= */
     if ('serviceWorker' in navigator && location.protocol !== 'file:')
