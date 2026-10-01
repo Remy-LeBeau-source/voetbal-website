@@ -463,6 +463,7 @@
 
     /* ---------- Minigame: jij bent de keeper ---------- */
     .niveau-keuze { display: inline-flex; background: #000; border: 1px solid var(--rand); border-radius: 999px; padding: 4px; }
+    .niveau-keuze[hidden] { display: none; }
     .niveau-keuze button { border: 0; background: none; color: var(--grijs); padding: 8px 16px; border-radius: 999px; cursor: pointer; font-weight: 700; }
     .niveau-keuze button[aria-pressed="true"] { background: var(--goud); color: #000; }
     @media (max-width: 760px) { .niveau-keuze button { padding: 6px 11px; font-size: .85rem; } }
@@ -589,6 +590,23 @@
     #rnDoek { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; touch-action: none; cursor: pointer; }
     #rnKnop { touch-action: none; user-select: none; -webkit-user-select: none; }
 
+    /* ---------- Minigame: vier op een rij ---------- */
+    .vier-spel { position: relative; }
+    .vier-bord { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); width: min(100%, 560px); padding: clamp(6px, 1.6vw, 12px);
+                 border-radius: 20px; background: linear-gradient(160deg, #1f8a41, #12612c); border: 3px solid #0c4420;
+                 box-shadow: inset 0 0 0 2px rgba(255,255,255,.15), 0 20px 50px rgba(0,0,0,.5); }
+    .vier-kolom { display: flex; flex-direction: column-reverse; gap: clamp(4px, 1.2vw, 8px); padding: clamp(2px, .6vw, 4px); border: 0; background: none;
+                  cursor: pointer; border-radius: 12px; position: relative; }
+    .vier-kolom:disabled { cursor: default; }
+    .vier-kolom:hover:not(:disabled), .vier-kolom:focus-visible { background: rgba(255,255,255,.12); }
+    .vier-cel { aspect-ratio: 1; border-radius: 50%; background: #06230f; box-shadow: inset 0 3px 6px rgba(0,0,0,.6); display: grid; place-items: center; }
+    .vier-cel svg { width: 92%; height: 92%; display: block; animation: vierVal .5s cubic-bezier(.3,.9,.4,1) both; --bal: #f5c542; }
+    .vier-cel.blauw svg { --bal: #35c6ff; }
+    @keyframes vierVal { 0% { transform: translateY(calc(var(--val) * -112%)); } 70% { transform: translateY(0); } 82% { transform: translateY(-9%); } 100% { transform: translateY(0); } }
+    .vier-cel.win { animation: vierWin .7s ease-in-out infinite alternate; }
+    @keyframes vierWin { to { box-shadow: 0 0 0 4px #fff, 0 0 22px 6px rgba(255,255,255,.7); scale: 1.06; } }
+    .vier-bord.klaar .vier-cel:not(.win) svg { opacity: .45; }
+
     /* ---------- Foto ---------- */
     .foto-groot { border-radius: 26px; overflow: hidden; border: 1px solid var(--rand); margin: 0; }
     .foto-groot.zichtbaar { transition: transform .25s ease-out, opacity .8s; }
@@ -698,6 +716,7 @@
             <li><a href="#dribbel">🏁 Dribbelen</a></li>
             <li><a href="#memory">🃏 Memory</a></li>
             <li><a href="#dribbelrun">🏃 Dribbelrun</a></li>
+            <li><a href="#vier">🔵 4 op een rij</a></li>
           </ul>
         </li>
         <li><a href="#foto">Foto</a></li>
@@ -735,8 +754,8 @@
 
     <div class="lichtkrant twee" aria-hidden="true">
       <div class="lichtkrant-rij">
-        <span>Penalty's ⚽ Panenka ⚽ Hooghouden ⚽ Overkoppen ⚽ Omhaal ⚽ Keeper ⚽ 1 tegen 1 ⚽ Vrije trap ⚽ Dribbelen ⚽ Schietwand ⚽ Memory ⚽ Dribbelrun ⚽</span>
-        <span>Penalty's ⚽ Panenka ⚽ Hooghouden ⚽ Overkoppen ⚽ Omhaal ⚽ Keeper ⚽ 1 tegen 1 ⚽ Vrije trap ⚽ Dribbelen ⚽ Schietwand ⚽ Memory ⚽ Dribbelrun ⚽</span>
+        <span>Penalty's ⚽ Panenka ⚽ Hooghouden ⚽ Overkoppen ⚽ Omhaal ⚽ Keeper ⚽ 1 tegen 1 ⚽ Vrije trap ⚽ Dribbelen ⚽ Schietwand ⚽ Memory ⚽ Dribbelrun ⚽ 4 op een rij ⚽</span>
+        <span>Penalty's ⚽ Panenka ⚽ Hooghouden ⚽ Overkoppen ⚽ Omhaal ⚽ Keeper ⚽ 1 tegen 1 ⚽ Vrije trap ⚽ Dribbelen ⚽ Schietwand ⚽ Memory ⚽ Dribbelrun ⚽ 4 op een rij ⚽</span>
       </div>
     </div>
 
@@ -757,7 +776,7 @@
           <div class="teller"><b data-tel="2">0</b><span>vrienden</span></div>
           <div class="teller"><b data-tel="1">0</b><span>passie: voetbal</span></div>
           <div class="teller"><b data-tel="100">0</b><span>procent inzet</span></div>
-          <div class="teller"><b data-tel="12">0</b><span>spellen om te spelen</span></div>
+          <div class="teller"><b data-tel="13">0</b><span>spellen om te spelen</span></div>
         </div>
 
         <div class="kaarten" style="margin-top:56px">
@@ -1251,6 +1270,33 @@
             <p class="spel-info">Afstand: <b id="rnAfstand">0</b> m · Punten: <b id="rnPunten">0</b> · Levens: <b id="rnLevens">❤❤❤</b> · Record: <b id="rnRecord">0</b></p>
             <button class="knop vol om-knop" id="rnKnop">⤒ Spring!</button>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Minigame: vier op een rij -->
+    <section id="vier">
+      <div class="wrap">
+        <div class="sectie-kop verschijn">
+          <p class="label">Minigame</p>
+          <h2 class="kop">Vier op een rij</h2>
+          <p>Laat om de beurt een bal in een kolom vallen. Wie het eerst vier ballen op een rij heeft, recht, omhoog of schuin, wint. Speel tegen elkaar of tegen de computer.</p>
+        </div>
+        <div class="vier-spel verschijn">
+          <div class="mem-balk">
+            <div class="niveau-keuze" id="vierModus" role="group" aria-label="Tegenstander">
+              <button data-vier-modus="samen" aria-pressed="true">Met z'n tweeën</button>
+              <button data-vier-modus="computer" aria-pressed="false">Tegen de computer</button>
+            </div>
+            <div class="niveau-keuze" id="vierNiveaus" role="group" aria-label="Moeilijkheid van de computer" hidden>
+              <button data-vier-niveau="makkelijk" aria-pressed="false">Makkelijk</button>
+              <button data-vier-niveau="normaal" aria-pressed="true">Normaal</button>
+              <button data-vier-niveau="moeilijk" aria-pressed="false">Moeilijk</button>
+            </div>
+            <button class="klein" id="vierNieuw">↺ Nieuw potje</button>
+          </div>
+          <p class="mem-stand" id="vierStand" aria-live="polite"></p>
+          <div class="vier-bord" id="vierBord" role="group" aria-label="Speelbord, zeven kolommen"></div>
         </div>
       </div>
     </section>
@@ -5012,6 +5058,132 @@
     new IntersectionObserver(([item]) => { rnInBeeld = item.isIntersecting; if (rnInBeeld) { rnMaat(); rnStartLoop(); } }).observe(rnDoek);
     addEventListener('resize', rnMaat);
     rnMaat();
+
+    /* ================= Minigame: vier op een rij ================= */
+    const VIER_K = 7, VIER_R = 6, VIER_NAMEN = ['Sill-vyan', 'Naoufal'], VIER_DIEPTE = { makkelijk: 1, normaal: 3, moeilijk: 5 };
+    const vierBord = $('#vierBord'), vierStand = $('#vierStand');
+    let vierModus = 'samen', vierNiveau = 'normaal', potje = null, vierWinst = [0, 0], vierBeginner = 0;
+    // Alle mogelijke rijtjes van vier op het bord (één keer uitrekenen)
+    const VIER_RIJTJES = [];
+    for (let k = 0; k < VIER_K; k++) for (let r = 0; r < VIER_R; r++) for (const [dk, dr] of [[1, 0], [0, 1], [1, 1], [1, -1]]) {
+      const ek = k + dk * 3, er = r + dr * 3;
+      if (ek < VIER_K && er >= 0 && er < VIER_R) VIER_RIJTJES.push([0, 1, 2, 3].map(i => [k + dk * i, r + dr * i]));
+    }
+    function vierNieuw() {
+      potje = { bord: Array.from({ length: VIER_K }, () => []), beurt: vierBeginner, klaar: false, slot: false, zetten: 0 };
+      vierBeginner = 1 - vierBeginner;                       // de volgende keer begint de ander
+      vierBord.classList.remove('klaar');
+      vierBord.innerHTML = '';
+      for (let k = 0; k < VIER_K; k++) {
+        const kolom = document.createElement('button');
+        kolom.className = 'vier-kolom';
+        kolom.setAttribute('aria-label', `Kolom ${k + 1}`);
+        kolom.innerHTML = '<span class="vier-cel"></span>'.repeat(VIER_R);
+        kolom.addEventListener('click', () => vierZet(k, true));
+        vierBord.appendChild(kolom);
+      }
+      vierToon();
+      if (vierModus === 'computer' && potje.beurt === 1) vierComputer();
+    }
+    const vierNaam = n => vierModus === 'computer' && n === 1 ? 'Computer' : VIER_NAMEN[n];
+    function vierToon(extra) {
+      const naam = n => potje.beurt === n && !potje.klaar ? `<span class="aan-beurt">${vierNaam(n)}</span>` : vierNaam(n);
+      vierStand.innerHTML = `🟡 ${naam(0)} <b>${vierWinst[0]}</b> – <b>${vierWinst[1]}</b> ${naam(1)} 🔵${extra ? ' · ' + extra : ''}`;
+      vierBord.querySelectorAll('.vier-kolom').forEach((kn, k) => kn.disabled = potje.klaar || potje.slot || potje.bord[k].length >= VIER_R);
+    }
+    const vierWinnaar = bord => {                            // geeft het winnende rijtje terug, of null
+      for (const rij of VIER_RIJTJES) {
+        const eerste = bord[rij[0][0]][rij[0][1]];
+        if (eerste !== undefined && rij.every(([k, r]) => bord[k][r] === eerste)) return rij;
+      }
+      return null;
+    };
+    function vierZet(k, mens) {
+      if (potje.klaar || potje.bord[k].length >= VIER_R || (mens && (potje.slot || (vierModus === 'computer' && potje.beurt === 1)))) return;
+      const r = potje.bord[k].length, speler = potje.beurt;
+      potje.bord[k].push(speler); potje.zetten++;
+      const cel = vierBord.children[k].children[r];
+      cel.classList.add(speler ? 'blauw' : 'goud');
+      cel.style.setProperty('--val', VIER_R - r);
+      cel.innerHTML = '<svg viewBox="0 0 40 40" aria-hidden="true"><use href="#balvorm"/></svg>';
+      vierBord.children[k].setAttribute('aria-label', `Kolom ${k + 1}, ${potje.bord[k].length} van ${VIER_R} vol`);
+      setTimeout(() => trapGeluid({ licht: true, pan: (k / 6) * 1.6 - .8 }), 330);
+      const rij = vierWinnaar(potje.bord);
+      if (rij || potje.zetten === VIER_K * VIER_R) {
+        potje.klaar = true;
+        vierBord.classList.add('klaar');
+        if (rij) {
+          vierWinst[speler]++;
+          setTimeout(() => {
+            rij.forEach(([wk, wr]) => vierBord.children[wk].children[wr].classList.add('win'));
+            const verloren = vierModus === 'computer' && speler === 1;
+            verloren ? oohGeluid() : juichGeluid();
+            if (!verloren) { const rr = vierBord.getBoundingClientRect(); confetti(vierBord.parentElement, vierBord.offsetLeft + rr.width / 2, vierBord.offsetTop + rr.height / 3, 110); }
+          }, 520);
+          return vierToon(vierModus === 'computer' ? (speler === 0 ? 'Jij wint! 🏆' : 'De computer wint!') : `${VIER_NAMEN[speler]} wint! 🏆`);
+        }
+        fluit();
+        return vierToon('Gelijkspel!');
+      }
+      potje.beurt = 1 - speler;
+      vierToon();
+      if (vierModus === 'computer' && potje.beurt === 1) vierComputer();
+    }
+    // Computer: denkt een paar zetten vooruit (hoe moeilijker, hoe verder)
+    function vierComputer() {
+      potje.slot = true; vierToon('De computer denkt na…');
+      setTimeout(() => {
+        if (potje.klaar) return;
+        const bord = potje.bord, volgorde = [3, 2, 4, 1, 5, 0, 6].filter(k => bord[k].length < VIER_R);
+        const waarde = () => {
+          let s = 0;
+          for (const rij of VIER_RIJTJES) {
+            let ik = 0, jij = 0;
+            for (const [k, r] of rij) { const v = bord[k][r]; if (v === 1) ik++; else if (v === 0) jij++; }
+            if (ik && jij) continue;
+            s += ik === 3 ? 6 : ik === 2 ? 2 : 0; s -= jij === 3 ? 7 : jij === 2 ? 2 : 0;
+          }
+          return s + bord[3].filter(v => v === 1).length * 2;
+        };
+        const zoek = (diepte, aanZet, alfa, beta) => {
+          if (vierWinnaar(bord)) return aanZet === 1 ? -1000 - diepte : 1000 + diepte;       // de vorige zet won
+          const mogelijk = [3, 2, 4, 1, 5, 0, 6].filter(k => bord[k].length < VIER_R);
+          if (!diepte || !mogelijk.length) return waarde();
+          let beste = aanZet === 1 ? -Infinity : Infinity;
+          for (const k of mogelijk) {
+            bord[k].push(aanZet);
+            const w = zoek(diepte - 1, 1 - aanZet, alfa, beta);
+            bord[k].pop();
+            if (aanZet === 1) { beste = Math.max(beste, w); alfa = Math.max(alfa, w); } else { beste = Math.min(beste, w); beta = Math.min(beta, w); }
+            if (alfa >= beta) break;
+          }
+          return beste;
+        };
+        let keuze = volgorde[0], besteW = -Infinity;
+        if (vierNiveau === 'makkelijk' && Math.random() < .35) keuze = volgorde[Math.floor(Math.random() * volgorde.length)];
+        else for (const k of volgorde) {
+          bord[k].push(1);
+          const w = zoek(VIER_DIEPTE[vierNiveau], 0, -Infinity, Infinity) + Math.random() * .5;
+          bord[k].pop();
+          if (w > besteW) { besteW = w; keuze = k; }
+        }
+        potje.slot = false;
+        vierZet(keuze, false);
+      }, 650);
+    }
+    document.querySelectorAll('#vierModus button').forEach(b => b.addEventListener('click', () => {
+      vierModus = b.dataset.vierModus; vierWinst = [0, 0]; vierBeginner = 0;
+      document.querySelectorAll('#vierModus button').forEach(x => x.setAttribute('aria-pressed', x === b));
+      $('#vierNiveaus').hidden = vierModus !== 'computer';
+      vierNieuw();
+    }));
+    document.querySelectorAll('#vierNiveaus button').forEach(b => b.addEventListener('click', () => {
+      vierNiveau = b.dataset.vierNiveau;
+      document.querySelectorAll('#vierNiveaus button').forEach(x => x.setAttribute('aria-pressed', x === b));
+      vierBeginner = 0; vierNieuw();
+    }));
+    $('#vierNieuw').addEventListener('click', vierNieuw);
+    vierNieuw();
 
     /* ================= App (PWA) ================= */
     if ('serviceWorker' in navigator && location.protocol !== 'file:')
