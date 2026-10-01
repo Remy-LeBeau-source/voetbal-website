@@ -99,7 +99,8 @@
     .ios-tip { margin: 16px 0 0 !important; font-size: .95rem !important; color: var(--grijs) !important; max-width: 46ch; }
     .knop[hidden] { display: none; }
     /* ---------- Lichtkrant ---------- */
-    .lichtkrant { background: var(--goud); color: #000; overflow: hidden; padding: 12px 0; transform: rotate(-1.5deg) scale(1.03); margin: 10px 0; }
+    .lichtkrant { background: var(--goud); color: #000; overflow: hidden; padding: 12px 0; margin: 10px 0;
+                  transform: rotate(-1.5deg) scale(1.03) skewX(var(--scheef, 0deg)); transition: transform .35s ease-out; }
     .lichtkrant-rij { display: flex; width: max-content; animation: loop 28s linear infinite; }
     .lichtkrant:hover .lichtkrant-rij { animation-play-state: paused; }
     .lichtkrant span { font-family: "Bebas Neue", sans-serif; font-size: 1.6rem; letter-spacing: .06em; padding-right: 36px; white-space: nowrap; }
@@ -453,8 +454,45 @@
     .ee-schiet.in { transform: scale(.94); filter: brightness(.85); }
     .ee-schiet[hidden] { display: none; }
 
+    /* ---------- Extra beweging op de hele site ---------- */
+    /* Zachte gloed die langzaam over de achtergrond schuift */
+    body::before { content: ""; position: fixed; inset: -20%; z-index: -1; pointer-events: none;
+      background: radial-gradient(circle at 22% 30%, rgba(245,197,66,.11), transparent 34%),
+                  radial-gradient(circle at 78% 68%, rgba(29,185,84,.1), transparent 34%);
+      animation: gloed 18s ease-in-out infinite alternate; }
+    @keyframes gloed { to { transform: translate(6%, -5%) rotate(8deg) scale(1.12); } }
+    /* Koppen komen letter voor letter binnen */
+    .letters .woord { display: inline-block; white-space: nowrap; }
+    .letters .l { display: inline-block; opacity: 0; transform: translateY(.7em) rotate(10deg);
+                  transition: opacity .45s, transform .6s cubic-bezier(.2,1.5,.4,1); transition-delay: calc(var(--i) * 30ms + .1s); }
+    .zichtbaar .letters .l { opacity: 1; transform: none; }
+    /* Gouden streepje dat uitgroeit voor het labeltje */
+    .sectie-kop .label::before { content: ""; display: inline-block; width: 0; height: 2px; margin-right: 0; vertical-align: middle;
+                                 background: var(--goud); transition: width .8s .25s, margin-right .8s .25s; }
+    .zichtbaar .label::before, .zichtbaar.sectie-kop .label::before { width: 36px; margin-right: 12px; }
+    /* Onderdelen komen op verschillende manieren binnen */
+    .sectie-kop.verschijn { transform: translateX(-50px); }
+    .kop-spel.verschijn, .stadion.verschijn, .tuin.verschijn, .foto-groot.verschijn { transform: translateY(50px) scale(.96); }
+    /* Rimpeling bij een klik op een knop */
+    .knop, .klein { position: relative; overflow: hidden; }
+    .rimpel { position: absolute; width: 20px; height: 20px; margin: -10px 0 0 -10px; border-radius: 50%; pointer-events: none;
+              background: rgba(255,255,255,.55); animation: rimpel .6s ease-out forwards; }
+    @keyframes rimpel { to { transform: scale(18); opacity: 0; } }
+    /* Lichtvlek die de muis volgt op de grote foto */
+    .hero::before { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: 0; transition: opacity .4s; mix-blend-mode: screen;
+                    background: radial-gradient(circle 280px at var(--lx, 50%) var(--ly, 40%), rgba(255,236,180,.26), transparent 70%); }
+    .hero:hover::before { opacity: 1; }
+    @media (max-width: 760px) { .hero::before { display: none; } }
+    /* Bal die door de voettekst rolt */
+    footer { position: relative; overflow: hidden; }
+    .rolbal { position: absolute; bottom: 6px; left: -40px; width: 26px; height: 26px; animation: rollen 11s linear infinite; opacity: .85; }
+    @keyframes rollen { to { left: 100%; transform: rotate(1440deg); } }
+    /* Gloeiende bal bij een lange reeks hooghouden */
+    .tuin-bal.gloeit svg { filter: drop-shadow(0 0 12px #ff9f1c) drop-shadow(0 0 4px #f5c542) drop-shadow(0 6px 8px rgba(0,0,0,.45)); }
+
     /* ---------- Foto ---------- */
     .foto-groot { border-radius: 26px; overflow: hidden; border: 1px solid var(--rand); margin: 0; }
+    .foto-groot.zichtbaar { transition: transform .25s ease-out, opacity .8s; }
     .foto-groot img { width: 100%; height: auto; transition: transform 1.2s; }
     .foto-groot:hover img { transform: scale(1.04); }
     .citaat { font-family: "Bebas Neue", sans-serif; font-size: clamp(2.2rem, 6vw, 4rem); text-align: center; margin: 48px auto 0; max-width: 18ch; line-height: 1; }
@@ -966,6 +1004,7 @@
   </main>
 
   <footer>
+    <svg class="rolbal" viewBox="0 0 40 40" aria-hidden="true"><use href="#balvorm"/></svg>
     <div class="wrap">⚽ Sill-vyan &amp; Naoufal · <span id="jaar"></span></div>
   </footer>
 
@@ -1068,6 +1107,54 @@
       verschijnObserver.unobserve(item.target);
     }), { threshold: 0.15 });
     document.querySelectorAll('.verschijn').forEach(el => verschijnObserver.observe(el));
+
+    /* ================= Extra beweging op de hele site ================= */
+    if (!rustig) {
+      // Koppen in losse letters knippen, zodat ze één voor één binnenkomen
+      document.querySelectorAll('.sectie-kop h2.kop:not(#spelTitel)').forEach(kop => {   // de penaltytitel wisselt van tekst, die laten we heel
+        const tekst = kop.textContent.trim();
+        kop.setAttribute('aria-label', tekst);
+        let i = 0;
+        kop.innerHTML = tekst.split(' ').map(w => `<span class="woord" aria-hidden="true">${[...w].map(c => `<span class="l" style="--i:${i++}">${c}</span>`).join('')}</span>`).join(' ');
+        kop.classList.add('letters');
+      });
+      // Rimpeling op knoppen
+      addEventListener('click', e => {
+        const knop = e.target.closest?.('.knop, .klein');
+        if (!knop) return;
+        const rr = knop.getBoundingClientRect(), stip = document.createElement('span');
+        stip.className = 'rimpel';
+        stip.style.left = (e.clientX - rr.left) + 'px'; stip.style.top = (e.clientY - rr.top) + 'px';
+        knop.appendChild(stip);
+        setTimeout(() => stip.remove(), 650);     // ook als de knop intussen verborgen is
+      });
+      // Lichtkrant: gaat sneller en schuiner als je scrolt
+      const krant = $('.lichtkrant'), krantRij = $('.lichtkrant-rij');
+      let vorigeY = scrollY, krantRust;
+      addEventListener('scroll', () => {
+        const dv = scrollY - vorigeY; vorigeY = scrollY;
+        krant.style.setProperty('--scheef', grens(-dv * .35, -14, 14) + 'deg');
+        const anim = krantRij.getAnimations()[0];
+        if (anim) anim.playbackRate = 1 + Math.min(7, Math.abs(dv) * .12);
+        clearTimeout(krantRust);
+        krantRust = setTimeout(() => { krant.style.setProperty('--scheef', '0deg'); if (anim) anim.playbackRate = 1; }, 140);
+      }, { passive: true });
+      if (muis) {
+        // Lichtvlek op de grote foto
+        const held = $('#home');
+        held.addEventListener('pointermove', e => {
+          const rr = held.getBoundingClientRect();
+          held.style.setProperty('--lx', (e.clientX - rr.left) + 'px'); held.style.setProperty('--ly', (e.clientY - rr.top) + 'px');
+        });
+        // De foto kantelt mee met de muis
+        const foto = $('.foto-groot');
+        foto.addEventListener('pointermove', e => {
+          const rr = foto.getBoundingClientRect(), x = (e.clientX - rr.left) / rr.width - .5, y = (e.clientY - rr.top) / rr.height - .5;
+          foto.style.transform = `perspective(1100px) rotateY(${x * 9}deg) rotateX(${-y * 7}deg) scale(1.01)`;
+        });
+        foto.addEventListener('pointerleave', () => foto.style.transform = '');
+      }
+    }
 
     /* ================= Tekst over ons: typen en oplichten ================= */
     const typWoord = $('#typWoord');
@@ -1878,6 +1965,9 @@
       if (laatste !== b) laatste = b;
       reeks++;
       reeksEl.textContent = reeks;
+      const kreet = { 5: 'LEKKER BEZIG!', 10: 'ON FIRE! 🔥', 15: 'ONGELOOFLIJK!', 20: 'KAMPIOEN! 🏆', 30: 'LEGENDE!' }[reeks];
+      if (kreet) { melding(kreet); if (reeks >= 10) speel('applaus', { duur: 1.2, dichtheid: 30 }); }
+      ballen.forEach(x => x.el.classList.toggle('gloeit', x === b && reeks >= 10));
       reeksEl.classList.add('tik');
       setTimeout(() => reeksEl.classList.remove('tik'), 120);
       trapGeluid({ pan: b.x / B * 2 - 1, licht: true });
@@ -1904,6 +1994,7 @@
       }
       reeks = 0;
       reeksEl.textContent = 0;
+      ballen.forEach(x => x.el.classList.remove('gloeit'));
     }
 
     function stap(nu) {
@@ -2099,7 +2190,7 @@
           b.vx = ux * kracht + s.vx * .35 + (isKop ? -s.kant * 95 : 0);    // koppen stuurt de bal richting het net
           b.vy = uy * kracht + Math.min(0, s.vy) * .35;
           if (isKop && uy > -.4) b.vy -= 240;
-          if (isKop) { laatsteKopper = s; trapGeluid({ pan: (s.x / KB) * 2 - 1, licht: true }); deeltjes(b.x - ux * BAL_R, b.y - uy * BAL_R, 12, false); }
+          if (isKop) { kopSchud = Math.max(kopSchud, .2); laatsteKopper = s; trapGeluid({ pan: (s.x / KB) * 2 - 1, licht: true }); deeltjes(b.x - ux * BAL_R, b.y - uy * BAL_R, 12, false); }
         }
       });
       // Over het net?
@@ -2114,7 +2205,10 @@
         const verliezer = b.x < NET_X ? 0 : 1, winnaar = 1 - verliezer;
         kopSpelers[winnaar].score++;
         kopScoreEl.textContent = `${kopSpelers[0].score} – ${kopSpelers[1].score}`;
+        kopSchud = .8; kopFlits = 1; kopJuich = 1.8;
+        deeltjes(b.x, GROND, 14, true);
         if (kopSpelers[winnaar].score >= WINST) return kopEinde(winnaar);
+        kopPunt = { tekst: 'PUNT!', kleur: kopSpelers[winnaar].kleur, t: 0 };
         fluit();
         (kopModus === 'computer' && winnaar === 1) ? oohGeluid() : speel('applaus', { duur: 1.6, dichtheid: 30 });
         kopReset(verliezer);
@@ -2178,6 +2272,8 @@
     function kopTeken() {
       const schaal = kopDoek.width / KB;
       kd.setTransform(schaal, 0, 0, schaal, 0, 0);
+      kd.fillStyle = '#050817'; kd.fillRect(0, 0, KB, KH);
+      if (kopSchud && !rustig) kd.translate((Math.random() - .5) * kopSchud * 12, (Math.random() - .5) * kopSchud * 9);
       const nu = performance.now() / 1000;
       // lucht met sterren
       const lucht = kd.createLinearGradient(0, 0, 0, GROND);
@@ -2202,7 +2298,7 @@
       kd.beginPath(); kd.moveTo(0, 150); kd.lineTo(KB, 150); kd.lineTo(KB, 250); kd.lineTo(0, 250); kd.fill();
       for (let r = 0; r < 5; r++) { kd.fillStyle = r % 2 ? '#111a38' : '#0e1631'; kd.fillRect(0, 155 + r * 19, KB, 19); }
       for (const p of KOP_PUBLIEK) {
-        const hop = kopBezig ? Math.max(0, Math.sin(nu * p.snel + p.fase)) * p.hop : 0;
+        const hop = (kopBezig ? Math.max(0, Math.sin(nu * p.snel + p.fase)) * p.hop : 0) + (kopJuich > 0 ? Math.abs(Math.sin(nu * p.snel * 1.6 + p.fase)) * 5 : 0);
         kd.fillStyle = p.shirt; kd.beginPath(); kd.roundRect(p.x - 5, p.y - 9 - hop, 10, 10, 3); kd.fill();
         kd.fillStyle = p.huid; kd.beginPath(); kd.arc(p.x, p.y - 12 - hop, 3.6, 0, Math.PI * 2); kd.fill();
       }
@@ -2245,8 +2341,15 @@
         kd.beginPath(); kd.arc(d.x, d.y, d.grootte * (d.stof ? 2 - d.leven / d.max : 1), 0, Math.PI * 2); kd.fill();
       }
       kd.globalAlpha = 1;
-      if (kopBezig && kopWacht > 0) {
-        kd.fillStyle = 'rgba(255,255,255,.9)'; kd.font = '32px "Bebas Neue", sans-serif'; kd.textAlign = 'center';
+      if (kopFlits) { kd.fillStyle = `rgba(255,255,255,${kopFlits * .28})`; kd.fillRect(-20, -20, KB + 40, KH + 40); }
+      if (kopPunt) {
+        const t = kopPunt.t, sc = t < .15 ? .4 + t / .15 * .8 : t < .3 ? 1.2 - (t - .15) / .15 * .2 : 1;
+        kd.save(); kd.translate(KB / 2, 105); kd.scale(sc, sc); kd.globalAlpha = t > .8 ? Math.max(0, 1 - (t - .8) / .3) : 1;
+        kd.font = '70px "Bebas Neue", sans-serif'; kd.textAlign = 'center'; kd.textBaseline = 'middle';
+        kd.lineWidth = 8; kd.strokeStyle = 'rgba(0,0,0,.6)'; kd.strokeText(kopPunt.tekst, 0, 0);
+        kd.fillStyle = kopPunt.kleur; kd.fillText(kopPunt.tekst, 0, 0); kd.restore();
+      } else if (kopBezig && kopWacht > 0) {
+        kd.fillStyle = 'rgba(255,255,255,.9)'; kd.font = '32px "Bebas Neue", sans-serif'; kd.textAlign = 'center'; kd.textBaseline = 'middle';
         kd.fillText('Klaar…', KB / 2, 110);
       }
     }
@@ -2266,7 +2369,10 @@
                            grootte: stof ? willekeurig(3, 6) : willekeurig(1.5, 3), kleur: stof ? 'rgba(210,230,200,.5)' : (Math.random() < .5 ? '#f5c542' : '#fff') });
       }
     }
+    let kopSchud = 0, kopFlits = 0, kopJuich = 0, kopPunt = null;
     function kopEffecten(dt) {
+      kopSchud = Math.max(0, kopSchud - dt * 2.4); kopFlits = Math.max(0, kopFlits - dt * 2.4); kopJuich = Math.max(0, kopJuich - dt);
+      if (kopPunt) { kopPunt.t += dt; if (kopPunt.t > 1.1) kopPunt = null; }
       for (let i = kopDeeltjes.length - 1; i >= 0; i--) {
         const d = kopDeeltjes[i];
         d.leven -= dt; d.x += d.vx * dt; d.y += d.vy * dt; d.vy += (d.stof ? 60 : 500) * dt;
@@ -2713,7 +2819,7 @@
 
     function rdStart() {
       const niv = RD_NIVEAUS[rdNiveau];
-      rd = { bezig: true, punten: 0, levens: niv.levens, maxLevens: niv.levens, niv, fase: 'wacht', t: 0, schot: null, tekst: null, flits: 0, spitsTrap: 0 };
+      rd = { bezig: true, punten: 0, levens: niv.levens, maxLevens: niv.levens, niv, fase: 'wacht', t: 0, schot: null, tekst: null, flits: 0, spitsTrap: 0, deeltjes: [], juich: 0, schud: 0 };
       rdScherm.hidden = true;
       rdPuntenEl.textContent = 0; rdLevensEl.textContent = '❤'.repeat(niv.levens);
       fluit();
@@ -2746,6 +2852,12 @@
     function rdStap(dt) {
       rd.t += dt;
       rd.flits = Math.max(0, rd.flits - dt * 2.5);
+      rd.juich = Math.max(0, rd.juich - dt); rd.schud = Math.max(0, rd.schud - dt * 2.4);
+      for (let i = rd.deeltjes.length - 1; i >= 0; i--) {
+        const d = rd.deeltjes[i];
+        d.leven -= dt; d.x += d.vx * dt; d.y += d.vy * dt; d.vy += 420 * dt;
+        if (d.leven <= 0) rd.deeltjes.splice(i, 1);
+      }
       rd.spitsTrap = Math.max(0, rd.spitsTrap - dt * 3);
       if (rd.tekst) rd.tekst.t += dt;
       // Handschoenen: volgen de aanwijzer soepel, of bewegen met de pijltjes
@@ -2768,11 +2880,17 @@
             rd.punten++; rdPuntenEl.textContent = rd.punten;
             s.gered = true;
             rdTekstToon(afstand < 22 ? 'KLEMVAST!' : 'GERED!', '#1db954');
+            rd.juich = 1.6;
+            if (!rustig) for (let i = 0; i < 22; i++) {
+              const hoek = willekeurig(0, Math.PI * 2), v = willekeurig(80, 300);
+              rd.deeltjes.push({ x: s.doel.x, y: s.doel.y, vx: Math.cos(hoek) * v, vy: Math.sin(hoek) * v - 60, leven: willekeurig(.3, .6), max: .6,
+                                 grootte: willekeurig(2, 4.5), kleur: ['#fff', '#1db954', '#f5c542'][i % 3] });
+            }
             speel('handschoen'); speel('applaus', { duur: 1.4, dichtheid: 28 });
             if (rd.punten > rdRecord) { rdRecord = rd.punten; bewaar.schrijf(rd.niv.sleutel, rdRecord); rdRecordEl.textContent = rdRecord; }
           } else {
             rd.levens--; rdLevensEl.textContent = '❤'.repeat(rd.levens) + '🖤'.repeat(rd.maxLevens - rd.levens);
-            rd.flits = 1;
+            rd.flits = 1; rd.schud = 1;
             rdTekstToon('GOAL TEGEN…', '#ff5a5a');
             speel('net'); oohGeluid();
           }
@@ -2820,6 +2938,8 @@
     function rdTeken() {
       const schaal = rdDoek.width / RB, nu = performance.now() / 1000;
       rc.setTransform(schaal, 0, 0, schaal, 0, 0);
+      rc.fillStyle = '#050817'; rc.fillRect(0, 0, RB, RH);
+      if (rd?.schud && !rustig) rc.translate((Math.random() - .5) * rd.schud * 14, (Math.random() - .5) * rd.schud * 10);
       // lucht, sterren, tribune aan de overkant
       const lucht = rc.createLinearGradient(0, 0, 0, HORIZON);
       lucht.addColorStop(0, '#050817'); lucht.addColorStop(1, '#1b3566');
@@ -2834,8 +2954,9 @@
       }
       rc.fillStyle = '#0d1430'; rc.fillRect(0, 150, RB, 100);
       for (const p of KOP_PUBLIEK) {
-        rc.fillStyle = p.shirt; rc.beginPath(); rc.roundRect(p.x - 5, p.y - 9, 10, 10, 3); rc.fill();
-        rc.fillStyle = p.huid; rc.beginPath(); rc.arc(p.x, p.y - 12, 3.6, 0, Math.PI * 2); rc.fill();
+        const hop = rd?.juich > 0 ? Math.abs(Math.sin(nu * p.snel * 1.6 + p.fase)) * 5 : 0;      // publiek springt bij een redding
+        rc.fillStyle = p.shirt; rc.beginPath(); rc.roundRect(p.x - 5, p.y - 9 - hop, 10, 10, 3); rc.fill();
+        rc.fillStyle = p.huid; rc.beginPath(); rc.arc(p.x, p.y - 12 - hop, 3.6, 0, Math.PI * 2); rc.fill();
       }
       // gras in perspectief met strafschopgebied
       const gras = rc.createLinearGradient(0, HORIZON, 0, RH);
@@ -2867,6 +2988,12 @@
           rc.fillStyle = 'rgba(0,0,0,.28)';
           rc.beginPath(); rc.ellipse(b.x, Math.min(RH - 6, HORIZON + 40 + p * 160), b.r * .9, b.r * .25, 0, 0, Math.PI * 2); rc.fill();
         }
+        if (rd.fase === 'schot' && !rustig) for (let k = 6; k >= 1; k--) {                           // spoor achter de bal
+          const sp = rdBalPlek(s, Math.max(0, p - k * .035));
+          rc.globalAlpha = (7 - k) / 7 * .28; rc.fillStyle = '#fff';
+          rc.beginPath(); rc.arc(sp.x, sp.y, sp.r * .9, 0, Math.PI * 2); rc.fill();
+        }
+        rc.globalAlpha = 1;
         const na = rd.fase === 'na' ? rd.t : 0;
         const bx = s.gered ? b.x + (b.x - hand.x) * na * 2 : b.x, by = s.gered ? b.y - na * 160 + na * na * 300 : b.y;
         const br = rd.fase === 'na' ? (s.gered ? b.r * Math.max(.3, 1 - na * .6) : b.r * (1 + na * .5)) : b.r;
@@ -2883,6 +3010,11 @@
       // handschoenen
       rc.globalAlpha = .95;
       rdHandschoen(hand.x - 30, hand.y, true); rdHandschoen(hand.x + 30, hand.y, false);
+      rc.globalAlpha = 1;
+      if (rd) for (const d of rd.deeltjes) {
+        rc.globalAlpha = Math.max(0, d.leven / d.max); rc.fillStyle = d.kleur;
+        rc.beginPath(); rc.arc(d.x, d.y, d.grootte, 0, Math.PI * 2); rc.fill();
+      }
       rc.globalAlpha = 1;
       // doelpalen en lat op de voorgrond (je staat in het doel)
       rc.strokeStyle = '#f4f4f4'; rc.lineWidth = 16; rc.lineCap = 'square';
