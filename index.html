@@ -173,6 +173,11 @@
     /* Tribune met getekende supporters (zie tekenTribune) */
     .publiek { position: absolute; left: 0; right: 0; top: 3%; height: 23%; opacity: .9; }
     .publiek canvas { width: 100%; height: 100%; display: block; }
+    .grasveld::before { content: ""; position: absolute; inset: 0; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 .95 0'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)'/%3E%3C/svg%3E"); opacity: .16; }
+    .stadion::after { content: ""; position: absolute; inset: 0; z-index: 5; pointer-events: none; border-radius: inherit;
+                      box-shadow: inset 0 0 110px rgba(0,0,0,.6), inset 0 -40px 60px rgba(0,0,0,.25); }
+    .tuin-gras { position: absolute; inset: 0; pointer-events: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 .95 0'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)'/%3E%3C/svg%3E"); opacity: .14;
+                 box-shadow: inset 0 0 100px rgba(0,0,0,.6); }
     .publiek::after { content: ""; position: absolute; inset: 0; pointer-events: none;
       background: linear-gradient(rgba(6,10,26,.55), rgba(6,10,26,0) 60%); }
     .dak { position: absolute; left: 0; right: 0; top: 0; height: 3.5%; z-index: 1;
@@ -408,7 +413,7 @@
     .kop-doek-houder { position: relative; border-radius: 22px; overflow: hidden; border: 1px solid var(--rand); background: #0d1733; }
     #kopDoek { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; touch-action: none; }
     .kop-scherm { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; text-align: center; gap: 10px;
-                  padding: 20px; background: rgba(0,0,0,.62); backdrop-filter: blur(3px); }
+                  padding: 20px; background: rgba(0,0,0,.72); }
     .kop-scherm[hidden] { display: none; }
     .kop-scherm h3 { font-size: clamp(2.4rem, 8vw, 4.5rem); color: var(--goud); }
     .kop-scherm p { margin: 0; color: #e6e6e6; }
@@ -455,12 +460,7 @@
     .ee-schiet[hidden] { display: none; }
 
     /* ---------- Extra beweging op de hele site ---------- */
-    /* Zachte gloed die langzaam over de achtergrond schuift */
-    body::before { content: ""; position: fixed; inset: -20%; z-index: -1; pointer-events: none;
-      background: radial-gradient(circle at 22% 30%, rgba(245,197,66,.11), transparent 34%),
-                  radial-gradient(circle at 78% 68%, rgba(29,185,84,.1), transparent 34%);
-      animation: gloed 18s ease-in-out infinite alternate; }
-    @keyframes gloed { to { transform: translate(6%, -5%) rotate(8deg) scale(1.12); } }
+
     /* Koppen komen letter voor letter binnen */
     .letters .woord { display: inline-block; white-space: nowrap; }
     .letters .l { display: inline-block; opacity: 0; transform: translateY(.7em) rotate(10deg);
@@ -479,19 +479,21 @@
               background: rgba(255,255,255,.55); animation: rimpel .6s ease-out forwards; }
     @keyframes rimpel { to { transform: scale(18); opacity: 0; } }
     /* Lichtvlek die de muis volgt op de grote foto */
-    .hero::before { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: 0; transition: opacity .4s; mix-blend-mode: screen;
+    .hero::before { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: 0; transition: opacity .4s;
                     background: radial-gradient(circle 280px at var(--lx, 50%) var(--ly, 40%), rgba(255,236,180,.26), transparent 70%); }
     .hero:hover::before { opacity: 1; }
     @media (max-width: 760px) { .hero::before { display: none; } }
     /* Bal die door de voettekst rolt */
     footer { position: relative; overflow: hidden; }
     .rolbal { position: absolute; bottom: 6px; left: -40px; width: 26px; height: 26px; animation: rollen 11s linear infinite; opacity: .85; }
-    @keyframes rollen { to { left: 100%; transform: rotate(1440deg); } }
+    @keyframes rollen { to { transform: translateX(calc(100vw + 60px)) rotate(1440deg); } }
     /* Gloeiende bal bij een lange reeks hooghouden */
     .tuin-bal.gloeit svg { filter: drop-shadow(0 0 12px #ff9f1c) drop-shadow(0 0 4px #f5c542) drop-shadow(0 6px 8px rgba(0,0,0,.45)); }
 
     /* ---------- Nog meer beweging ---------- */
-    #stof { position: fixed; inset: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; }
+    #stof { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+    #stof i { position: absolute; top: 100%; border-radius: 50%; background: var(--goud); animation: stofje linear infinite; will-change: transform; }
+    @keyframes stofje { to { transform: translate(var(--zwenk), -115vh); } }
     .vonk { position: fixed; z-index: 95; width: 7px; height: 7px; margin: -3.5px 0 0 -3.5px; border-radius: 50%; pointer-events: none; }
     /* Voetbal die langs de rechterrand naar beneden rolt terwijl je scrolt */
     .scrolbaan { position: fixed; right: 21px; top: 84px; bottom: 96px; width: 2px; background: rgba(255,255,255,.1); z-index: 40; pointer-events: none; }
@@ -507,30 +509,30 @@
     .kaart:nth-child(2) { animation-delay: -2.5s; }
     .kaart:hover { animation-play-state: paused; }
     @keyframes zweefkaart { 50% { translate: 0 -12px; } }
-    .kaart-kant { background: linear-gradient(115deg, transparent 42%, rgba(255,255,255,.55) 50%, transparent 58%) no-repeat 160% 0 / 260% 100%,
-                              linear-gradient(155deg, #fff3b0 0%, var(--goud) 30%, var(--goud-donker) 100%);
-                  animation: kaartglans 4.5s ease-in-out infinite; }
-    .kaart:nth-child(2) .kaart-kant { animation-delay: -2.2s; }
-    @keyframes kaartglans { 0%, 55% { background-position: 160% 0, 0 0; } 100% { background-position: -60% 0, 0 0; } }
+    .kaart-glans { position: absolute; inset: 0; border-radius: 22px; overflow: hidden; pointer-events: none; }
+    .kaart-glans::before { content: ""; position: absolute; top: -20%; bottom: -20%; left: 0; width: 45%;
+                           background: linear-gradient(100deg, transparent, rgba(255,255,255,.5), transparent);
+                           transform: translateX(-160%) skewX(-18deg); animation: kaartglans 4.5s ease-in-out infinite; will-change: transform; }
+    .kaart:nth-child(2) .kaart-glans::before { animation-delay: -2.2s; }
+    @keyframes kaartglans { 0%, 55% { transform: translateX(-160%) skewX(-18deg); } 100% { transform: translateX(380%) skewX(-18deg); } }
     /* Gloeiende startknop en glinsterende "&" */
-    .hero .knop.vol { animation: gloeiknop 2.4s ease-in-out 1.5s infinite; }
-    @keyframes gloeiknop { 50% { box-shadow: 0 0 0 10px rgba(245,197,66,0), 0 0 34px rgba(245,197,66,.65); } 0%, 100% { box-shadow: 0 0 0 0 rgba(245,197,66,.5), 0 0 0 rgba(245,197,66,0); } }
+    .hero .knop.vol { animation: gloeiknop 2.4s ease-in-out 1.5s infinite; box-shadow: 0 0 26px rgba(245,197,66,.35); }
+    @keyframes gloeiknop { 50% { scale: 1.06; } }
     .hero h1 .en { background: linear-gradient(100deg, var(--goud) 20%, #fff8d0 50%, var(--goud) 80%) 0 0 / 220% 100%;
-                   -webkit-background-clip: text; background-clip: text; color: transparent; animation: glinster 3s linear infinite; }
-    @keyframes glinster { to { background-position: -220% 0; } }
-    .teller b { animation: tellergloed 3.2s ease-in-out infinite; }
+                   -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .teller b { text-shadow: 0 0 18px rgba(245,197,66,.35); animation: tellerhup 3.2s ease-in-out infinite; }
     .teller:nth-child(2) b { animation-delay: -.8s; } .teller:nth-child(3) b { animation-delay: -1.6s; } .teller:nth-child(4) b { animation-delay: -2.4s; }
-    @keyframes tellergloed { 50% { text-shadow: 0 0 22px rgba(245,197,66,.75); } }
+    @keyframes tellerhup { 50% { translate: 0 -5px; scale: 1.05; } }
     /* Wave door het publiek in het penaltystadion */
     .wave { position: absolute; left: 0; right: 0; top: 7%; height: 19%; z-index: 1; pointer-events: none;
       background-image:
         url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 20'%3E%3Cpath d='M8 20L5 6M16 20l3-14' stroke='%23f1c9a5' stroke-width='2.6' stroke-linecap='round'/%3E%3Ccircle cx='5' cy='5' r='2.2' fill='%23f1c9a5'/%3E%3Ccircle cx='19' cy='5' r='2.2' fill='%23f1c9a5'/%3E%3C/svg%3E"),
         url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 20'%3E%3Cpath d='M8 20L5 6M16 20l3-14' stroke='%238a5a3b' stroke-width='2.6' stroke-linecap='round'/%3E%3Ccircle cx='5' cy='5' r='2.2' fill='%238a5a3b'/%3E%3Ccircle cx='19' cy='5' r='2.2' fill='%238a5a3b'/%3E%3C/svg%3E");
       background-size: 30px 26px, 34px 28px; background-position: 0 100%, 15px 100%; background-repeat: repeat-x;
-      -webkit-mask: linear-gradient(90deg, transparent, #000 40%, #000 60%, transparent) no-repeat -30% 0 / 22% 100%;
-              mask: linear-gradient(90deg, transparent, #000 40%, #000 60%, transparent) no-repeat -30% 0 / 22% 100%;
-      animation: wave 9s linear infinite; }
-    @keyframes wave { 0%, 35% { -webkit-mask-position: -30% 0; mask-position: -30% 0; } 100% { -webkit-mask-position: 130% 0; mask-position: 130% 0; } }
+      -webkit-mask: linear-gradient(90deg, transparent, #000 40%, #000 60%, transparent);
+              mask: linear-gradient(90deg, transparent, #000 40%, #000 60%, transparent);
+      width: 22%; right: auto; transform: translateX(-110%); animation: wave 9s linear infinite; will-change: transform; }
+    @keyframes wave { 0%, 35% { transform: translateX(-110%); } 100% { transform: translateX(470%); } }
     .stadion.juich .wave, .stadion.balen .wave { opacity: 0; }
 
     /* ---------- Foto ---------- */
@@ -606,7 +608,7 @@
     </defs>
   </svg>
 
-  <canvas id="stof" aria-hidden="true"></canvas>
+  <div id="stof" aria-hidden="true"></div>
   <div id="voortgang" aria-hidden="true"></div>
   <div class="scrolbaan" aria-hidden="true"></div>
   <svg class="scrolbal" id="scrolbal" viewBox="0 0 40 40" aria-hidden="true"><use href="#balvorm"/></svg>
@@ -690,6 +692,7 @@
           <div class="kaart verschijn" tabindex="0" role="button" aria-label="Spelerskaart Sill-vyan, klik om om te draaien">
             <div class="kaart-binnen">
               <div class="kaart-kant">
+                <div class="kaart-glans" aria-hidden="true"></div>
                 <span class="kaart-nummer">#39 · Verdediger</span>
                 <div class="monogram">S</div>
                 <h3>Sill-vyan</h3>
@@ -710,6 +713,7 @@
           <div class="kaart verschijn" tabindex="0" role="button" aria-label="Spelerskaart Naoufal, klik om om te draaien">
             <div class="kaart-binnen">
               <div class="kaart-kant">
+                <div class="kaart-glans" aria-hidden="true"></div>
                 <span class="kaart-nummer">#20 · Verdediger</span>
                 <div class="monogram">N</div>
                 <h3>Naoufal</h3>
@@ -879,6 +883,7 @@
           <p>Tik op de bal om hem hoog te houden. Hoe vaak lukt het zonder dat hij de grond raakt? Je kunt de ballen ook pakken, slepen en gooien.</p>
         </div>
         <div class="tuin verschijn" id="tuin">
+          <div class="tuin-gras" aria-hidden="true"></div>
           <div class="tuin-teller"><b id="reeks">0</b><span>keer hooggehouden</span></div>
           <div class="tuin-melding" id="tuinMelding" aria-live="polite"></div>
         </div>
@@ -1110,6 +1115,64 @@
       schrijf: (k, w) => { try { localStorage.setItem(k, JSON.stringify(w)); } catch {} },
     };
 
+    /* ================= Realisme: bal, gras en licht voor de getekende spellen ================= */
+    // Een voetbal met bolling: licht van linksboven, een donkere rand en vlakken die meedraaien
+    function echteBal(c, x, y, r, hoek) {
+      c.save(); c.translate(x, y);
+      const licht = c.createRadialGradient(-r * .35, -r * .4, r * .1, 0, 0, r * 1.05);
+      licht.addColorStop(0, '#ffffff'); licht.addColorStop(.6, '#e8e8e8'); licht.addColorStop(1, '#9c9c9c');
+      c.fillStyle = licht; c.beginPath(); c.arc(0, 0, r, 0, Math.PI * 2); c.fill();
+      c.save(); c.beginPath(); c.arc(0, 0, r, 0, Math.PI * 2); c.clip(); c.rotate(hoek);
+      c.fillStyle = '#171717'; c.strokeStyle = '#333'; c.lineWidth = Math.max(.6, r * .07); c.lineJoin = 'round';
+      const vijfhoek = (cx, cy, s, draai) => { c.beginPath(); for (let i = 0; i < 5; i++) { const a = draai + i * Math.PI * 2 / 5; c.lineTo(cx + Math.cos(a) * s, cy + Math.sin(a) * s); } c.closePath(); c.fill(); };
+      vijfhoek(0, 0, r * .36, -Math.PI / 2);
+      for (let i = 0; i < 5; i++) {
+        const a = -Math.PI / 2 + i * Math.PI * 2 / 5;
+        c.beginPath(); c.moveTo(Math.cos(a) * r * .36, Math.sin(a) * r * .36); c.lineTo(Math.cos(a) * r * .68, Math.sin(a) * r * .68); c.stroke();   // naden
+        vijfhoek(Math.cos(a) * r * .98, Math.sin(a) * r * .98, r * .34, a + Math.PI);                                                              // vlakken aan de rand
+      }
+      c.restore();
+      const schaduw = c.createRadialGradient(-r * .3, -r * .35, r * .2, 0, 0, r);
+      schaduw.addColorStop(0, 'rgba(255,255,255,0)'); schaduw.addColorStop(.75, 'rgba(0,0,0,.12)'); schaduw.addColorStop(1, 'rgba(0,0,0,.5)');
+      c.fillStyle = schaduw; c.beginPath(); c.arc(0, 0, r, 0, Math.PI * 2); c.fill();
+      c.fillStyle = 'rgba(255,255,255,.75)'; c.beginPath(); c.ellipse(-r * .38, -r * .42, r * .2, r * .12, -.6, 0, Math.PI * 2); c.fill();           // glimlicht
+      c.strokeStyle = 'rgba(0,0,0,.55)'; c.lineWidth = Math.max(.8, r * .06); c.beginPath(); c.arc(0, 0, r, 0, Math.PI * 2); c.stroke();
+      c.restore();
+    }
+    // Grastextuur: één keer een tegel met sprietjes tekenen en die daarna als patroon hergebruiken
+    let grasTegel;
+    function grasTextuur(c, x, y, w, ht, sterkte = .5) {
+      if (!grasTegel) {
+        grasTegel = document.createElement('canvas'); grasTegel.width = grasTegel.height = 128;
+        const g = grasTegel.getContext('2d');
+        for (let i = 0; i < 1600; i++) {
+          const px = Math.random() * 128, py = Math.random() * 128, l = 2 + Math.random() * 4;
+          g.strokeStyle = Math.random() < .5 ? 'rgba(0,45,0,.5)' : 'rgba(190,255,170,.34)'; g.lineWidth = .7;
+          g.beginPath(); g.moveTo(px, py); g.lineTo(px + (Math.random() - .5) * 1.6, py - l); g.stroke();
+        }
+      }
+      // Eén keer op een verborgen laag tekenen en die daarna als plaatje plakken: dat scheelt veel rekenwerk per beeld
+      laag(c, 'gras' + [x, y, w, ht, sterkte], lc => { lc.globalAlpha = sterkte; lc.fillStyle = lc.createPattern(grasTegel, 'repeat'); lc.fillRect(x, y, w, ht); });
+    }
+    function laag(c, sleutel, tekenFn) {          // alle getekende spellen zijn 800 x 450 groot
+      const doek = c.canvas, id = sleutel + ':' + doek.width;
+      let l = (c.lagen ||= {})[id];
+      if (!l) {
+        l = document.createElement('canvas'); l.width = Math.ceil(doek.width / 2); l.height = Math.ceil(doek.height / 2);
+        const lc = l.getContext('2d'); lc.scale(l.width / 800, l.height / 450);
+        tekenFn(lc); c.lagen[id] = l;
+      }
+      c.drawImage(l, 0, 0, 800, 450);
+    }
+    // Donkere hoeken, zoals bij een echte camera onder stadionlicht
+    function vignet(c, w, ht, sterkte = .45) {
+      laag(c, 'vignet' + sterkte, lc => {
+        const v = lc.createRadialGradient(w / 2, ht * .45, Math.min(w, ht) * .38, w / 2, ht / 2, Math.max(w, ht) * .72);
+        v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,' + sterkte + ')');
+        lc.fillStyle = v; lc.fillRect(0, 0, w, ht);
+      });
+    }
+
     /* ================= Algemeen: header, voortgang, parallax ================= */
     const header = $('#header'), heroFoto = $('#heroFoto'), voortgang = $('#voortgang');
     addEventListener('scroll', () => {
@@ -1213,38 +1276,13 @@
         }
       });
 
-      // Gouden stofdeeltjes op de achtergrond: zweven omhoog en gaan opzij voor de muis
-      const stof = $('#stof'), sc = stof.getContext('2d');
-      let stofB = 0, stofH = 0, stofMuis = null, stofVorigeY = scrollY;
-      const deeltjesStof = Array.from({ length: innerWidth < 760 ? 26 : 64 }, () => ({
-        x: Math.random(), y: Math.random(), r: willekeurig(.8, 2.6), vx: willekeurig(-.008, .008), vy: willekeurig(-.022, -.006),
-        diep: willekeurig(.2, 1), fase: willekeurig(0, 6), dx: 0, dy: 0 }));
-      const stofMaat = () => { const d = Math.min(devicePixelRatio || 1, 1.5); stofB = innerWidth; stofH = innerHeight; stof.width = stofB * d; stof.height = stofH * d; sc.setTransform(d, 0, 0, d, 0, 0); };
-      stofMaat(); addEventListener('resize', stofMaat);
-      addEventListener('pointermove', e => { if (e.pointerType === 'mouse') stofMuis = [e.clientX, e.clientY]; });
-      let stofVorige = performance.now();
-      (function stofFrame(nu) {
-        const dt = Math.min((nu - stofVorige) / 1000 || 0, .05); stofVorige = nu;
-        if (!document.hidden) {
-          const dScroll = scrollY - stofVorigeY; stofVorigeY = scrollY;
-          sc.clearRect(0, 0, stofB, stofH);
-          for (const d of deeltjesStof) {
-            d.x += d.vx * dt; d.y += d.vy * dt - dScroll / stofH * .25 * d.diep;
-            d.x = (d.x + 1) % 1; d.y = (d.y + 1) % 1;
-            let px = d.x * stofB, py = d.y * stofH;
-            if (stofMuis) {                                   // opzij voor de muis
-              const mx = px - stofMuis[0], my = py - stofMuis[1], afstand = Math.hypot(mx, my);
-              if (afstand < 130 && afstand > 0) { const duw = (130 - afstand) / 130 * 46; d.dx += (mx / afstand * duw - d.dx) * .2; d.dy += (my / afstand * duw - d.dy) * .2; }
-            }
-            d.dx *= .92; d.dy *= .92;
-            sc.globalAlpha = (.18 + Math.sin(nu / 900 + d.fase) * .12) * (.5 + d.diep * .5) + .1;
-            sc.fillStyle = d.diep > .8 ? '#fff3b0' : '#f5c542';
-            sc.beginPath(); sc.arc(px + d.dx, py + d.dy, d.r * (.6 + d.diep * .6), 0, Math.PI * 2); sc.fill();
-          }
-          sc.globalAlpha = 1;
-        }
-        requestAnimationFrame(stofFrame);
-      })(performance.now());
+      // Gouden stofdeeltjes op de achtergrond: losse bolletjes die langzaam omhoog zweven
+      const stofHouder = $('#stof');
+      for (let i = 0; i < (innerWidth < 760 ? 12 : 22); i++) {
+        const d = document.createElement('i'), maat = willekeurig(3, 7), duur = willekeurig(14, 30);
+        d.style.cssText = `left:${willekeurig(0, 100)}%;width:${maat}px;height:${maat}px;opacity:${willekeurig(.2, .6)};animation-duration:${duur}s;animation-delay:-${willekeurig(0, duur)}s;--zwenk:${willekeurig(-60, 60)}px`;
+        stofHouder.appendChild(d);
+      }
 
       if (muis) {
         // Lichtvlek op de grote foto
@@ -1636,12 +1674,12 @@
     const zet = (el, x, y, extra = '') => { el.style.left = x + '%'; el.style.top = y + '%'; el.style.transform = `translate(-50%, -50%) ${extra}`; };
 
     // Beweeg de bal in een boog van a naar b
-    function vlieg(van, naar, { duur = 550, boog = 0, schaal = [1, 1], draai = 720, schaduwMee = true, vervaag = false } = {}) {
+    function vlieg(van, naar, { duur = 550, boog = 0, schaal = [1, 1], draai = 720, schaduwMee = true, vervaag = false, effect = 0 } = {}) {
       return new Promise(klaar => {
         const start = performance.now(), geschiedenis = [];
         const stap = nu => {
           const t = Math.min((nu - start) / duur, 1), e = 1 - Math.pow(1 - t, 2);
-          const x = van.x + (naar.x - van.x) * e;
+          const x = van.x + (naar.x - van.x) * e + Math.sin(Math.PI * t) * effect;      // effect: de bal krult onderweg
           const y = van.y + (naar.y - van.y) * e - Math.sin(Math.PI * t) * boog;
           const s = schaal[0] + (schaal[1] - schaal[0]) * e;
           zet(bal, x, y, `scale(${s}) rotate(${draai * e}deg)`);
@@ -1884,7 +1922,7 @@
         else if (uitkomst === 'over') await vlieg(STIP, { x: 50, y: 13 }, { duur: 1000, boog: 24, schaal: [1, .45], draai: 260 });
         else await vlieg(STIP, { x: tx + willekeurig(-3, 3), y: ty }, { duur: 1150, boog: 24, schaal: [1, .55], draai: 240 });
       } else {
-        await vlieg(STIP, { x: tx, y: ty }, { duur: 560, boog: 4 + (50 - ty) * .15, schaal: [1, .52] });
+        await vlieg(STIP, { x: tx, y: ty }, { duur: 560, boog: 4 + (50 - ty) * .15, schaal: [1, .52], effect: (50 - tx) * .11 });
       }
       const balX = parseFloat(bal.style.left), balY = parseFloat(bal.style.top);
 
@@ -2031,7 +2069,7 @@
       schaduwEl.style.setProperty('--maat', r * 2 + 'px');
       tuin.insertBefore(schaduwEl, tuin.firstChild);
       tuin.appendChild(el);
-      const b = { el, schaduwEl, r, x: willekeurig(r, B - r), y: r + 10, vx: willekeurig(-200, 200), vy: 0, hoek: 0, plet: 0, grijp: null, sleept: false, getrapt: false };
+      const b = { el, schaduwEl, r, x: willekeurig(r, B - r), y: r + 10, vx: willekeurig(-200, 200), vy: 0, hoek: 0, draai: 0, plet: 0, grijp: null, sleept: false, getrapt: false };
       ballen.push(b);
       el.addEventListener('pointerdown', e => {
         e.preventDefault();
@@ -2068,6 +2106,7 @@
       const px = e.clientX - r.left;
       b.vy = -willekeurig(820, 1050);
       b.vx = grens((b.x - px) / b.r * 320 + willekeurig(-120, 120), -700, 700);
+      b.draai = b.vx * 1.6 + willekeurig(-90, 90);          // de bal krijgt draaiing mee van de tik
       b.getrapt = true;
       if (laatste !== b) laatste = b;
       reeks++;
@@ -2110,9 +2149,10 @@
       for (const b of ballen) {
         if (!b.sleept) {
           b.vy += ZWAARTEKRACHT * dt;
+          b.vx *= 1 - .2 * dt; b.vy *= 1 - .05 * dt;                       // luchtweerstand
           b.x += b.vx * dt; b.y += b.vy * dt;
-          if (b.x < b.r) { b.x = b.r; b.vx = Math.abs(b.vx) * .75; }
-          if (b.x > B - b.r) { b.x = B - b.r; b.vx = -Math.abs(b.vx) * .75; }
+          if (b.x < b.r) { b.x = b.r; b.vx = Math.abs(b.vx) * .75; b.draai *= -.5; }
+          if (b.x > B - b.r) { b.x = B - b.r; b.vx = -Math.abs(b.vx) * .75; b.draai *= -.5; }
           if (b.y < b.r) { b.y = b.r; b.vy = Math.abs(b.vy) * .6; }
           if (b.y > H - b.r) {
             b.y = H - b.r;
@@ -2126,7 +2166,10 @@
             if (Math.abs(b.vx) < 4) b.vx = 0;
           }
         }
-        b.hoek += (b.vx * dt / b.r) * 57.3;
+        // Draaiing: op de grond rolt de bal, in de lucht draait hij door en remt hij langzaam af
+        if (b.y >= H - b.r - .5 && Math.abs(b.vy) < 5) b.draai += (b.vx / b.r * 57.3 - b.draai) * Math.min(1, dt * 12);
+        else b.draai *= 1 - .3 * dt;
+        b.hoek += b.draai * dt;
       }
       // Ballen botsen tegen elkaar
       for (let i = 0; i < ballen.length; i++) for (let j = i + 1; j < ballen.length; j++) {
@@ -2270,6 +2313,7 @@
       // Bal
       const b = kopBal;
       b.vy += BAL_ZW * dt;
+      b.vx *= 1 - .14 * dt;                                 // luchtweerstand
       b.x += b.vx * dt; b.y += b.vy * dt;
       b.hoek += b.vx * dt / BAL_R;
       if (b.x < BAL_R) { b.x = BAL_R; b.vx = Math.abs(b.vx) * .85; }
@@ -2335,14 +2379,7 @@
 
     /* ---------- Tekenen ---------- */
     function tekenBal(x, y, hoek) {
-      kd.save(); kd.translate(x, y); kd.rotate(hoek);
-      kd.fillStyle = '#fff'; kd.strokeStyle = '#111'; kd.lineWidth = 1.5;
-      kd.beginPath(); kd.arc(0, 0, BAL_R, 0, Math.PI * 2); kd.fill(); kd.stroke();
-      kd.fillStyle = '#111'; kd.beginPath();
-      for (let i = 0; i < 5; i++) { const a = -Math.PI / 2 + i * Math.PI * 2 / 5; kd.lineTo(Math.cos(a) * 5.5, Math.sin(a) * 5.5); }
-      kd.closePath(); kd.fill();
-      for (let i = 0; i < 5; i++) { const a = -Math.PI / 2 + i * Math.PI * 2 / 5; kd.beginPath(); kd.moveTo(Math.cos(a) * 5.5, Math.sin(a) * 5.5); kd.lineTo(Math.cos(a) * BAL_R, Math.sin(a) * BAL_R); kd.stroke(); }
-      kd.restore();
+      echteBal(kd, x, y, BAL_R, hoek);
     }
     function tekenSpeler(s) {
       const { x, y } = s, lucht = GROND - y;
@@ -2420,6 +2457,7 @@
       kd.restore();
       // gras met maaistroken en licht in het midden
       for (let i = 0; i < 10; i++) { kd.fillStyle = i % 2 ? '#1f8a41' : '#1c7a3a'; kd.fillRect(i * 80, 264, 80, KH); }
+      grasTextuur(kd, 0, 264, KB, KH - 264, .55);
       const glans = kd.createRadialGradient(KB / 2, GROND, 20, KB / 2, GROND, 420);
       glans.addColorStop(0, 'rgba(255,255,255,.12)'); glans.addColorStop(1, 'rgba(0,0,0,.25)');
       kd.fillStyle = glans; kd.fillRect(0, 264, KB, KH);
@@ -2448,6 +2486,7 @@
         kd.beginPath(); kd.arc(d.x, d.y, d.grootte * (d.stof ? 2 - d.leven / d.max : 1), 0, Math.PI * 2); kd.fill();
       }
       kd.globalAlpha = 1;
+      vignet(kd, KB, KH, .45);
       if (kopFlits) { kd.fillStyle = `rgba(255,255,255,${kopFlits * .28})`; kd.fillRect(-20, -20, KB + 40, KH + 40); }
       if (kopPunt) {
         const t = kopPunt.t, sc = t < .15 ? .4 + t / .15 * .8 : t < .3 ? 1.2 - (t - .15) / .15 * .2 : 1;
@@ -2495,7 +2534,9 @@
       if (w && kopDoek.width !== Math.round(w)) { kopDoek.width = Math.round(w); kopDoek.height = Math.round(w * KH / KB); }
       kopTeken();
     }
+    let kopRust = 0;
     function kopFrame(nu) {
+      if (!kopBezig && kopInBeeld && (kopRust = (kopRust + 1) % 3)) return requestAnimationFrame(kopFrame);
       let dt = Math.min((nu - kopVorige) / 1000, .05);
       kopVorige = nu;
       if (kopBezig) { const stappen = Math.ceil(dt / (1 / 240)); for (let i = 0; i < stappen; i++) kopStap(dt / stappen); }
@@ -2786,6 +2827,7 @@
         oc.fillStyle = g; oc.fillRect(f.x - 16, f.y - 16, 32, 32);
       }
       for (let i = 0; i < 12; i++) { oc.fillStyle = i % 2 ? '#1f8a41' : '#1c7a3a'; oc.fillRect(i * 80 - 40, 264, 80, OH); }
+      grasTextuur(oc, -40, 264, OB + 80, OH - 264, .55);
       oc.fillStyle = 'rgba(255,255,255,.7)'; oc.fillRect(-40, OG, OB + 80, 3);
       // doel (zijaanzicht) met trillend net
       const tril = Math.sin(nu * 40) * om?.netTril * 4 || 0;
@@ -2838,13 +2880,9 @@
           oc.beginPath(); oc.arc(x, y, (om.vuur ? 9 : 7) + i * .6, 0, Math.PI * 2); oc.fill();
         });
         oc.globalAlpha = 1;
-        oc.save(); oc.translate(b.x, b.y); oc.rotate(b.hoek);
-        oc.fillStyle = '#fff'; oc.strokeStyle = '#111'; oc.lineWidth = 1.5;
-        oc.beginPath(); oc.arc(0, 0, 13, 0, Math.PI * 2); oc.fill(); oc.stroke();
-        oc.fillStyle = '#111'; oc.beginPath();
-        for (let i = 0; i < 5; i++) { const a = -Math.PI / 2 + i * Math.PI * 2 / 5; oc.lineTo(Math.cos(a) * 5, Math.sin(a) * 5); }
-        oc.closePath(); oc.fill(); oc.restore();
+        echteBal(oc, b.x, b.y, 13, b.hoek);
       }
+      vignet(oc, OB, OH, .45);
       // vonken
       if (om) for (const d of om.deeltjes) {
         oc.globalAlpha = Math.max(0, d.leven / d.max); oc.fillStyle = d.kleur;
@@ -2879,7 +2917,9 @@
       if (w && omDoek.width !== Math.round(w)) { omDoek.width = Math.round(w); omDoek.height = Math.round(w * OH / OB); }
       omTeken();
     }
+    let omRust = 0;
     function omFrame(nu) {
+      if (!om?.bezig && omInBeeld && (omRust = (omRust + 1) % 3)) return requestAnimationFrame(omFrame);
       const dt = Math.min((nu - omVorige) / 1000, .05);
       omVorige = nu;
       if (om?.bezig) { omEffecten(dt); omStap(dt * (om.traag > 0 && !rustig ? .22 : 1)); }
@@ -3069,6 +3109,7 @@
       const gras = rc.createLinearGradient(0, HORIZON, 0, RH);
       gras.addColorStop(0, '#176e33'); gras.addColorStop(1, '#23994a');
       rc.fillStyle = gras; rc.fillRect(0, HORIZON, RB, RH - HORIZON);
+      grasTextuur(rc, 0, HORIZON, RB, RH - HORIZON, .45);
       for (let i = 0; i < 6; i++) {
         const y1 = HORIZON + Math.pow(i / 6, 1.8) * (RH - HORIZON), y2 = HORIZON + Math.pow((i + .5) / 6, 1.8) * (RH - HORIZON);
         rc.fillStyle = 'rgba(255,255,255,.05)'; rc.fillRect(0, y1, RB, y2 - y1);
@@ -3105,14 +3146,7 @@
         const bx = s.gered ? b.x + (b.x - hand.x) * na * 2 : b.x, by = s.gered ? b.y - na * 160 + na * na * 300 : b.y;
         const br = rd.fase === 'na' ? (s.gered ? b.r * Math.max(.3, 1 - na * .6) : b.r * (1 + na * .5)) : b.r;
         rc.globalAlpha = rd.fase === 'na' && !s.gered ? Math.max(0, 1 - na * 1.6) : 1;
-        rc.save(); rc.translate(bx, by); rc.rotate(nu * 9);
-        rc.fillStyle = '#fff'; rc.strokeStyle = '#111'; rc.lineWidth = Math.max(1, br * .08);
-        rc.beginPath(); rc.arc(0, 0, br, 0, Math.PI * 2); rc.fill(); rc.stroke();
-        rc.fillStyle = '#111'; rc.beginPath();
-        for (let i = 0; i < 5; i++) { const a = -Math.PI / 2 + i * Math.PI * 2 / 5; rc.lineTo(Math.cos(a) * br * .38, Math.sin(a) * br * .38); }
-        rc.closePath(); rc.fill();
-        for (let i = 0; i < 5; i++) { const a = -Math.PI / 2 + i * Math.PI * 2 / 5; rc.beginPath(); rc.moveTo(Math.cos(a) * br * .38, Math.sin(a) * br * .38); rc.lineTo(Math.cos(a) * br, Math.sin(a) * br); rc.stroke(); }
-        rc.restore(); rc.globalAlpha = 1;
+        echteBal(rc, bx, by, br, nu * 9); rc.globalAlpha = 1;
       }
       // handschoenen
       rc.globalAlpha = .95;
@@ -3128,6 +3162,7 @@
       rc.beginPath(); rc.moveTo(VAK.x1 - 30, RH); rc.lineTo(VAK.x1 - 30, VAK.y1 - 30); rc.lineTo(VAK.x2 + 30, VAK.y1 - 30); rc.lineTo(VAK.x2 + 30, RH); rc.stroke();
       rc.strokeStyle = 'rgba(0,0,0,.18)'; rc.lineWidth = 4;
       rc.beginPath(); rc.moveTo(VAK.x1 - 22, RH); rc.lineTo(VAK.x1 - 22, VAK.y1 - 22); rc.lineTo(VAK.x2 + 22, VAK.y1 - 22); rc.lineTo(VAK.x2 + 22, RH); rc.stroke();
+      vignet(rc, RB, RH, .4);
       // rode flits bij een tegengoal
       if (rd?.flits) { rc.fillStyle = `rgba(255,60,60,${rd.flits * .3})`; rc.fillRect(0, 0, RB, RH); }
       // tekst
@@ -3145,7 +3180,9 @@
       if (w && rdDoek.width !== Math.round(w)) { rdDoek.width = Math.round(w); rdDoek.height = Math.round(w * RH / RB); }
       rdTeken();
     }
+    let rdRust = 0;
     function rdFrame(nu) {
+      if (!rd?.bezig && rdInBeeld && (rdRust = (rdRust + 1) % 3)) return requestAnimationFrame(rdFrame);
       const dt = Math.min((nu - rdVorige) / 1000, .05);
       rdVorige = nu;
       if (rd?.bezig) rdStap(dt);
@@ -3320,7 +3357,7 @@
         s.boost = Math.max(0, s.boost - dt);
         const L = Math.hypot(rx, ry), snel = SNEL * (s.ai ? EE_NIVEAUS[eeNiveau].snel : 1) * (s.boost > 0 ? 1.5 : 1);
         const wx = L ? rx / L * snel : 0, wy = L ? ry / L * snel : 0;
-        s.vx += (wx - s.vx) * Math.min(1, dt * 11); s.vy += (wy - s.vy) * Math.min(1, dt * 11);
+        s.vx += (wx - s.vx) * Math.min(1, dt * 7.5); s.vy += (wy - s.vy) * Math.min(1, dt * 7.5);
         s.x = grens(s.x + s.vx * dt, VELD.x1 + SP_R, VELD.x2 - SP_R);
         s.y = grens(s.y + s.vy * dt, VELD.y1 + SP_R, VELD.y2 - SP_R);
         if (L) s.kijk = Math.atan2(s.vy, s.vx);
@@ -3433,6 +3470,7 @@
       }
       // veld met maaistroken
       for (let i = 0; i < 12; i++) { ec.fillStyle = i % 2 ? '#1f8a41' : '#1c7a3a'; ec.fillRect(VELD.x1 + i * (VELD.x2 - VELD.x1) / 12, VELD.y1, (VELD.x2 - VELD.x1) / 12 + 1, VELD.y2 - VELD.y1); }
+      grasTextuur(ec, VELD.x1, VELD.y1, VELD.x2 - VELD.x1, VELD.y2 - VELD.y1, .5);
       ec.strokeStyle = 'rgba(255,255,255,.8)'; ec.lineWidth = 2.5;
       ec.strokeRect(VELD.x1, VELD.y1, VELD.x2 - VELD.x1, VELD.y2 - VELD.y1);
       ec.beginPath(); ec.moveTo(MID.x, VELD.y1); ec.lineTo(MID.x, VELD.y2); ec.stroke();
@@ -3475,12 +3513,7 @@
       });
       ec.globalAlpha = 1;
       ec.fillStyle = 'rgba(0,0,0,.3)'; ec.beginPath(); ec.ellipse(b.x + 3, b.y + 5, B_R, B_R * .7, 0, 0, Math.PI * 2); ec.fill();
-      ec.save(); ec.translate(b.x, b.y); ec.rotate(b.hoek);
-      ec.fillStyle = '#fff'; ec.strokeStyle = '#111'; ec.lineWidth = 1.3;
-      ec.beginPath(); ec.arc(0, 0, B_R, 0, Math.PI * 2); ec.fill(); ec.stroke();
-      ec.fillStyle = '#111'; ec.beginPath();
-      for (let i = 0; i < 5; i++) { const a = -Math.PI / 2 + i * Math.PI * 2 / 5; ec.lineTo(Math.cos(a) * 4, Math.sin(a) * 4); }
-      ec.closePath(); ec.fill(); ec.restore();
+      echteBal(ec, b.x, b.y, B_R, b.hoek);
       // spelers (van bovenaf): schaduw, voeten, lijf en hoofd
       for (const s of eeSpelers) {
         if (s.x === undefined) continue;
@@ -3520,6 +3553,7 @@
         ec.lineWidth = 5; ec.strokeStyle = 'rgba(0,0,0,.7)'; ec.strokeText(p.tekst, 0, 0);
         ec.fillStyle = p.kleur; ec.fillText(p.tekst, 0, 0); ec.restore();
       }
+      vignet(ec, EB, EH, .32);
       if (eeFlits) { ec.fillStyle = `rgba(255,255,255,${eeFlits * .32})`; ec.fillRect(-20, -20, EB + 40, EH + 40); }
       // meldingen
       if (eeBezig && eeMelding && eeMelding.t < 1.4) {
@@ -3542,7 +3576,9 @@
       if (w && eeDoek.width !== Math.round(w)) { eeDoek.width = Math.round(w); eeDoek.height = Math.round(w * EH / EB); }
       eeTeken();
     }
+    let eeRust = 0;
     function eeFrame(nu) {
+      if (!eeBezig && eeInBeeld && (eeRust = (eeRust + 1) % 3)) return requestAnimationFrame(eeFrame);
       const dt = Math.min((nu - eeVorige) / 1000, .05);
       eeVorige = nu;
       const stappen = Math.ceil(dt / (1 / 180));
