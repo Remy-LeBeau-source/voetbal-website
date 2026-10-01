@@ -56,6 +56,7 @@
     .logo:hover span { transform: rotate(360deg) scale(1.3); }
     .menu { display: flex; gap: 26px; list-style: none; margin: 0; padding: 0; }
     @media (max-width: 1250px) and (min-width: 761px) { .menu { gap: 12px; } .menu a { font-size: .85rem; } }
+    @media (max-width: 980px) and (min-width: 761px) { .menu { gap: 7px; } .menu a { font-size: .74rem; } }
     .menu a { text-decoration: none; font-weight: 600; color: var(--grijs); transition: color .2s; position: relative; }
     .menu a::after { content: ""; position: absolute; left: 0; right: 0; bottom: -4px; height: 2px; background: var(--goud);
                      transform: scaleX(0); transition: transform .3s; }
@@ -540,6 +541,11 @@
     #vtKnop { touch-action: none; user-select: none; -webkit-user-select: none; }
     #vtKnop.in { transform: scale(.95); filter: brightness(.85); }
 
+    /* ---------- Minigame: dribbelparcours ---------- */
+    #dpDoek { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; touch-action: none; }
+    .dp-schiet { touch-action: none; user-select: none; -webkit-user-select: none; padding: 16px 26px; font-size: 1.1rem; }
+    .dp-schiet.in { transform: scale(.94); filter: brightness(.85); }
+
     /* ---------- Foto ---------- */
     .foto-groot { border-radius: 26px; overflow: hidden; border: 1px solid var(--rand); margin: 0; }
     .foto-groot.zichtbaar { transition: transform .25s ease-out, opacity .8s; }
@@ -634,7 +640,7 @@
         <li><a href="#redden">Keeper</a></li>
         <li><a href="#eentegeneen">1 tegen 1</a></li>
         <li><a href="#vrijetrap">Vrije trap</a></li>
-        <li><a href="#foto">Foto</a></li>
+        <li><a href="#dribbel">Dribbelen</a></li>
       </ul>
     </nav>
   </header>
@@ -669,8 +675,8 @@
 
     <div class="lichtkrant twee" aria-hidden="true">
       <div class="lichtkrant-rij">
-        <span>Penalty's ⚽ Panenka ⚽ Hooghouden ⚽ Overkoppen ⚽ Omhaal ⚽ Keeper ⚽ 1 tegen 1 ⚽ Vrije trap ⚽</span>
-        <span>Penalty's ⚽ Panenka ⚽ Hooghouden ⚽ Overkoppen ⚽ Omhaal ⚽ Keeper ⚽ 1 tegen 1 ⚽ Vrije trap ⚽</span>
+        <span>Penalty's ⚽ Panenka ⚽ Hooghouden ⚽ Overkoppen ⚽ Omhaal ⚽ Keeper ⚽ 1 tegen 1 ⚽ Vrije trap ⚽ Dribbelen ⚽</span>
+        <span>Penalty's ⚽ Panenka ⚽ Hooghouden ⚽ Overkoppen ⚽ Omhaal ⚽ Keeper ⚽ 1 tegen 1 ⚽ Vrije trap ⚽ Dribbelen ⚽</span>
       </div>
     </div>
 
@@ -691,7 +697,7 @@
           <div class="teller"><b data-tel="2">0</b><span>vrienden</span></div>
           <div class="teller"><b data-tel="1">0</b><span>passie: voetbal</span></div>
           <div class="teller"><b data-tel="100">0</b><span>procent inzet</span></div>
-          <div class="teller"><b data-tel="8">0</b><span>spellen om te spelen</span></div>
+          <div class="teller"><b data-tel="9">0</b><span>spellen om te spelen</span></div>
         </div>
 
         <div class="kaarten" style="margin-top:56px">
@@ -1073,6 +1079,37 @@
           <div class="kop-bediening">
             <p class="spel-info">Vrije trap <b id="vtNr">0</b> van 5 · Goals: <b id="vtGoals">0</b> · Record: <b id="vtRecord">0</b></p>
             <button class="knop vol om-knop" id="vtKnop">⚽ Houd vast en laat los</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Minigame: dribbelparcours -->
+    <section id="dribbel">
+      <div class="wrap">
+        <div class="sectie-kop verschijn">
+          <p class="label">Minigame</p>
+          <h2 class="kop">Dribbelparcours</h2>
+          <p>Dribbel zo snel als je kunt met de bal door de poortjes, op volgorde, en schiet hem daarna in het doel. Raak je een pion met de bal, dan krijg je een strafseconde. Haal jij goud?</p>
+        </div>
+        <div class="kop-spel verschijn">
+          <div class="kop-doek-houder">
+            <canvas id="dpDoek" width="800" height="450" aria-label="Dribbelparcours: dribbel de bal door de poortjes en scoor"></canvas>
+            <div class="kop-scherm" id="dpScherm">
+              <h3 class="kop" id="dpTitel">Dribbelparcours</h3>
+              <p id="dpTekst">Door alle poortjes en dan scoren. Elke keer een ander parcours!</p>
+              <div class="niveau-keuze" id="dpNiveaus" role="group" aria-label="Moeilijkheid">
+                <button data-dp-niveau="makkelijk" aria-pressed="false">Makkelijk</button>
+                <button data-dp-niveau="normaal" aria-pressed="true">Normaal</button>
+                <button data-dp-niveau="moeilijk" aria-pressed="false">Moeilijk</button>
+              </div>
+              <div class="kop-modi"><button class="knop vol" id="dpStartKnop">Start</button></div>
+              <p class="kop-uitleg">Lopen met <b>W A S D</b> of de <b>pijltjes</b>, schieten met <b>spatie</b>.</p>
+            </div>
+          </div>
+          <div class="kop-bediening">
+            <button class="knop vol dp-schiet" id="dpSchiet">⚽ Schiet</button>
+            <p class="spel-info">Tijd: <b id="dpTijd">0.0</b> s · Poortjes: <b id="dpPoort">0/6</b> · Record: <b id="dpRecord">–</b></p>
           </div>
         </div>
       </div>
@@ -3964,6 +4001,287 @@
     addEventListener('resize', vtMaat);
     vtKnop.disabled = true;
     vtMaat();
+
+    /* ================= Minigame: dribbelparcours ================= */
+    const dpDoek = $('#dpDoek'), dc = dpDoek.getContext('2d');
+    const PION_R = 8;
+    const DP_NIVEAUS = {
+      makkelijk: { naam: 'Makkelijk', poorten: 4, breed: 88, goud: 13, zilver: 18, sleutel: 'dribbel-record-makkelijk' },
+      normaal:   { naam: 'Normaal',   poorten: 6, breed: 72, goud: 18, zilver: 24, sleutel: 'dribbel-record' },
+      moeilijk:  { naam: 'Moeilijk',  poorten: 8, breed: 58, goud: 25, zilver: 32, sleutel: 'dribbel-record-moeilijk' },
+    };
+    const dpScherm = $('#dpScherm'), dpTitel = $('#dpTitel'), dpTekst = $('#dpTekst');
+    const dpTijdEl = $('#dpTijd'), dpPoortEl = $('#dpPoort'), dpRecordEl = $('#dpRecord');
+    let dp = null, dpLoop = false, dpInBeeld = false, dpVorige = 0, dpRust = 0, dpSleep = null, dpSchietKnop = false;
+    let dpNiveau = bewaar.lees('dribbel-niveau', 'normaal');
+    if (!DP_NIVEAUS[dpNiveau]) dpNiveau = 'normaal';
+    const dpToetsen = new Set();
+    const dpToonRecord = () => { const r = bewaar.lees(DP_NIVEAUS[dpNiveau].sleutel, null); dpRecordEl.textContent = r ? r.toFixed(1) + ' s' : '–'; };
+    function dpZetNiveau(naam) {
+      dpNiveau = naam; bewaar.schrijf('dribbel-niveau', naam);
+      document.querySelectorAll('#dpNiveaus button').forEach(b => b.setAttribute('aria-pressed', b.dataset.dpNiveau === naam));
+      dpToonRecord();
+      if (!dp?.bezig) { dpMaakParcours(); dpTeken(); }
+    }
+    document.querySelectorAll('#dpNiveaus button').forEach(b => b.addEventListener('click', () => dpZetNiveau(b.dataset.dpNiveau)));
+
+    // Parcours: poortjes van links naar rechts, om en om hoog en laag (slalom), elke keer net anders
+    function dpMaakParcours() {
+      const niv = DP_NIVEAUS[dpNiveau], poorten = [];
+      for (let i = 0; i < niv.poorten; i++)
+        poorten.push({ x: 185 + i * (440 / (niv.poorten - 1)), y: i % 2 ? willekeurig(275, 345) : willekeurig(105, 175), klaar: false, wiebel: [0, 0], strafTijd: 0 });
+      dp = { bezig: false, niv, poorten, volgende: 0, tijd: 0, straf: 0, wacht: 0, klaar: false,
+             speler: { x: 92, y: MID.y, vx: 0, vy: 0, kijk: 0, wachtSchot: 0, schietAnim: 0 },
+             bal: { x: 128, y: MID.y, vx: 0, vy: 0, hoek: 0 }, spoor: [], spoorTijd: 0, deeltjes: [], popups: [], schud: 0, juich: 0 };
+      dpPoortEl.textContent = `0/${niv.poorten}`; dpTijdEl.textContent = '0.0';
+    }
+    function dpStart() {
+      dpMaakParcours();
+      dp.bezig = true; dp.wacht = 1.8;
+      dpScherm.hidden = true;
+      fluit();
+      dpStartLoop();
+    }
+    $('#dpStartKnop').addEventListener('click', dpStart);
+
+    // Invoer
+    const DP_CODES = ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'Space', 'Enter', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
+    addEventListener('keydown', e => {
+      if (!dp?.bezig || !dpInBeeld || !DP_CODES.includes(e.code)) return;
+      if ((e.code === 'Space' || e.code === 'Enter') && document.activeElement?.closest('button, a, input')) return;
+      e.preventDefault(); dpToetsen.add(e.code);
+    });
+    addEventListener('keyup', e => dpToetsen.delete(e.code));
+    addEventListener('blur', () => dpToetsen.clear());
+    const dpPunt = e => { const r = dpDoek.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width * EB, y: (e.clientY - r.top) / r.height * EH }; };
+    dpDoek.addEventListener('pointerdown', e => { if (!dp?.bezig) return; e.preventDefault(); dpDoek.setPointerCapture(e.pointerId); dpSleep = dpPunt(e); });
+    dpDoek.addEventListener('pointermove', e => { if (dpSleep) dpSleep = dpPunt(e); });
+    ['pointerup', 'pointercancel'].forEach(t => dpDoek.addEventListener(t, () => dpSleep = null));
+    const dpKnop = $('#dpSchiet');
+    dpKnop.addEventListener('pointerdown', e => { e.preventDefault(); dpSchietKnop = true; dpKnop.classList.add('in'); });
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(t => dpKnop.addEventListener(t, () => { dpSchietKnop = false; dpKnop.classList.remove('in'); }));
+    const dpIn = (...codes) => codes.some(c => dpToetsen.has(c));
+
+    function dpVonken(x, y, aantal, kleuren, kracht = 220, stof = false) {
+      if (rustig) return;
+      for (let i = 0; i < aantal; i++) {
+        const hoek = willekeurig(0, Math.PI * 2), v = willekeurig(kracht * .25, kracht);
+        dp.deeltjes.push({ x, y, vx: Math.cos(hoek) * v, vy: Math.sin(hoek) * v, leven: stof ? .45 : willekeurig(.25, .5), max: .5, stof,
+                           grootte: stof ? willekeurig(2.5, 5) : willekeurig(1.5, 3.2), kleur: kleuren[i % kleuren.length] });
+      }
+    }
+    const dpPopup = (tekst, x, y, kleur) => dp.popups.push({ tekst, x: grens(x, 90, EB - 90), y: Math.max(40, y), kleur, t: 0 });
+    const dpPionnen = p => [[p.x, p.y - dp.niv.breed / 2], [p.x, p.y + dp.niv.breed / 2]];
+
+    function dpEffecten(dt) {
+      dp.schud = Math.max(0, dp.schud - dt * 2.4); dp.juich = Math.max(0, dp.juich - dt);
+      for (let i = dp.deeltjes.length - 1; i >= 0; i--) { const d = dp.deeltjes[i]; d.leven -= dt; d.x += d.vx * dt; d.y += d.vy * dt; d.vx *= 1 - dt * 3; d.vy *= 1 - dt * 3; if (d.leven <= 0) dp.deeltjes.splice(i, 1); }
+      for (let i = dp.popups.length - 1; i >= 0; i--) { dp.popups[i].t += dt; if (dp.popups[i].t > 1.2) dp.popups.splice(i, 1); }
+      for (const p of dp.poorten) { p.wiebel[0] = Math.max(0, p.wiebel[0] - dt * 2.5); p.wiebel[1] = Math.max(0, p.wiebel[1] - dt * 2.5); p.strafTijd = Math.max(0, p.strafTijd - dt); }
+    }
+    function dpStap(dt) {
+      if (!dp.bezig) return;
+      if (dp.wacht > 0) { dp.wacht -= dt; return; }
+      dp.tijd += dt;
+      const s = dp.speler, b = dp.bal, vorigeX = b.x, vorigeY = b.y;
+      // Speler
+      let rx = (dpIn('KeyD', 'ArrowRight') ? 1 : 0) - (dpIn('KeyA', 'ArrowLeft') ? 1 : 0), ry = (dpIn('KeyS', 'ArrowDown') ? 1 : 0) - (dpIn('KeyW', 'ArrowUp') ? 1 : 0);
+      if (!rx && !ry && dpSleep) { rx = dpSleep.x - s.x; ry = dpSleep.y - s.y; if (Math.hypot(rx, ry) < 8) rx = ry = 0; }
+      const L = Math.hypot(rx, ry), wx = L ? rx / L * SNEL : 0, wy = L ? ry / L * SNEL : 0;
+      s.vx += (wx - s.vx) * Math.min(1, dt * 7.5); s.vy += (wy - s.vy) * Math.min(1, dt * 7.5);
+      s.x = grens(s.x + s.vx * dt, VELD.x1 + SP_R, VELD.x2 - SP_R); s.y = grens(s.y + s.vy * dt, VELD.y1 + SP_R, VELD.y2 - SP_R);
+      if (L) s.kijk = Math.atan2(s.vy, s.vx);
+      s.wachtSchot = Math.max(0, s.wachtSchot - dt); s.schietAnim = Math.max(0, s.schietAnim - dt * 4);
+      if (Math.hypot(s.vx, s.vy) > 225 && Math.random() < dt * 10) dpVonken(s.x - Math.cos(s.kijk) * 14, s.y - Math.sin(s.kijk) * 14, 1, ['rgba(225,245,215,.55)'], 50, true);
+      // Bal: dribbelen of schieten
+      const dx = b.x - s.x, dy = b.y - s.y, d = Math.hypot(dx, dy) || 1, ux = dx / d, uy = dy / d;
+      if ((dpIn('Space', 'Enter') || dpSchietKnop) && s.wachtSchot <= 0 && d < SP_R + B_R + 14) {
+        b.vx = ux * 640 + s.vx * .3; b.vy = uy * 640 + s.vy * .3; s.wachtSchot = .35; s.schietAnim = 1;
+        trapGeluid({ pan: (s.x / EB) * 2 - 1 }); dpVonken(b.x, b.y, 8, ['#fff', '#f5c542']);
+      } else if (d < SP_R + B_R) {
+        b.x = s.x + ux * (SP_R + B_R); b.y = s.y + uy * (SP_R + B_R);
+        const vn = (b.vx - s.vx) * ux + (b.vy - s.vy) * uy;
+        if (vn < 0) { b.vx -= 1.35 * vn * ux; b.vy -= 1.35 * vn * uy; }
+      }
+      const rem = Math.pow(.42, dt);
+      b.vx *= rem; b.vy *= rem; b.x += b.vx * dt; b.y += b.vy * dt;
+      b.hoek += Math.hypot(b.vx, b.vy) * dt / B_R * Math.sign(b.vx || 1);
+      dp.spoorTijd += dt;
+      if (dp.spoorTijd >= 1 / 60) { dp.spoorTijd = 0; if (Math.hypot(b.vx, b.vy) > 300) { dp.spoor.push([b.x, b.y]); if (dp.spoor.length > 12) dp.spoor.shift(); } else if (dp.spoor.length) dp.spoor.shift(); }
+      // Pionnen: de bal kaatst ertegen (+1 seconde straf), de speler wordt opzij geduwd
+      dp.poorten.forEach(p => dpPionnen(p).forEach(([cx, cy], nr) => {
+        let ex = b.x - cx, ey = b.y - cy, ed = Math.hypot(ex, ey);
+        if (ed && ed < PION_R + B_R) {
+          const nx = ex / ed, ny = ey / ed, vn = b.vx * nx + b.vy * ny;
+          b.x = cx + nx * (PION_R + B_R); b.y = cy + ny * (PION_R + B_R);
+          if (vn < 0) { b.vx -= 1.6 * vn * nx; b.vy -= 1.6 * vn * ny; }
+          p.wiebel[nr] = 1;
+          if (p.strafTijd <= 0 && !dp.klaar) { p.strafTijd = .6; dp.straf += 1; dp.schud = .35; paalGeluid(); dpPopup('+1 SEC', cx, cy - 18, '#ff5a5a'); dpVonken(cx, cy, 8, ['#ff9f1c', '#fff']); }
+        }
+        ex = s.x - cx; ey = s.y - cy; ed = Math.hypot(ex, ey);
+        if (ed && ed < PION_R + SP_R) { s.x = cx + ex / ed * (PION_R + SP_R); s.y = cy + ey / ed * (PION_R + SP_R); p.wiebel[nr] = Math.max(p.wiebel[nr], .5); }
+      }));
+      // Door het volgende poortje? (de bal steekt de lijn tussen de twee pionnen over)
+      const p = dp.poorten[dp.volgende];
+      if (p && (vorigeX - p.x) * (b.x - p.x) < 0) {
+        const kruisY = vorigeY + (b.y - vorigeY) * ((p.x - vorigeX) / (b.x - vorigeX));
+        if (Math.abs(kruisY - p.y) < dp.niv.breed / 2 - PION_R) {
+          p.klaar = true; dp.volgende++;
+          dpPoortEl.textContent = `${dp.volgende}/${dp.niv.poorten}`;
+          dpPopup(dp.volgende === dp.niv.poorten ? 'NU SCOREN!' : '✓ ' + dp.volgende, p.x, p.y - 20, '#1db954');
+          dpVonken(p.x, kruisY, 14, ['#1db954', '#fff']); trapGeluid({ pan: (p.x / EB) * 2 - 1, licht: true });
+        }
+      }
+      // Randen en doel (alleen het rechterdoel is open)
+      if (b.y < VELD.y1 + B_R) { b.y = VELD.y1 + B_R; b.vy = Math.abs(b.vy) * .8; }
+      if (b.y > VELD.y2 - B_R) { b.y = VELD.y2 - B_R; b.vy = -Math.abs(b.vy) * .8; }
+      if (b.x < VELD.x1 + B_R) { b.x = VELD.x1 + B_R; b.vx = Math.abs(b.vx) * .8; }
+      for (const py of [MOND.y1, MOND.y2]) {
+        const ex = b.x - VELD.x2, ey = b.y - py, ed = Math.hypot(ex, ey);
+        if (ed && ed < B_R + 5) { const nx = ex / ed, ny = ey / ed, vn = b.vx * nx + b.vy * ny; b.x = VELD.x2 + nx * (B_R + 5); b.y = py + ny * (B_R + 5); if (vn < 0) { b.vx -= 1.8 * vn * nx; b.vy -= 1.8 * vn * ny; if (vn < -120) paalGeluid(); } }
+      }
+      const inMond = b.y > MOND.y1 && b.y < MOND.y2;
+      if (!inMond) { if (b.x > VELD.x2 - B_R) { b.x = VELD.x2 - B_R; b.vx = -Math.abs(b.vx) * .8; } }
+      // Ligt de bal stil tegen de rand of in een hoek? Dan rolt hij vanzelf een stukje terug het veld in
+      if (Math.hypot(b.vx, b.vy) < 25 && (b.x < VELD.x1 + B_R + 6 || b.x > VELD.x2 - B_R - 6 || b.y < VELD.y1 + B_R + 6 || b.y > VELD.y2 - B_R - 6) && !(inMond && b.x > MID.x)) {
+        const mx = MID.x - b.x, my = MID.y - b.y, ml = Math.hypot(mx, my) || 1;
+        b.vx += mx / ml * 260 * dt; b.vy += my / ml * 260 * dt;
+      }
+      else if (b.x > VELD.x2 + B_R) {
+        if (dp.volgende >= dp.niv.poorten) return dpFinish();
+        dpPopup('EERST ALLE POORTJES!', VELD.x2 - 110, MID.y - 30, '#ff5a5a'); oohGeluid();
+        Object.assign(b, { x: VELD.x2 - 90, y: MID.y, vx: 0, vy: 0 });
+      }
+      dpTijdEl.textContent = (dp.tijd + dp.straf).toFixed(1);
+    }
+    function dpFinish() {
+      dp.bezig = false; dp.klaar = true;
+      const tijd = dp.tijd + dp.straf, niv = dp.niv, oud = bewaar.lees(niv.sleutel, null), nieuw = oud === null || tijd < oud;
+      if (nieuw) bewaar.schrijf(niv.sleutel, +tijd.toFixed(2));
+      dpToonRecord();
+      const medaille = tijd <= niv.goud ? '🥇 Goud' : tijd <= niv.zilver ? '🥈 Zilver' : '🥉 Brons';
+      dp.schud = 1; dp.juich = 3;
+      speel('net'); juichGeluid();
+      const r = dpDoek.getBoundingClientRect(); confetti(dpDoek.parentElement, VELD.x2 / EB * r.width, r.height / 2, tijd <= niv.goud ? 130 : 70);
+      dpTitel.textContent = nieuw && oud !== null ? 'Record! ' + medaille : medaille;
+      dpTekst.textContent = `${tijd.toFixed(1)} seconden${dp.straf ? ` (+${dp.straf} straf)` : ''} · goud onder ${niv.goud} s`;
+      $('#dpStartKnop').textContent = 'Nog een keer';
+      dpTijdEl.textContent = tijd.toFixed(1);
+      setTimeout(() => { if (dp.klaar) dpScherm.hidden = false; }, 1100);
+    }
+
+    /* ---------- Tekenen ---------- */
+    function dpTeken() {
+      const schaal = dpDoek.width / EB, nu = performance.now() / 1000;
+      dc.setTransform(schaal, 0, 0, schaal, 0, 0);
+      dc.fillStyle = '#0c3d1c'; dc.fillRect(0, 0, EB, EH);
+      if (dp?.schud && !rustig) dc.translate((Math.random() - .5) * dp.schud * 12, (Math.random() - .5) * dp.schud * 9);
+      for (const p of EE_PUBLIEK) {
+        const hop = dp?.juich > 0 ? Math.abs(Math.sin(nu * p.snel + p.fase)) * 4 : Math.sin(nu * 2 + p.fase) * .6;
+        dc.fillStyle = p.shirt; dc.beginPath(); dc.roundRect(p.x - 4.5, p.y - 2 - hop, 9, 8, 3); dc.fill();
+        dc.fillStyle = p.huid; dc.beginPath(); dc.arc(p.x, p.y - 5 - hop, 3.2, 0, Math.PI * 2); dc.fill();
+      }
+      for (let i = 0; i < 12; i++) { dc.fillStyle = i % 2 ? '#1f8a41' : '#1c7a3a'; dc.fillRect(VELD.x1 + i * (VELD.x2 - VELD.x1) / 12, VELD.y1, (VELD.x2 - VELD.x1) / 12 + 1, VELD.y2 - VELD.y1); }
+      grasTextuur(dc, VELD.x1, VELD.y1, VELD.x2 - VELD.x1, VELD.y2 - VELD.y1, .5);
+      dc.strokeStyle = 'rgba(255,255,255,.8)'; dc.lineWidth = 2.5;
+      dc.strokeRect(VELD.x1, VELD.y1, VELD.x2 - VELD.x1, VELD.y2 - VELD.y1);
+      dc.strokeRect(VELD.x2 - 110, 115, 110, 220);
+      // startvak links en doel rechts
+      dc.setLineDash([8, 8]); dc.strokeRect(VELD.x1 + 14, MID.y - 50, 100, 100); dc.setLineDash([]);
+      dc.fillStyle = 'rgba(255,255,255,.55)'; dc.font = '15px "Bebas Neue", sans-serif'; dc.textAlign = 'center'; dc.textBaseline = 'middle'; dc.fillText('START', VELD.x1 + 64, MID.y - 62);
+      const open = dp && dp.volgende >= dp.niv.poorten;
+      dc.fillStyle = open ? 'rgba(29,185,84,.3)' : 'rgba(255,255,255,.12)'; dc.fillRect(VELD.x2, MOND.y1, DOEL_DIEP, MOND.y2 - MOND.y1);
+      dc.strokeStyle = 'rgba(255,255,255,.35)'; dc.lineWidth = 1;
+      for (let i = 6; i < DOEL_DIEP; i += 7) { dc.beginPath(); dc.moveTo(VELD.x2 + i, MOND.y1); dc.lineTo(VELD.x2 + i, MOND.y2); dc.stroke(); }
+      for (let y = MOND.y1 + 8; y < MOND.y2; y += 8) { dc.beginPath(); dc.moveTo(VELD.x2, y); dc.lineTo(VELD.x2 + DOEL_DIEP, y); dc.stroke(); }
+      dc.strokeStyle = open ? '#1db954' : '#fff'; dc.lineWidth = 4; dc.strokeRect(VELD.x2, MOND.y1, DOEL_DIEP, MOND.y2 - MOND.y1);
+      if (!dp) return;
+      // poortjes: lijn tussen de pionnen, nummer en de pionnen zelf
+      dp.poorten.forEach((p, i) => {
+        const actief = i === dp.volgende, [boven, onder] = dpPionnen(p);
+        dc.setLineDash([6, 6]); dc.lineWidth = actief ? 4 : 2.5;
+        dc.strokeStyle = p.klaar ? 'rgba(29,185,84,.9)' : actief ? `rgba(245,197,66,${.65 + Math.sin(nu * 7) * .35})` : 'rgba(255,255,255,.3)';
+        dc.beginPath(); dc.moveTo(boven[0], boven[1]); dc.lineTo(onder[0], onder[1]); dc.stroke(); dc.setLineDash([]);
+        dc.fillStyle = p.klaar ? '#1db954' : actief ? '#f5c542' : 'rgba(255,255,255,.6)';
+        dc.font = '20px "Bebas Neue", sans-serif'; dc.textAlign = 'center'; dc.textBaseline = 'middle';
+        dc.fillText(p.klaar ? '✓' : i + 1, p.x, boven[1] - 20);
+        [boven, onder].forEach(([cx, cy], nr) => {
+          const w = Math.sin(nu * 30) * p.wiebel[nr] * 3;
+          dc.fillStyle = 'rgba(0,0,0,.3)'; dc.beginPath(); dc.ellipse(cx + 3, cy + 4, PION_R + 2, PION_R, 0, 0, Math.PI * 2); dc.fill();
+          const kegel = dc.createRadialGradient(cx + w - 2, cy - 2, 1, cx + w, cy, PION_R + 2);
+          kegel.addColorStop(0, '#ffd08a'); kegel.addColorStop(.55, '#ff8a1c'); kegel.addColorStop(1, '#c95a00');
+          dc.fillStyle = kegel; dc.beginPath(); dc.arc(cx + w, cy, PION_R + 1, 0, Math.PI * 2); dc.fill();
+          dc.strokeStyle = '#fff'; dc.lineWidth = 2; dc.beginPath(); dc.arc(cx + w, cy, PION_R * .55, 0, Math.PI * 2); dc.stroke();
+        });
+      });
+      // pijltje naar het volgende doel
+      const b = dp.bal, s = dp.speler, doel = dp.poorten[dp.volgende] || { x: VELD.x2, y: MID.y };
+      if (dp.bezig && dp.wacht <= 0) {
+        const hoek = Math.atan2(doel.y - b.y, doel.x - b.x), ax = b.x + Math.cos(hoek) * 30, ay = b.y + Math.sin(hoek) * 30;
+        dc.save(); dc.translate(ax, ay); dc.rotate(hoek); dc.globalAlpha = .5 + Math.sin(nu * 6) * .25; dc.fillStyle = '#f5c542';
+        dc.beginPath(); dc.moveTo(10, 0); dc.lineTo(-4, -7); dc.lineTo(-4, 7); dc.closePath(); dc.fill(); dc.restore(); dc.globalAlpha = 1;
+      }
+      if (dpSleep && dp.bezig) { dc.strokeStyle = '#f5c542'; dc.globalAlpha = .6; dc.lineWidth = 2; dc.beginPath(); dc.arc(dpSleep.x, dpSleep.y, 14, 0, Math.PI * 2); dc.stroke(); dc.globalAlpha = 1; }
+      // bal met spoor
+      dp.spoor.forEach(([x, y], i) => { dc.globalAlpha = i / dp.spoor.length * .3; dc.fillStyle = '#fff'; dc.beginPath(); dc.arc(x, y, B_R * (.4 + i / dp.spoor.length * .6), 0, Math.PI * 2); dc.fill(); });
+      dc.globalAlpha = 1;
+      dc.fillStyle = 'rgba(0,0,0,.3)'; dc.beginPath(); dc.ellipse(b.x + 3, b.y + 5, B_R, B_R * .7, 0, 0, Math.PI * 2); dc.fill();
+      echteBal(dc, b.x, b.y, B_R, b.hoek);
+      // speler (van bovenaf)
+      dc.fillStyle = 'rgba(0,0,0,.3)'; dc.beginPath(); dc.ellipse(s.x + 3, s.y + 6, SP_R, SP_R * .8, 0, 0, Math.PI * 2); dc.fill();
+      dc.save(); dc.translate(s.x, s.y); dc.rotate(s.kijk);
+      const loop = Math.sin(performance.now() / 60) * Math.min(1, Math.hypot(s.vx, s.vy) / 120) * 6;
+      dc.fillStyle = '#111';
+      dc.beginPath(); dc.ellipse(6 + loop + s.schietAnim * 10, -8, 7, 4.5, 0, 0, Math.PI * 2); dc.fill();
+      dc.beginPath(); dc.ellipse(6 - loop, 8, 7, 4.5, 0, 0, Math.PI * 2); dc.fill();
+      dc.fillStyle = '#f5c542'; dc.strokeStyle = '#9a7412'; dc.lineWidth = 2.5;
+      dc.beginPath(); dc.ellipse(0, 0, SP_R * .78, SP_R, 0, 0, Math.PI * 2); dc.fill(); dc.stroke();
+      dc.fillStyle = '#23160d'; dc.beginPath(); dc.arc(1, 0, 8.5, 0, Math.PI * 2); dc.fill();
+      dc.fillStyle = '#d9a77e'; dc.beginPath(); dc.arc(5, 0, 5, -Math.PI / 2, Math.PI / 2); dc.fill();
+      dc.restore();
+      // vonken, stof, kreten
+      for (const d of dp.deeltjes) { dc.globalAlpha = Math.max(0, d.leven / d.max); dc.fillStyle = d.kleur; dc.beginPath(); dc.arc(d.x, d.y, d.grootte * (d.stof ? 1.6 - d.leven / d.max * .6 : 1), 0, Math.PI * 2); dc.fill(); }
+      dc.globalAlpha = 1;
+      for (const p of dp.popups) {
+        const sc = p.t < .12 ? .5 + p.t / .12 * .7 : 1;
+        dc.save(); dc.translate(p.x, p.y - p.t * 34); dc.scale(sc, sc); dc.globalAlpha = p.t > .85 ? Math.max(0, 1 - (p.t - .85) / .35) : 1;
+        dc.font = '24px "Bebas Neue", sans-serif'; dc.textAlign = 'center'; dc.textBaseline = 'middle';
+        dc.lineWidth = 5; dc.strokeStyle = 'rgba(0,0,0,.7)'; dc.strokeText(p.tekst, 0, 0); dc.fillStyle = p.kleur; dc.fillText(p.tekst, 0, 0); dc.restore();
+      }
+      vignet(dc, EB, EH, .32);
+      // aftellen en klok
+      if (dp.bezig && dp.wacht > 0) {
+        const cijfer = Math.min(3, Math.ceil(dp.wacht / .6)), deel = (dp.wacht / .6) % 1, sc = 1 + deel * .8;
+        dc.save(); dc.translate(MID.x, MID.y); dc.scale(sc, sc); dc.globalAlpha = Math.min(1, 1.3 - deel);
+        dc.font = '96px "Bebas Neue", sans-serif'; dc.textAlign = 'center'; dc.textBaseline = 'middle';
+        dc.lineWidth = 8; dc.strokeStyle = 'rgba(0,0,0,.6)'; dc.strokeText(cijfer, 0, 0); dc.fillStyle = '#f5c542'; dc.fillText(cijfer, 0, 0); dc.restore();
+      } else if (dp.bezig || dp.klaar) {
+        const tekst = (dp.tijd + dp.straf).toFixed(1) + ' s';
+        dc.font = '34px "Bebas Neue", sans-serif'; dc.textAlign = 'center'; dc.textBaseline = 'middle';
+        dc.lineWidth = 6; dc.strokeStyle = 'rgba(0,0,0,.65)'; dc.strokeText(tekst, MID.x, 46); dc.fillStyle = dp.straf ? '#ffb347' : '#fff'; dc.fillText(tekst, MID.x, 46);
+      }
+    }
+    function dpMaat() {
+      const w = dpDoek.clientWidth * Math.min(devicePixelRatio || 1, 2);
+      if (w && dpDoek.width !== Math.round(w)) { dpDoek.width = Math.round(w); dpDoek.height = Math.round(w * EH / EB); }
+      dpTeken();
+    }
+    function dpFrame(nu) {
+      if (!dp?.bezig && dpInBeeld && (dpRust = (dpRust + 1) % 3)) return requestAnimationFrame(dpFrame);
+      const dt = Math.min((nu - dpVorige) / 1000, .05);
+      dpVorige = nu;
+      const stappen = Math.ceil(dt / (1 / 180));
+      for (let i = 0; i < stappen && dp.bezig; i++) dpStap(dt / stappen);
+      dpEffecten(dt);
+      dpTeken();
+      if (dpInBeeld) requestAnimationFrame(dpFrame); else dpLoop = false;
+    }
+    function dpStartLoop() { if (!dpLoop && dpInBeeld) { dpLoop = true; dpVorige = performance.now(); requestAnimationFrame(dpFrame); } }
+    new IntersectionObserver(([item]) => { dpInBeeld = item.isIntersecting; if (dpInBeeld) { dpMaat(); dpStartLoop(); } else { dpToetsen.clear(); dpSleep = null; } }).observe(dpDoek);
+    addEventListener('resize', dpMaat);
+    dpMaakParcours();
+    dpZetNiveau(dpNiveau);
+    dpMaat();
 
     /* ================= App (PWA) ================= */
     if ('serviceWorker' in navigator && location.protocol !== 'file:')
