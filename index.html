@@ -2214,7 +2214,7 @@
     /* ================= Minigame: overkoppen ================= */
     const kopDoek = $('#kopDoek'), kd = kopDoek.getContext('2d');
     const KB = 800, KH = 450, GROND = 405, NET_X = 400, NET_TOP = 322, NET_HALF = 4;
-    const KOP_R = 25, LIJF_R = 24, BAL_R = 15, WINST = 5;
+    const KOP_R = 19, LIJF_R = 21, BAL_R = 15, WINST = 5, HOOFD_Y = 86, LIJF_Y = 50;   // hoofd en lijf: hoogte boven de voeten
     const SPELER_ZW = 1650, BAL_ZW = 780, LOOP = 340, SPRONG = 660;
     const kopScherm = $('#kopScherm'), kopTitel = $('#kopTitel'), kopTekst = $('#kopTekst');
     const kopScoreEl = $('#kopScore'), kopRallyEl = $('#kopRally'), kopRecordEl = $('#kopRecord');
@@ -2233,7 +2233,7 @@
     const knopIn = [{}, {}];                      // schermknoppen per speler
 
     function kopReset(serveerder) {
-      kopSpelers.forEach(s => Object.assign(s, { x: s.start, y: GROND, vx: 0, vy: 0, loopFase: 0 }));
+      kopSpelers.forEach(s => Object.assign(s, { x: s.start, y: GROND, vx: 0, vy: 0, loopFase: 0, kopTijd: 0, landTijd: 0 }));
       const s = kopSpelers[serveerder];
       Object.assign(kopBal, { x: s.start + s.kant * -20, y: 110, vx: 0, vy: 0 });
       balKant = s.kant; laatsteKopper = null; rally = 0; kopRallyEl.textContent = 0;
@@ -2305,8 +2305,9 @@
         s.vy += SPELER_ZW * dt;
         s.x = grens(s.x + s.vx * dt, s.min, s.max);
         s.y += s.vy * dt;
-        if (s.y > GROND) { if (s.vy > 350) deeltjes(s.x, GROND, 8, true); s.y = GROND; s.vy = 0; }
+        if (s.y > GROND) { if (s.vy > 350) { deeltjes(s.x, GROND, 8, true); s.landTijd = .16; } s.y = GROND; s.vy = 0; }
         s.loopFase += Math.abs(s.vx) * dt * .05;
+        s.kopTijd = Math.max(0, s.kopTijd - dt); s.landTijd = Math.max(0, s.landTijd - dt);
       });
       if (kopWacht > 0) return;
 
@@ -2326,11 +2327,11 @@
         const ux = dn ? ddx / dn : (b.x < NET_X ? -1 : 1), uy = dn ? ddy / dn : 0;
         b.x = nx + ux * BAL_R; b.y = ny + uy * BAL_R;
         const vn = b.vx * ux + b.vy * uy;
-        if (vn < 0) { b.vx -= 1.7 * vn * ux; b.vy -= 1.7 * vn * uy; }
+        if (vn < 0) { b.vx -= 1.7 * vn * ux; b.vy -= 1.7 * vn * uy; kopNetTril = Math.min(1, -vn / 350); }   // het net veert mee
       }
       // Kop en lijf van de spelers
       kopSpelers.forEach(s => {
-        for (const [cx, cy, r, isKop] of [[s.x, s.y - 78, KOP_R, true], [s.x, s.y - 36, LIJF_R, false]]) {
+        for (const [cx, cy, r, isKop] of [[s.x - s.kant * 5, s.y - HOOFD_Y, KOP_R, true], [s.x, s.y - LIJF_Y, LIJF_R, false]]) {
           const dx = b.x - cx, dy = b.y - cy, d = Math.hypot(dx, dy);
           if (d === 0 || d >= r + BAL_R) continue;
           const ux = dx / d, uy = dy / d;
@@ -2341,7 +2342,7 @@
           b.vx = ux * kracht + s.vx * .35 + (isKop ? -s.kant * 95 : 0);    // koppen stuurt de bal richting het net
           b.vy = uy * kracht + Math.min(0, s.vy) * .35;
           if (isKop && uy > -.4) b.vy -= 240;
-          if (isKop) { kopSchud = Math.max(kopSchud, .2); laatsteKopper = s; trapGeluid({ pan: (s.x / KB) * 2 - 1, licht: true }); deeltjes(b.x - ux * BAL_R, b.y - uy * BAL_R, 12, false); }
+          if (isKop) { s.kopTijd = .24; kopSchud = Math.max(kopSchud, .2); laatsteKopper = s; trapGeluid({ pan: (s.x / KB) * 2 - 1, licht: true }); deeltjes(b.x - ux * BAL_R, b.y - uy * BAL_R, 12, false); }
         }
       });
       // Over het net?
@@ -2382,36 +2383,64 @@
       echteBal(kd, x, y, BAL_R, hoek);
     }
     function tekenSpeler(s) {
-      const { x, y } = s, lucht = GROND - y;
-      // schaduw
-      kd.fillStyle = `rgba(0,0,0,${.35 - Math.min(lucht, 150) / 600})`;
-      kd.beginPath(); kd.ellipse(x, GROND + 4, 26 - lucht / 12, 6, 0, 0, Math.PI * 2); kd.fill();
-      // benen
-      const zwaai = Math.sin(s.loopFase * 6) * (Math.abs(s.vx) > 1 && lucht < 1 ? 10 : 0);
-      kd.strokeStyle = '#111'; kd.lineWidth = 9; kd.lineCap = 'round';
-      kd.beginPath(); kd.moveTo(x - 7, y - 20); kd.lineTo(x - 8 + zwaai, y - 3); kd.moveTo(x + 7, y - 20); kd.lineTo(x + 8 - zwaai, y - 3); kd.stroke();
-      kd.strokeStyle = '#fff'; kd.lineWidth = 10;
-      kd.beginPath(); kd.moveTo(x - 10 + zwaai, y - 1); kd.lineTo(x - 3 + zwaai, y - 1); kd.moveTo(x + 3 - zwaai, y - 1); kd.lineTo(x + 10 - zwaai, y - 1); kd.stroke();
-      // shirt
-      kd.fillStyle = s.kleur; kd.strokeStyle = s.rand; kd.lineWidth = 2;
-      kd.beginPath(); kd.roundRect(x - 19, y - 58, 38, 40, 10); kd.fill(); kd.stroke();
-      kd.fillStyle = 'rgba(0,0,0,.55)'; kd.font = 'bold 15px Inter, sans-serif'; kd.textAlign = 'center'; kd.textBaseline = 'middle';
-      kd.fillText(s.naam[0], x, y - 38);
-      // armen
-      const armOp = lucht > 5 ? -14 : 0;
-      kd.strokeStyle = s.kleur; kd.lineWidth = 8;
-      kd.beginPath(); kd.moveTo(x - 17, y - 52); kd.lineTo(x - 27, y - 34 + armOp); kd.moveTo(x + 17, y - 52); kd.lineTo(x + 27, y - 34 + armOp); kd.stroke();
-      // hoofd
-      const hy = y - 78;
-      kd.fillStyle = '#d9a77e'; kd.beginPath(); kd.arc(x, hy, KOP_R, 0, Math.PI * 2); kd.fill();
-      kd.fillStyle = '#23160d'; kd.beginPath(); kd.arc(x, hy - 4, KOP_R, Math.PI * 1.05, Math.PI * 1.95); kd.fill();
-      // ogen kijken naar de bal
-      const kijk = Math.atan2(kopBal.y - hy, kopBal.x - x);
-      for (const ox of [-8, 8]) {
-        kd.fillStyle = '#fff'; kd.beginPath(); kd.arc(x + ox, hy + 2, 5.5, 0, Math.PI * 2); kd.fill();
-        kd.fillStyle = '#111'; kd.beginPath(); kd.arc(x + ox + Math.cos(kijk) * 2.5, hy + 2 + Math.sin(kijk) * 2.5, 2.6, 0, Math.PI * 2); kd.fill();
+      const { x, y } = s, f = -s.kant, lucht = GROND - y, rent = Math.abs(s.vx) > 1 && lucht < 1, fase = s.loopFase * 6;
+      const knik = s.kopTijd > 0 ? Math.sin(s.kopTijd / .24 * Math.PI) : 0;      // kopbeweging: hoofd en schouders naar voren
+      const hurk = s.landTijd > 0 ? Math.sin(s.landTijd / .16 * Math.PI) * 7 : 0; // door de knieën bij het landen
+      const afzet = lucht > 1 && s.vy < 0 ? 1 : 0;
+      // twee schaduwen, van de twee lichtmasten
+      for (const kant of [-1, 1]) {
+        kd.fillStyle = `rgba(0,0,0,${Math.max(.05, .2 - lucht / 900)})`;
+        kd.beginPath(); kd.ellipse(x + kant * (12 + lucht / 7), GROND + 4, Math.max(8, 22 - lucht / 12), 5, 0, 0, Math.PI * 2); kd.fill();
       }
-      kd.strokeStyle = '#7a4a2a'; kd.lineWidth = 2; kd.beginPath(); kd.arc(x, hy + 10, 6, .15 * Math.PI, .85 * Math.PI); kd.stroke();
+      const heup = [x - f * 2, y - 44 + hurk], schouder = [x + f * (3 + knik * 6), y - 73 + hurk * .7 + knik * 2];
+      const hoofd = [x + f * (5 + knik * 10), y - HOOFD_Y + hurk * .7 + knik * 3];
+      kd.lineCap = 'round'; kd.lineJoin = 'round';
+      const lijn = (a, b, breed, kleur) => { kd.strokeStyle = kleur; kd.lineWidth = breed; kd.beginPath(); kd.moveTo(a[0], a[1]); kd.lineTo(b[0], b[1]); kd.stroke(); };
+      // Been met knie: boven- en onderbeen zijn even lang, de knie buigt naar voren
+      const been = (voor, donker) => {
+        const p = fase + (voor ? 0 : Math.PI);
+        let voet;
+        if (lucht > 1) voet = afzet ? [x + (voor ? f * 6 : -f * 9), y - (voor ? 3 : 0)] : [x + (voor ? f * 12 : -f * 6), y - (voor ? 12 : 5)];   // omhoog: gestrekt, omlaag: knieën opgetrokken
+        else voet = [x + (rent ? Math.sin(p) * 14 : (voor ? f * 4 : -f * 4)), y - (rent ? Math.max(0, Math.cos(p)) * 8 : 0)];
+        const dx = voet[0] - heup[0], dy = voet[1] - heup[1], d = Math.min(43.5, Math.hypot(dx, dy)) || 1;
+        const buig = Math.sqrt(Math.max(0, 22 * 22 - (d / 2) * (d / 2)));
+        const knie = [heup[0] + dx / 2 + (dy / d) * buig * f, heup[1] + dy / 2 - (dx / d) * buig * f];
+        lijn(heup, knie, 10, donker ? '#b98a63' : '#d9a77e');                                    // bovenbeen
+        lijn(knie, voet, 8, donker ? '#d5d5d5' : '#ffffff');                                     // kous
+        lijn([knie[0] + (voet[0] - knie[0]) * .15, knie[1] + (voet[1] - knie[1]) * .15], knie, 8, donker ? '#b98a63' : '#d9a77e');   // knie
+        kd.fillStyle = '#111'; kd.beginPath(); kd.ellipse(voet[0] + f * 4, voet[1] - 2, 9, 4.5, 0, 0, Math.PI * 2); kd.fill();      // schoen
+        kd.fillStyle = s.kleur; kd.fillRect(voet[0] + f * 1 - 2, voet[1] - 5, 4, 2);                                                 // streepje op de schoen
+      };
+      // Arm met elleboog; zwaait mee bij het rennen en gaat omhoog bij het springen
+      const arm = (voor, donker) => {
+        const zw = rent ? Math.sin(fase + (voor ? Math.PI : 0)) : 0;
+        const hand = lucht > 1 ? [schouder[0] + (voor ? f * 14 : -f * 12), schouder[1] + (afzet ? -6 : 8)] : [schouder[0] + f * (4 + zw * 11) + knik * f * -6, schouder[1] + 25 - Math.abs(zw) * 5];
+        const elleboog = [(schouder[0] + hand[0]) / 2 - f * 5, (schouder[1] + hand[1]) / 2 + 3];
+        lijn(schouder, elleboog, 8, donker ? s.rand : s.kleur);
+        lijn(elleboog, hand, 6, donker ? '#b98a63' : '#d9a77e');
+      };
+      arm(false, true); been(false, true);
+      // broek en shirt (met een donkere kant: licht komt van boven)
+      kd.fillStyle = '#141414'; kd.beginPath(); kd.roundRect(heup[0] - 11, heup[1] - 9, 22, 19, 6); kd.fill();
+      const stof = kd.createLinearGradient(schouder[0] - 12, 0, schouder[0] + 12, 0);
+      stof.addColorStop(f > 0 ? 0 : 1, s.rand); stof.addColorStop(f > 0 ? 1 : 0, s.kleur);
+      lijn([heup[0], heup[1] - 8], schouder, 23, stof);
+      kd.fillStyle = 'rgba(0,0,0,.5)'; kd.font = 'bold 12px Inter, sans-serif'; kd.textAlign = 'center'; kd.textBaseline = 'middle';
+      kd.fillText(s.naam[0], (heup[0] + schouder[0]) / 2, (heup[1] + schouder[1]) / 2 - 4);
+      been(true, false); arm(true, false);
+      // nek en hoofd
+      lijn(schouder, [hoofd[0] - f * 2, hoofd[1] + 8], 8, '#c9976f');
+      const huid = kd.createRadialGradient(hoofd[0] - 4, hoofd[1] - 6, 2, hoofd[0], hoofd[1], 16);
+      huid.addColorStop(0, '#edc19a'); huid.addColorStop(1, '#c08f66');
+      kd.fillStyle = huid; kd.beginPath(); kd.arc(hoofd[0], hoofd[1], 14, 0, Math.PI * 2); kd.fill();
+      kd.fillStyle = '#c9976f'; kd.beginPath(); kd.moveTo(hoofd[0] + f * 12, hoofd[1] - 1); kd.lineTo(hoofd[0] + f * 18, hoofd[1] + 4); kd.lineTo(hoofd[0] + f * 12, hoofd[1] + 6); kd.fill();   // neus
+      kd.fillStyle = '#23160d'; kd.beginPath();                                                                                            // haar: bovenop en achter
+      kd.arc(hoofd[0], hoofd[1], 14.6, Math.PI + (f > 0 ? -.75 : .25), Math.PI * 2 + (f > 0 ? -.25 : .75)); kd.fill();
+      kd.fillStyle = '#b98a63'; kd.beginPath(); kd.arc(hoofd[0] - f * 4, hoofd[1] + 2, 3.2, 0, Math.PI * 2); kd.fill();                    // oor
+      const kijk = Math.atan2(kopBal.y - hoofd[1], kopBal.x - hoofd[0]);
+      kd.fillStyle = '#fff'; kd.beginPath(); kd.ellipse(hoofd[0] + f * 7, hoofd[1] - 2, 3.6, 3, 0, 0, Math.PI * 2); kd.fill();              // oog kijkt naar de bal
+      kd.fillStyle = '#111'; kd.beginPath(); kd.arc(hoofd[0] + f * 7 + Math.cos(kijk) * 1.6, hoofd[1] - 2 + Math.sin(kijk) * 1.4, 1.7, 0, Math.PI * 2); kd.fill();
+      kd.strokeStyle = '#7a4a2a'; kd.lineWidth = 1.6; kd.beginPath(); kd.moveTo(hoofd[0] + f * 7, hoofd[1] + 8); kd.lineTo(hoofd[0] + f * 12, hoofd[1] + 7.5 - knik * 2); kd.stroke();   // mond
     }
     function kopTeken() {
       const schaal = kopDoek.width / KB;
@@ -2462,11 +2491,21 @@
       glans.addColorStop(0, 'rgba(255,255,255,.12)'); glans.addColorStop(1, 'rgba(0,0,0,.25)');
       kd.fillStyle = glans; kd.fillRect(0, 264, KB, KH);
       kd.fillStyle = 'rgba(255,255,255,.7)'; kd.fillRect(0, GROND, KB, 3);
-      // net
-      kd.fillStyle = '#ddd'; kd.fillRect(NET_X - NET_HALF, NET_TOP - 4, NET_HALF * 2, GROND - NET_TOP + 4);
-      kd.strokeStyle = 'rgba(255,255,255,.5)'; kd.lineWidth = 1;
-      for (let y = NET_TOP; y < GROND; y += 8) { kd.beginPath(); kd.moveTo(NET_X - 14, y); kd.lineTo(NET_X + 14, y); kd.stroke(); }
-      kd.fillStyle = '#fff'; kd.fillRect(NET_X - 16, NET_TOP - 6, 32, 5);
+      // net: van opzij zie je de paal, het gaas en de band; hij veert mee als de bal ertegen komt
+      const veer = Math.sin(nu * 34) * kopNetTril * 6;
+      kd.fillStyle = 'rgba(0,0,0,.25)'; kd.beginPath(); kd.ellipse(NET_X, GROND + 4, 30, 5, 0, 0, Math.PI * 2); kd.fill();
+      kd.strokeStyle = 'rgba(255,255,255,.4)'; kd.lineWidth = 1;
+      for (let ny = NET_TOP + 4; ny < GROND; ny += 7) {
+        const deel = 1 - (ny - NET_TOP) / (GROND - NET_TOP);
+        kd.beginPath(); kd.moveTo(NET_X - 13 + veer * deel, ny); kd.lineTo(NET_X + 13 + veer * deel, ny); kd.stroke();
+      }
+      const paal = kd.createLinearGradient(NET_X - NET_HALF, 0, NET_X + NET_HALF, 0);
+      paal.addColorStop(0, '#f6f6f6'); paal.addColorStop(.5, '#cfcfcf'); paal.addColorStop(1, '#8d8d8d');
+      kd.strokeStyle = paal; kd.lineWidth = NET_HALF * 2; kd.lineCap = 'butt';
+      kd.beginPath(); kd.moveTo(NET_X, GROND); kd.quadraticCurveTo(NET_X, NET_TOP + 40, NET_X + veer, NET_TOP - 4); kd.stroke();
+      kd.fillStyle = '#fff'; kd.fillRect(NET_X - 16 + veer, NET_TOP - 7, 32, 6);
+      kd.fillStyle = 'rgba(0,0,0,.18)'; kd.fillRect(NET_X - 16 + veer, NET_TOP - 3, 32, 2);
+      kd.fillStyle = '#555'; kd.fillRect(NET_X - 9, GROND - 3, 18, 5);
       // spelers en bal
       kopSpelers.forEach(tekenSpeler);
       const lucht2 = GROND - kopBal.y;
@@ -2515,8 +2554,9 @@
                            grootte: stof ? willekeurig(3, 6) : willekeurig(1.5, 3), kleur: stof ? 'rgba(210,230,200,.5)' : (Math.random() < .5 ? '#f5c542' : '#fff') });
       }
     }
-    let kopSchud = 0, kopFlits = 0, kopJuich = 0, kopPunt = null;
+    let kopSchud = 0, kopFlits = 0, kopJuich = 0, kopPunt = null, kopNetTril = 0;
     function kopEffecten(dt) {
+      kopNetTril = Math.max(0, kopNetTril - dt * 2.2);
       kopSchud = Math.max(0, kopSchud - dt * 2.4); kopFlits = Math.max(0, kopFlits - dt * 2.4); kopJuich = Math.max(0, kopJuich - dt);
       if (kopPunt) { kopPunt.t += dt; if (kopPunt.t > 1.1) kopPunt = null; }
       for (let i = kopDeeltjes.length - 1; i >= 0; i--) {
