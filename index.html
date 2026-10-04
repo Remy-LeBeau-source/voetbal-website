@@ -94,8 +94,7 @@
     .hero h1 .regel { display: inline-block; overflow: hidden; vertical-align: bottom; padding-top: .05em; }
     .hero h1 .regel > span { display: inline-block; animation: omhoog 1s cubic-bezier(.2,.9,.2,1) both; animation-delay: var(--d); }
     @keyframes omhoog { from { transform: translateY(110%) rotate(4deg); } }
-    .hero h1 { color: var(--goud); }
-    .hero h1 .en { color: var(--rood); }
+    .hero h1 .en { color: var(--goud); }
     .hero .label, .hero p, .knoppen { animation: infaden .9s both; animation-delay: var(--d, .9s); }
     @keyframes infaden { from { opacity: 0; transform: translateY(20px); } }
     .hero p { font-size: clamp(1.05rem, 2.4vw, 1.4rem); color: #e6e6e6; margin: 14px 0 28px; max-width: 34ch; }
@@ -536,7 +535,7 @@
     /* Gloeiende startknop en glinsterende "&" */
     .hero .knop.vol { animation: gloeiknop 2.4s ease-in-out 1.5s infinite; box-shadow: 0 0 26px rgba(245,197,66,.35); }
     @keyframes gloeiknop { 50% { scale: 1.06; } }
-    .hero h1 .en { background: linear-gradient(100deg, var(--rood) 20%, #ffd0d0 50%, var(--rood) 80%) 0 0 / 220% 100%;
+    .hero h1 .en { background: linear-gradient(100deg, var(--goud) 20%, #fff8d0 50%, var(--goud) 80%) 0 0 / 220% 100%;
                    -webkit-background-clip: text; background-clip: text; color: transparent; }
     .teller b { text-shadow: 0 0 18px rgba(245,197,66,.35); animation: tellerhup 3.2s ease-in-out infinite; }
     .teller:nth-child(2) b { animation-delay: -.8s; } .teller:nth-child(3) b { animation-delay: -1.6s; } .teller:nth-child(4) b { animation-delay: -2.4s; }
