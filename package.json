@@ -1,0 +1,15 @@
+{
+  "name": "voetbal-website",
+  "private": true,
+  "scripts": {
+    "start": "http-server . -p 4173 -c-1 --silent",
+    "test": "bddgen && playwright test",
+    "test:zien": "bddgen && playwright test --headed",
+    "test:rapport": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "http-server": "^14.1.1",
+    "playwright-bdd": "^9.2.1"
+  }
+}

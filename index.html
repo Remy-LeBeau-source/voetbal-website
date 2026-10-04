@@ -81,6 +81,20 @@
     .hamburger[aria-expanded="true"] span:nth-child(1) { transform: translateY(8px) rotate(45deg); }
     .hamburger[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
     .hamburger[aria-expanded="true"] span:nth-child(3) { transform: translateY(-8px) rotate(-45deg); }
+    /* Inloggen en uitloggen in het menu */
+    .account { display: flex; align-items: center; gap: 12px; }
+    .account [hidden] { display: none; }
+    .account-naam { font-weight: 700; color: var(--goud); }
+    .inlog-knop { background: none; border: 1px solid var(--goud); border-radius: 999px; padding: 7px 16px; cursor: pointer; font: inherit; font-weight: 700;
+                  color: var(--wit); transition: background .2s, color .2s; }
+    .inlog-knop:hover { background: var(--goud); color: #000; }
+    .inlog-form { display: grid; gap: 14px; text-align: left; }
+    .inlog-form h3 { text-align: center; }
+    .inlog-form label { display: grid; gap: 6px; font-weight: 600; color: #ddd; }
+    .inlog-form input { font: inherit; color: var(--wit); background: #000; border: 1px solid var(--rand); border-radius: 12px; padding: 12px 14px; }
+    .inlog-form input:focus { outline: 2px solid var(--goud); outline-offset: 1px; }
+    .inlog-form .inlog-fout { margin: 0; color: var(--rood); font-weight: 600; }
+    .inlog-fout[hidden] { display: none; }
 
     /* ---------- Hero ---------- */
     .hero { position: relative; min-height: 100svh; display: grid; align-items: end; overflow: hidden; padding: 0; }
@@ -666,6 +680,7 @@
       .submenu a { padding: 14px 24px 14px 40px; border-radius: 0; white-space: normal; }
       .submenu a:hover, .submenu a.actief { background: none; }
       .menu a::after { display: none; }
+      .account { padding: 14px 24px; border-top: 1px solid var(--rand); }
       /* Hele foto bovenaan, tekst eronder: zo staan jullie er allebei helemaal op */
       .hero { min-height: auto; display: block; padding-top: 68px; }
       .hero::after { display: none; }
@@ -742,6 +757,11 @@
           </ul>
         </li>
         <li><a href="#foto">Foto</a></li>
+        <li class="account">
+          <button class="inlog-knop" id="inlogKnop">Inloggen</button>
+          <span class="account-naam" id="accountNaam" hidden></span>
+          <button class="inlog-knop" id="uitlogKnop" hidden>Uitloggen</button>
+        </li>
       </ul>
     </nav>
   </header>
@@ -1403,6 +1423,18 @@
         <button class="knop leeg" id="appLater">Later</button>
       </div>
     </div>
+  </div>
+
+  <!-- Pop-up: inloggen -->
+  <div class="app-popup" id="inlogPopup" role="dialog" aria-modal="true" aria-labelledby="inlogTitel" hidden>
+    <form class="app-kaart inlog-form" id="inlogForm" novalidate>
+      <button type="button" class="probeer app-sluit" id="inlogSluit" aria-label="Sluiten">✕</button>
+      <h3 class="kop" id="inlogTitel">Inloggen</h3>
+      <label>Gebruikersnaam <input id="inlogNaam" name="gebruikersnaam" autocomplete="username" autocapitalize="none"></label>
+      <label>Wachtwoord <input id="inlogWachtwoord" name="wachtwoord" type="password" autocomplete="current-password"></label>
+      <p class="inlog-fout" id="inlogFout" role="alert" hidden>Gebruikersnaam of wachtwoord klopt niet.</p>
+      <div class="app-knoppen"><button class="knop vol" type="submit">Inloggen</button></div>
+    </form>
   </div>
 
   <!-- Geluidspaneel: altijd bereikbaar rechtsonder -->
@@ -5544,6 +5576,43 @@
     appPopup.addEventListener('click', e => { if (e.target === appPopup) sluitPopup(); });
     addEventListener('keydown', e => { if (e.key === 'Escape') sluitPopup(); });
     if (isIOS) planPopup();
+
+    /* ================= Inloggen en uitloggen ================= */
+    // Let op: dit is een oefen-login die alleen in de browser draait. Het wachtwoord staat in deze pagina, dus het beveiligt niets echt.
+    const GEBRUIKERS = { testuser: 'Voetbal123!' };
+    const inlogPopup = $('#inlogPopup'), inlogKnop = $('#inlogKnop'), uitlogKnop = $('#uitlogKnop'), accountNaam = $('#accountNaam');
+    const inlogNaam = $('#inlogNaam'), inlogWachtwoord = $('#inlogWachtwoord'), inlogFout = $('#inlogFout');
+    function toonAccount() {
+      const naam = bewaar.lees('ingelogd', null);
+      inlogKnop.hidden = !!naam;
+      uitlogKnop.hidden = accountNaam.hidden = !naam;
+      accountNaam.textContent = naam ? '👤 ' + naam : '';
+    }
+    function sluitInlog() { inlogPopup.hidden = true; inlogKnop.focus({ preventScroll: true }); }
+    inlogKnop.addEventListener('click', () => {
+      menu.classList.remove('open'); hamburger.setAttribute('aria-expanded', 'false');
+      $('#inlogForm').reset(); inlogFout.hidden = true;
+      inlogPopup.hidden = false;
+      inlogNaam.focus({ preventScroll: true });
+    });
+    $('#inlogForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const naam = inlogNaam.value.trim();
+      if (Object.hasOwn(GEBRUIKERS, naam) && GEBRUIKERS[naam] === inlogWachtwoord.value) {
+        bewaar.schrijf('ingelogd', naam);
+        inlogPopup.hidden = true;
+        toonAccount();
+      } else {
+        inlogFout.hidden = false;
+        inlogWachtwoord.value = '';
+        inlogWachtwoord.focus({ preventScroll: true });
+      }
+    });
+    uitlogKnop.addEventListener('click', () => { try { localStorage.removeItem('ingelogd'); } catch {} toonAccount(); });
+    $('#inlogSluit').addEventListener('click', sluitInlog);
+    inlogPopup.addEventListener('click', e => { if (e.target === inlogPopup) sluitInlog(); });
+    addEventListener('keydown', e => { if (e.key === 'Escape' && !inlogPopup.hidden) sluitInlog(); });
+    toonAccount();
 
     document.getElementById('jaar').textContent = new Date().getFullYear();
   </script>
