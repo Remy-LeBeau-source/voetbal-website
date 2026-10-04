@@ -24,7 +24,20 @@ When('ik inlog met gebruikersnaam {string} en wachtwoord {string}', async ({ pag
   await logIn(page, gebruikersnaam, wachtwoord);
 });
 
-When('ik uitlog', async ({ page }) => {
+// Typt zichtbaar, letter voor letter, en laat het klikken op Inloggen aan de mens over
+When('ik gebruikersnaam {string} en wachtwoord {string} invul', async ({ page }, gebruikersnaam: string, wachtwoord: string) => {
+  await page.locator('#inlogKnop').click();
+  const popup = page.getByRole('dialog', { name: 'Inloggen' });
+  await popup.getByLabel('Gebruikersnaam').pressSequentially(gebruikersnaam, { delay: 90 });
+  await popup.getByLabel('Wachtwoord').pressSequentially(wachtwoord, { delay: 90 });
+});
+
+When('ik zelf op de knop Inloggen druk', async ({ page, $test }) => {
+  $test.setTimeout(5 * 60_000);      // de test wacht maximaal 5 minuten op jouw klik
+  await expect(page.getByRole('dialog', { name: 'Inloggen' })).toBeHidden({ timeout: 5 * 60_000 });
+});
+
+When('ik uitlog',async ({ page }) => {
   await page.locator('#uitlogKnop').click();
 });
 

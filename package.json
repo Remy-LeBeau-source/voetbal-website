@@ -3,8 +3,9 @@
   "private": true,
   "scripts": {
     "start": "http-server . -p 4173 -c-1 --silent",
-    "test": "bddgen && playwright test",
-    "test:zien": "bddgen && playwright test --headed",
+    "test": "bddgen && playwright test --grep-invert @zelf",
+    "test:zien": "bddgen && playwright test --headed --grep-invert @zelf",
+    "test:zelf": "bddgen && playwright test --headed --grep @zelf",
     "test:rapport": "playwright show-report"
   },
   "devDependencies": {
