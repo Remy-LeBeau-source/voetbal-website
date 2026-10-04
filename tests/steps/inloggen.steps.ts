@@ -7,7 +7,7 @@ async function logIn(page: Page, gebruikersnaam: string, wachtwoord: string) {
   await page.locator('#inlogKnop').click();
   const popup = page.getByRole('dialog', { name: 'Inloggen' });
   await popup.getByLabel('Gebruikersnaam').fill(gebruikersnaam);
-  await popup.getByLabel('Wachtwoord').fill(wachtwoord);
+  await popup.getByLabel('Wachtwoord', { exact: true }).fill(wachtwoord);
   await popup.getByRole('button', { name: 'Inloggen' }).click();
 }
 
@@ -29,7 +29,20 @@ When('ik gebruikersnaam {string} en wachtwoord {string} invul', async ({ page },
   await page.locator('#inlogKnop').click();
   const popup = page.getByRole('dialog', { name: 'Inloggen' });
   await popup.getByLabel('Gebruikersnaam').pressSequentially(gebruikersnaam, { delay: 90 });
-  await popup.getByLabel('Wachtwoord').pressSequentially(wachtwoord, { delay: 90 });
+  await popup.getByLabel('Wachtwoord', { exact: true }).pressSequentially(wachtwoord, { delay: 90 });
+});
+
+When('ik op het oogje druk', async ({ page }) => {
+  await page.locator('#inlogOog').click();
+});
+
+Then('zie ik het wachtwoord {string}', async ({ page }, wachtwoord: string) => {
+  await expect(page.locator('#inlogWachtwoord')).toHaveAttribute('type', 'text');
+  await expect(page.locator('#inlogWachtwoord')).toHaveValue(wachtwoord);
+});
+
+Then('is het wachtwoord verborgen', async ({ page }) => {
+  await expect(page.locator('#inlogWachtwoord')).toHaveAttribute('type', 'password');
 });
 
 When('ik zelf op de knop Inloggen druk', async ({ page, $test }) => {

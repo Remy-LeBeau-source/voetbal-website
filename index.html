@@ -90,7 +90,12 @@
     .inlog-knop:hover { background: var(--goud); color: #000; }
     .inlog-form { display: grid; gap: 14px; text-align: left; }
     .inlog-form h3 { text-align: center; }
-    .inlog-form label { display: grid; gap: 6px; font-weight: 600; color: #ddd; }
+    .inlog-form label, .inlog-form .veld { display: grid; gap: 6px; font-weight: 600; color: #ddd; }
+    .wachtwoord-veld { position: relative; display: grid; }
+    .wachtwoord-veld input { padding-right: 52px; }
+    .oog { position: absolute; right: 6px; top: 50%; translate: 0 -50%; width: 40px; height: 40px; border: 0; border-radius: 10px; background: none;
+           cursor: pointer; font-size: 1.2rem; line-height: 1; }
+    .oog:hover, .oog[aria-pressed="true"] { background: #1b1b1b; }
     .inlog-form input { font: inherit; color: var(--wit); background: #000; border: 1px solid var(--rand); border-radius: 12px; padding: 12px 14px; }
     .inlog-form input:focus { outline: 2px solid var(--goud); outline-offset: 1px; }
     .inlog-form .inlog-fout { margin: 0; color: var(--rood); font-weight: 600; }
@@ -1431,7 +1436,13 @@
       <button type="button" class="probeer app-sluit" id="inlogSluit" aria-label="Sluiten">✕</button>
       <h3 class="kop" id="inlogTitel">Inloggen</h3>
       <label>Gebruikersnaam <input id="inlogNaam" name="gebruikersnaam" autocomplete="username" autocapitalize="none"></label>
-      <label>Wachtwoord <input id="inlogWachtwoord" name="wachtwoord" type="password" autocomplete="current-password"></label>
+      <div class="veld">
+        <label for="inlogWachtwoord">Wachtwoord</label>
+        <div class="wachtwoord-veld">
+          <input id="inlogWachtwoord" name="wachtwoord" type="password" autocomplete="current-password">
+          <button type="button" class="oog" id="inlogOog" aria-label="Wachtwoord tonen" aria-pressed="false">👁️</button>
+        </div>
+      </div>
       <p class="inlog-fout" id="inlogFout" role="alert" hidden>Gebruikersnaam of wachtwoord klopt niet.</p>
       <div class="app-knoppen"><button class="knop vol" type="submit">Inloggen</button></div>
     </form>
@@ -5588,10 +5599,19 @@
       uitlogKnop.hidden = accountNaam.hidden = !naam;
       accountNaam.textContent = naam ? '👤 ' + naam : '';
     }
+    // Het oogje: wachtwoord tonen of weer verbergen
+    const inlogOog = $('#inlogOog');
+    function zetOog(tonen) {
+      inlogWachtwoord.type = tonen ? 'text' : 'password';
+      inlogOog.setAttribute('aria-pressed', tonen);
+      inlogOog.setAttribute('aria-label', tonen ? 'Wachtwoord verbergen' : 'Wachtwoord tonen');
+      inlogOog.textContent = tonen ? '🙈' : '👁️';
+    }
+    inlogOog.addEventListener('click', () => zetOog(inlogWachtwoord.type === 'password'));
     function sluitInlog() { inlogPopup.hidden = true; inlogKnop.focus({ preventScroll: true }); }
     inlogKnop.addEventListener('click', () => {
       menu.classList.remove('open'); hamburger.setAttribute('aria-expanded', 'false');
-      $('#inlogForm').reset(); inlogFout.hidden = true;
+      $('#inlogForm').reset(); inlogFout.hidden = true; zetOog(false);
       inlogPopup.hidden = false;
       inlogNaam.focus({ preventScroll: true });
     });

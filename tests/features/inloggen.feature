@@ -19,6 +19,13 @@ Functionaliteit: Inloggen en uitloggen
     En ik zelf op de knop Inloggen druk
     Dan ben ik ingelogd als "testuser"
 
+  Scenario: Het wachtwoord bekijken met het oogje
+    Als ik gebruikersnaam "testuser" en wachtwoord "Voetbal123!" invul
+    En ik op het oogje druk
+    Dan zie ik het wachtwoord "Voetbal123!"
+    Als ik op het oogje druk
+    Dan is het wachtwoord verborgen
+
   Scenario: Uitloggen
     Gegeven ik ben ingelogd met gebruikersnaam "testuser" en wachtwoord "Voetbal123!"
     Als ik uitlog
