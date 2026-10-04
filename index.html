@@ -90,6 +90,7 @@
     .inlog-knop:hover { background: var(--goud); color: #000; }
     .inlog-form { display: grid; gap: 14px; text-align: left; }
     .inlog-form h3 { text-align: center; }
+    .inlog-kies { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px; color: var(--grijs); font-weight: 600; }
     .inlog-form label, .inlog-form .veld { display: grid; gap: 6px; font-weight: 600; color: #ddd; }
     .wachtwoord-veld { position: relative; display: grid; }
     .wachtwoord-veld input { padding-right: 52px; }
@@ -1435,6 +1436,7 @@
     <form class="app-kaart inlog-form" id="inlogForm" novalidate>
       <button type="button" class="probeer app-sluit" id="inlogSluit" aria-label="Sluiten">✕</button>
       <h3 class="kop" id="inlogTitel">Inloggen</h3>
+      <div class="inlog-kies">Kies een gebruiker: <button type="button" class="inlog-knop" data-gebruiker="testuser">👤 testuser</button></div>
       <label>Gebruikersnaam <input id="inlogNaam" name="gebruikersnaam" autocomplete="username" autocapitalize="none"></label>
       <div class="veld">
         <label for="inlogWachtwoord">Wachtwoord</label>
@@ -5608,6 +5610,13 @@
       inlogOog.textContent = tonen ? '🙈' : '👁️';
     }
     inlogOog.addEventListener('click', () => zetOog(inlogWachtwoord.type === 'password'));
+    // Een gebruiker aanklikken vult de naam en het wachtwoord in; op Inloggen drukken doe je zelf
+    inlogPopup.querySelectorAll('[data-gebruiker]').forEach(knop => knop.addEventListener('click', () => {
+      inlogNaam.value = knop.dataset.gebruiker;
+      inlogWachtwoord.value = GEBRUIKERS[knop.dataset.gebruiker];
+      inlogFout.hidden = true;
+      $('#inlogForm button[type="submit"]').focus({ preventScroll: true });
+    }));
     function sluitInlog() { inlogPopup.hidden = true; inlogKnop.focus({ preventScroll: true }); }
     inlogKnop.addEventListener('click', () => {
       menu.classList.remove('open'); hamburger.setAttribute('aria-expanded', 'false');

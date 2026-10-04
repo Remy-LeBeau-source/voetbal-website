@@ -32,6 +32,26 @@ When('ik gebruikersnaam {string} en wachtwoord {string} invul', async ({ page },
   await popup.getByLabel('Wachtwoord', { exact: true }).pressSequentially(wachtwoord, { delay: 90 });
 });
 
+When('ik het inlogmenu open', async ({ page }) => {
+  await page.locator('#inlogKnop').click();
+});
+
+When('ik de gebruiker {string} aanklik', async ({ page }, gebruikersnaam: string) => {
+  await page.getByRole('dialog', { name: 'Inloggen' }).getByRole('button', { name: gebruikersnaam }).click();
+});
+
+When('ik op de knop Inloggen druk', async ({ page }) => {
+  await page.getByRole('dialog', { name: 'Inloggen' }).getByRole('button', { name: 'Inloggen' }).click();
+});
+
+Then('is de gebruikersnaam {string} ingevuld', async ({ page }, gebruikersnaam: string) => {
+  await expect(page.locator('#inlogNaam')).toHaveValue(gebruikersnaam);
+});
+
+Then('is het wachtwoord {string} ingevuld', async ({ page }, wachtwoord: string) => {
+  await expect(page.locator('#inlogWachtwoord')).toHaveValue(wachtwoord);
+});
+
 When('ik op het oogje druk', async ({ page }) => {
   await page.locator('#inlogOog').click();
 });

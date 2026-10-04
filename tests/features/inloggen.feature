@@ -14,9 +14,18 @@ Functionaliteit: Inloggen en uitloggen
 
   # Draait alleen met een zichtbare browser: npm run test:zelf
   @zelf
-  Scenario: Gegevens worden ingevuld en ik druk zelf op Inloggen
-    Als ik gebruikersnaam "testuser" en wachtwoord "Voetbal123!" invul
+  Scenario: De testgebruiker wordt aangeklikt en ik druk zelf op Inloggen
+    Als ik het inlogmenu open
+    En ik de gebruiker "testuser" aanklik
     En ik zelf op de knop Inloggen druk
+    Dan ben ik ingelogd als "testuser"
+
+  Scenario: De testgebruiker aanklikken vult het wachtwoord in
+    Als ik het inlogmenu open
+    En ik de gebruiker "testuser" aanklik
+    Dan is de gebruikersnaam "testuser" ingevuld
+    En is het wachtwoord "Voetbal123!" ingevuld
+    Als ik op de knop Inloggen druk
     Dan ben ik ingelogd als "testuser"
 
   Scenario: Het wachtwoord bekijken met het oogje
