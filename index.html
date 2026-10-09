@@ -674,6 +674,30 @@
     /* ---------- Minigame: De Blockers ---------- */
     #bkDoek { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; touch-action: none; }
 
+    /* ---------- Ons verhaal ---------- */
+    .ons-verhaal { max-width: 920px; margin: 0 auto; }
+    .hoofdstuk { display: grid; grid-template-columns: auto 1fr; gap: clamp(16px, 3vw, 28px); align-items: start; margin: 28px 0; }
+    .hoofdstuk-nr { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; font-family: "Bebas Neue", sans-serif;
+                    font-size: 2rem; color: #000; background: var(--goud); box-shadow: 0 0 0 6px rgba(245,197,66,.15); }
+    .hoofdstuk h3, .speler-verhaal h3 { font-family: "Bebas Neue", sans-serif; font-size: clamp(1.8rem, 4.5vw, 2.4rem); letter-spacing: .02em; margin: 4px 0 10px; }
+    .hoofdstuk p, .speler-verhaal p { color: #d8d8d8; font-size: clamp(1rem, 2.2vw, 1.12rem); margin: 0 0 12px; }
+    .hoofdstuk strong, .speler-verhaal strong { color: var(--wit); }
+    .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 34px 0; }
+    .speler-verhaal { position: relative; overflow: hidden; padding: 26px 24px 22px; border-radius: 22px; background: linear-gradient(160deg, #171717, #0b0b0b);
+                      border: 1px solid var(--rand); transition: transform .3s, border-color .3s; }
+    .speler-verhaal:hover { transform: translateY(-5px); }
+    .speler-verhaal.goud { border-top: 4px solid var(--goud); } .speler-verhaal.goud:hover { border-color: var(--goud); }
+    .speler-verhaal.blauw { border-top: 4px solid #35c6ff; } .speler-verhaal.blauw:hover { border-color: #35c6ff; }
+    .speler-nr { position: absolute; right: 10px; top: -14px; font-family: "Bebas Neue", sans-serif; font-size: 8rem; line-height: 1; opacity: .08; pointer-events: none; }
+    .speler-rol { font-weight: 800 !important; letter-spacing: .1em; text-transform: uppercase; font-size: .8rem !important; }
+    .goud .speler-rol { color: var(--goud) !important; } .blauw .speler-rol { color: #35c6ff !important; }
+    .kenmerken { list-style: none; padding: 0; margin: 16px 0 0; display: flex; flex-wrap: wrap; gap: 8px; }
+    .kenmerken li { padding: 6px 12px; border-radius: 999px; background: #222; font-weight: 700; font-size: .85rem; }
+    .droom { padding: clamp(20px, 4vw, 30px); border-radius: 22px; background: radial-gradient(ellipse at 0% 0%, rgba(245,197,66,.16), transparent 60%), #0d0d0d; border: 1px solid #3a3320; }
+    .droom-zin { font-family: "Bebas Neue", sans-serif; font-size: clamp(1.4rem, 3.6vw, 1.9rem) !important; color: var(--wit) !important; letter-spacing: .02em; margin-top: 14px !important; }
+    .droom-zin span { color: var(--goud); }
+    @media (max-width: 760px) { .duo { grid-template-columns: 1fr; } .hoofdstuk-nr { width: 46px; height: 46px; font-size: 1.6rem; } }
+
     /* ---------- Indeling: spellenoverzicht, groepen en secties ---------- */
     .spelsectie { background: var(--zwart); }
     .spelsectie.donker { background: var(--paneel); }
@@ -972,6 +996,59 @@
               </div>
             </div>
           </div>
+        </div>
+
+        <div class="ons-verhaal">
+          <div class="sectie-kop verschijn" style="margin-top:80px">
+            <p class="label">Ons verhaal</p>
+            <h2 class="kop">Van schoolplein tot stadion</h2>
+          </div>
+
+          <article class="hoofdstuk verschijn">
+            <span class="hoofdstuk-nr" aria-hidden="true">1</span>
+            <div>
+              <h3>Hoe het begon 🏫</h3>
+              <p>Sill-vyan en Naoufal leerden elkaar kennen <strong>op school</strong>. Daar ontdekten ze al snel dat ze allebei maar één ding in hun hoofd hadden: <strong>voetbal</strong>. In de pauze, na school, op het plein: overal waar een bal was, waren zij ook.</p>
+              <p>Wat begon als samen een balletje trappen, werd een echte vriendschap. Vandaag zijn ze niet alleen beste vrienden, maar ook een sterk duo achterin.</p>
+            </div>
+          </article>
+
+          <div class="duo">
+            <article class="speler-verhaal goud verschijn">
+              <span class="speler-nr" aria-hidden="true">39</span>
+              <h3>Sill-vyan ⚡</h3>
+              <p class="speler-rol">Verdediger · nummer 39</p>
+              <p>Sill-vyan is <strong>supersnel</strong>. Denkt een spits dat hij weg is? Dan is Sill-vyan er al lang naast. Zijn snelheid is zijn wapen: hij sprint terug, haalt iedereen in en pakt de bal af voordat de aanvaller het doorheeft.</p>
+              <p>Zijn grote voorbeeld is <strong>Ronaldo</strong>, en zijn favoriete club is <strong>DBS</strong>.</p>
+              <ul class="kenmerken"><li>⚡ Snelheid</li><li>🛡️ Verdedigen</li><li>⭐ Fan van Ronaldo</li></ul>
+            </article>
+
+            <article class="speler-verhaal blauw verschijn">
+              <span class="speler-nr" aria-hidden="true">20</span>
+              <h3>Naoufal 🦵</h3>
+              <p class="speler-rol">Verdediger · nummer 20</p>
+              <p>Naoufal is de koning van de <strong>sliding tackle</strong>. Precies op het goede moment glijdt hij erin en is de bal weg. Schoon, snel en keihard: wie langs Naoufal wil, moet van goeden huize komen.</p>
+              <p>Net als zijn voorbeeld <strong>Hakimi</strong> is hij altijd op tijd, en zijn favoriete club is <strong>PSG</strong>.</p>
+              <ul class="kenmerken"><li>🦵 Sliding tackles</li><li>🛡️ Verdedigen</li><li>⭐ Fan van Hakimi</li></ul>
+            </article>
+          </div>
+
+          <article class="hoofdstuk verschijn">
+            <span class="hoofdstuk-nr" aria-hidden="true">2</span>
+            <div>
+              <h3>Samen sterk 🤝</h3>
+              <p>Snelheid en sliding tackles: samen vormen ze <strong>De Blockers</strong>. Sill-vyan rent alles terug, Naoufal glijdt erin. Waar de één is, is de ander nooit ver weg, op school én op het veld.</p>
+            </div>
+          </article>
+
+          <article class="hoofdstuk droom verschijn">
+            <span class="hoofdstuk-nr" aria-hidden="true">3</span>
+            <div>
+              <h3>Onze droom 🌟</h3>
+              <p>Sill-vyan en Naoufal hebben één grote droom: <strong>profvoetballer worden</strong>. Spelen in een vol stadion, met duizenden mensen op de tribune die hun naam roepen. Daar trainen ze voor, elke dag weer.</p>
+              <p class="droom-zin">Wie weet zie je ze ooit op tv. Onthoud deze namen: <span>Sill-vyan</span> en <span>Naoufal</span>!</p>
+            </div>
+          </article>
         </div>
       </div>
     </section>
