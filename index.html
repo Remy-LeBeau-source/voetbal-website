@@ -131,7 +131,28 @@
     @keyframes scrol { to { transform: translateY(14px); opacity: 0; } }
     @keyframes dobber { 50% { translate: 0 -18px; } }
 
-    .ios-tip { margin: 16px 0 0 !important; font-size: .95rem !important; color: var(--grijs) !important; max-width: 46ch; }
+    /* App-knoppen */
+    .app-knop { display: inline-flex; align-items: center; gap: 7px; margin-left: 18px; padding: 6px 14px 6px 7px; border-radius: 999px; cursor: pointer;
+                border: 1px solid rgba(245,197,66,.55); background: rgba(245,197,66,.1); color: var(--wit); font: 700 .9rem Inter, sans-serif;
+                transition: background .2s, transform .2s; }
+    .app-knop img { width: 22px; height: 22px; border-radius: 6px; }
+    .menu { margin-left: auto; }            /* menu en App-knop samen rechts in de bovenbalk */
+    .app-knop { order: 3; }
+    .hamburger { order: 4; }
+    .app-knop:hover { background: rgba(245,197,66,.25); transform: translateY(-1px); }
+    .app-knop[hidden], .installeer-knop[hidden] { display: none; }
+    .installeer-knop { display: inline-flex; align-items: center; gap: 12px; padding: 8px 22px 8px 8px; border-radius: 999px; cursor: pointer; text-align: left;
+                       border: 2px solid var(--goud); background: rgba(0,0,0,.55); color: var(--wit); backdrop-filter: blur(4px);
+                       box-shadow: 0 0 24px rgba(245,197,66,.3); transition: transform .2s, background .2s; position: relative; overflow: hidden; }
+    .installeer-knop img { width: 44px; height: 44px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,.5); }
+    .installeer-knop b { display: block; font-size: 1.02rem; }
+    .installeer-knop small { display: block; color: var(--grijs); font-size: .8rem; font-weight: 600; }
+    .installeer-knop:hover { transform: translateY(-2px); background: rgba(245,197,66,.16); }
+    .installeer-knop::after { content: ""; position: absolute; top: 0; bottom: 0; width: 40%; left: 0; pointer-events: none;
+                              background: linear-gradient(100deg, transparent, rgba(255,255,255,.28), transparent);
+                              transform: translateX(-150%) skewX(-18deg); animation: knopglans 3.8s ease-in-out infinite; }
+    @keyframes knopglans { 0%, 60% { transform: translateX(-150%) skewX(-18deg); } 100% { transform: translateX(350%) skewX(-18deg); } }
+    @media (max-width: 760px) { .app-knop { margin-left: auto; margin-right: 8px; } .installeer-knop { width: 100%; } }
     .knop[hidden] { display: none; }
     /* ---------- Lichtkrant ---------- */
     .lichtkrant { background: var(--goud); color: #000; overflow: hidden; padding: 12px 0; margin: 10px 0;
@@ -738,6 +759,7 @@
   <header id="header">
     <nav class="wrap" aria-label="Hoofdmenu">
       <a class="logo" href="#home">S<span>&amp;</span>N</a>
+      <button class="app-knop" id="appKnop" hidden><img src="icons/icoon-192.png" alt="" width="22" height="22"> App</button>
       <button class="hamburger" aria-label="Menu" aria-expanded="false" aria-controls="menu">
         <span></span><span></span><span></span>
       </button>
@@ -785,9 +807,11 @@
         <div class="knoppen" style="--d:1s">
           <a class="knop vol magneet" href="#wij">Leer ons kennen</a>
           <a class="knop leeg magneet" href="#spel">Neem een penalty</a>
-          <button class="knop leeg magneet" id="installeer" hidden>📲 Installeer de app</button>
+          <button class="installeer-knop" id="installeer" hidden>
+            <img src="icons/icoon-192.png" alt="" width="44" height="44">
+            <span><b>Installeer de app</b><small>Gratis · werkt ook zonder internet</small></span>
+          </button>
         </div>
-        <p class="ios-tip" id="iosTip" hidden>📲 <b>App op je iPhone of iPad?</b> Tik onderin op <b>Deel</b> <span aria-hidden="true">⎋</span> en kies <b>Zet op beginscherm</b>.</p>
       </div>
       <div class="scroll-hint" aria-hidden="true"></div>
     </section>
@@ -1419,11 +1443,7 @@
         <li>📴 Werkt ook zonder internet</li>
         <li>🏆 Je records blijven bewaard</li>
       </ul>
-      <ol class="app-ios" id="appIos" hidden>
-        <li>Tik onderin op <b>Deel</b> (het vierkantje met de pijl omhoog)</li>
-        <li>Kies <b>Zet op beginscherm</b></li>
-        <li>Tik rechtsboven op <b>Voeg toe</b></li>
-      </ol>
+      <ol class="app-ios" id="appIos" hidden></ol>
       <div class="app-knoppen">
         <button class="knop vol" id="appJa">📲 Installeren</button>
         <button class="knop leeg" id="appLater">Later</button>
@@ -5536,46 +5556,57 @@
     if ('serviceWorker' in navigator && location.protocol !== 'file:')
       addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
     const alsApp = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
-    const installeerKnop = $('#installeer');
+    const installeerKnop = $('#installeer'), appKnop = $('#appKnop');
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const isAndroid = /android/i.test(navigator.userAgent), isFirefox = /firefox/i.test(navigator.userAgent);
+    const isSafariMac = !isIOS && /safari/i.test(navigator.userAgent) && !/chrome|chromium|edg/i.test(navigator.userAgent);
     let installatieVraag = null;
-    // Chrome, Edge, Android: de browser geeft ons een installatievraag die we via onze knop tonen
-    addEventListener('beforeinstallprompt', e => {
-      e.preventDefault();
-      installatieVraag = e;
-      if (!alsApp) installeerKnop.hidden = false;
-      planPopup();
-    });
+    // De knoppen staan er altijd, behalve als je de website al als app gebruikt
+    if (!alsApp) { installeerKnop.hidden = false; appKnop.hidden = false; }
+    // Chrome, Edge, Android: de browser geeft ons een installatievraag
+    addEventListener('beforeinstallprompt', e => { e.preventDefault(); installatieVraag = e; planPopup(); });
+    // Uitleg per apparaat, voor als de browser het zelf niet aanbiedt
+    function installatieStappen() {
+      if (isIOS) return ['Tik onderin op <b>Deel</b> (het vierkantje met de pijl omhoog)', 'Kies <b>Zet op beginscherm</b>', 'Tik rechtsboven op <b>Voeg toe</b>'];
+      if (isAndroid) return ['Tik rechtsboven op de <b>drie puntjes ⋮</b>', 'Kies <b>App installeren</b> of <b>Toevoegen aan startscherm</b>', 'Tik op <b>Installeren</b>'];
+      if (isFirefox) return ['Firefox kan helaas geen apps installeren', 'Open deze website in <b>Chrome</b> of <b>Edge</b>', 'Klik daar op de knop <b>Installeer de app</b>'];
+      if (isSafariMac) return ['Klik bovenin op <b>Archief</b>', 'Kies <b>Voeg toe aan Dock</b>', 'Klik op <b>Voeg toe</b>'];
+      return ['Kijk rechts in de adresbalk naar het <b>installeer-icoontje</b> (een schermpje met een pijl)', 'Of klik op de <b>drie puntjes ⋮</b> en kies <b>Opslaan en delen → Pagina installeren als app</b>', 'Klik op <b>Installeren</b>'];
+    }
     async function installeer() {
-      if (!installatieVraag) return;
-      installatieVraag.prompt();
-      await installatieVraag.userChoice;
-      installatieVraag = null;
-      installeerKnop.hidden = true;
+      if (installatieVraag) {
+        installatieVraag.prompt();
+        const keuze = await installatieVraag.userChoice;
+        installatieVraag = null;
+        if (keuze?.outcome === 'accepted') { installeerKnop.hidden = appKnop.hidden = true; sluitPopup(false); }
+        return;
+      }
+      toonPopup(true);                                       // geen installatievraag: dan laten we zien hoe het moet
     }
     installeerKnop.addEventListener('click', installeer);
-    addEventListener('appinstalled', () => { installeerKnop.hidden = true; sluitPopup(false); });
-    // iPhone/iPad hebben geen installatievraag: daar tonen we uitleg
-    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    if (isIOS && !alsApp) $('#iosTip').hidden = false;
+    appKnop.addEventListener('click', () => installatieVraag ? installeer() : toonPopup(true));
+    addEventListener('appinstalled', () => { installeerKnop.hidden = appKnop.hidden = true; sluitPopup(false); });
 
-    // Pop-up "Installeer de app": na een tijdje op de pagina, en daarna pas weer na 3 dagen
+    // Pop-up "Installeer de app": vanzelf na een tijdje (daarna pas weer na 3 dagen), of meteen via een knop
     const appPopup = $('#appPopup'), PAUZE = 3 * 24 * 60 * 60 * 1000, WACHT = 12000;
     let popupGepland = false, vorigeFocus = null;
     function planPopup() {
       if (popupGepland || alsApp || Date.now() - bewaar.lees('app-popup-weg', 0) < PAUZE) return;
-      if (!installatieVraag && !isIOS) return;           // deze browser kan niet installeren
+      if (!installatieVraag && !isIOS) return;
       popupGepland = true;
-      setTimeout(toonPopup, WACHT);
+      setTimeout(() => toonPopup(false), WACHT);
     }
-    function toonPopup() {
-      if (!appPopup.hidden || (!installatieVraag && !isIOS)) return;
-      $('#appIos').hidden = !isIOS;
-      $('.app-voordelen').hidden = isIOS;             // op iPhone zijn de stappen belangrijker
-      $('#appJa').hidden = isIOS;
-      $('#appLater').textContent = isIOS ? 'Begrepen' : 'Later';
+    function toonPopup(viaKnop) {
+      if (!appPopup.hidden || alsApp) return;
+      const metVraag = !!installatieVraag, stappen = $('#appIos');
+      stappen.innerHTML = installatieStappen().map(s => `<li>${s}</li>`).join('');
+      stappen.hidden = metVraag;                            // kan de browser het zelf? dan is één knop genoeg
+      $('.app-voordelen').hidden = !metVraag && (isIOS || window.innerHeight < 700);
+      $('#appJa').hidden = !metVraag;
+      $('#appLater').textContent = metVraag ? 'Later' : 'Begrepen';
       vorigeFocus = document.activeElement;
       appPopup.hidden = false;
-      (isIOS ? $('#appLater') : $('#appJa')).focus({ preventScroll: true });
+      (metVraag ? $('#appJa') : $('#appLater')).focus({ preventScroll: true });
     }
     function sluitPopup(onthoud = true) {
       if (appPopup.hidden) return;
