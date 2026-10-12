@@ -8,7 +8,7 @@ erDiagram
     GEBRUIKER ||--o{ SESSIE : "is ingelogd in"
     BROWSER ||--|| GELUIDSINSTELLING : "heeft"
     GELUIDSINSTELLING ||--o{ GELUIDKEUZE : "bevat"
-    BROWSER ||--o| APP_POPUP : "onthoudt"
+    BROWSER ||--o{ APP_MELDING : "onthoudt"
     BROWSER ||--o{ RECORD : "bewaart"
     BROWSER ||--o{ NIVEAUKEUZE : "bewaart"
     SPEL ||--o{ NIVEAU : "heeft"
@@ -41,9 +41,9 @@ erDiagram
         boolean aan
     }
 
-    APP_POPUP {
-        string sleutel PK "app-popup-weg"
-        number tijdstip "moment waarop de popup is weggeklikt"
+    APP_MELDING {
+        string sleutel PK "app-popup-weg of app-zwevend-weg"
+        string weggeklikt_op "popup: tijdstip in ms, zwevende knop: datum van vandaag"
     }
 
     SPEL {
